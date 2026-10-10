@@ -20,6 +20,8 @@ A personal task tracker built for ADHD-friendly capture, picking, and focus. The
 ## Features that must keep working
 
 - Backup downloads both lists as JSON and never includes the token. Restore checks the file, shows its date, and asks before replacing. It still accepts first-version backups (`tasks` + `space`).
+- With sync on, `autoBackup()` saves `backups/open loops backup YYYY-MM-DD.json` to the data repo after a full sync (both lists) when the newest one is 7 or more days old, then deletes all but the newest 12. It only lists or deletes files matching that name. Restore from GitHub runs the same `restorePayload()` checks as a file restore.
+- Talk it out: `splitLoops` / `parseLoop` are the no-AI sorter; AI extract, AI fill, and Suggest call the Claude API with the key in `localStorage` key `openloops_ai` (never in backups or sync). Everything goes through the review screen before tasks change.
 - Undo reverses only the loops that one action changed (`before` and `after` snapshots), so it never overwrites edits that synced in from another device.
 - The focus timer stores an end time, not a countdown, so a refresh does not lose it.
 

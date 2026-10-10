@@ -283,6 +283,7 @@
           <label>Restore
             <input type="file" accept=".json,application/json" style="display:none" onchange="importAllData(event);closeMenu()">
           </label>
+          <button id="gh-restore" style="display:none" onclick="openGitRestore();closeMenu()">Restore from GitHub</button>
           <button onclick="openSync();closeMenu()">Sync settings</button>
           <button onclick="openSettings();closeMenu()">Settings</button>
           <div class="menu-note" id="backup-note"></div>
@@ -476,7 +477,7 @@ function defaultState() {
     version: 2,
     current: 'Work',
     lists,
-    settings: { sound: true, lastBackup: null },
+    settings: { sound: true, lastBackup: null, lastAutoBackup: null },
     timer: null
   };
 }
@@ -646,19 +647,24 @@ function todayStr(d = new Date()) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-function exportAllData() {
-  state.settings.lastBackup = new Date().toISOString();
-  save();
+// Same shape for the downloaded file and the GitHub copy. Never holds a token.
+function backupPayload(at) {
   const lists = {};
   LIST_NAMES.forEach(n => lists[n] = state.lists[n]);
-  const payload = {
+  return {
     app: APP_ID,
-    exportedAt: state.settings.lastBackup,
+    exportedAt: at,
     exportedFrom: window.location.href,
     version: 2,
     lists,
     settings: { sound: state.settings.sound }
   };
+}
+
+function exportAllData() {
+  state.settings.lastBackup = new Date().toISOString();
+  save();
+  const payload = backupPayload(state.settings.lastBackup);
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -679,8 +685,18 @@ function importAllData(event) {
   const reader = new FileReader();
   reader.onload = function (e) {
     try {
-      const payload = JSON.parse(e.target.result);
-      if (payload.app !== APP_ID || !(payload.lists || Array.isArray(payload.tasks))) {
+      restorePayload(JSON.parse(e.target.result));
+    } catch (err) {
+      alert('Could not restore data: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Checks a backup, shows its date and contents, and asks before replacing anything
+function restorePayload(payload) {
+    try {
+      if (!payload || payload.app !== APP_ID || !(payload.lists || Array.isArray(payload.tasks))) {
         alert('This does not appear to be an Open Loops backup file.');
         return;
       }
@@ -715,8 +731,6 @@ function importAllData(event) {
     } catch (err) {
       alert('Could not restore data: ' + err.message);
     }
-  };
-  reader.readAsText(file);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -882,6 +896,8 @@ async function runSync(names) {
   try {
     for (const name of todo) await syncList(name);
     setSyncStatus('ok');
+    // Both lists are fresh only after a full sync (when the app opens), so back up then
+    if (LIST_NAMES.every(n => todo.includes(n))) autoBackup();
   } catch (e) {
     todo.forEach(n => _dirty.add(n));
     if (e instanceof SyncError) setSyncStatus(e.kind, e.message);
@@ -964,6 +980,97 @@ function disconnectSync() {
   closeModal();
 }
 
+// ── Automatic backups to GitHub ─────────────────────
+// With sync on, about once a week the app saves a dated copy of both
+// lists to backups/ in the same private repo, and keeps the newest 12.
+// Any device can do it; each one checks the folder first so two
+// devices don't both save one the same week.
+
+const AUTO_BACKUP_DAYS = 7;
+const AUTO_BACKUP_KEEP = 12;
+const BACKUP_DIR = 'backups';
+const BACKUP_NAME_RE = /^open loops backup (\d{4}-\d{2}-\d{2})\.json$/;
+let _autoBackupRunning = false;
+
+const backupUrl = name => `/contents/${BACKUP_DIR}/${encodeURIComponent(name)}`;
+
+// Newest first. Only files this app named, so nothing else in the folder is ever touched.
+async function listGitBackups() {
+  const res = await gh(`/contents/${BACKUP_DIR}?t=${Date.now()}`);
+  if (res.status === 404) return [];
+  if (!res.ok) throw httpError(res);
+  const items = await res.json();
+  return (Array.isArray(items) ? items : [])
+    .filter(f => f.type === 'file' && BACKUP_NAME_RE.test(f.name))
+    .map(f => ({ name: f.name, sha: f.sha, date: f.name.match(BACKUP_NAME_RE)[1] }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+async function autoBackup() {
+  if (!syncOn() || _autoBackupRunning) return;
+  // This device already knows a recent one exists, so skip the network
+  if (daysSince(state.settings.lastAutoBackup) < AUTO_BACKUP_DAYS) return;
+  _autoBackupRunning = true;
+  try {
+    const existing = await listGitBackups();
+    const newest = existing[0];
+    if (newest && daysSince(newest.date + 'T12:00:00') < AUTO_BACKUP_DAYS) {
+      state.settings.lastAutoBackup = newest.date + 'T12:00:00';
+    } else {
+      const now = new Date();
+      const name = `open loops backup ${todayStr(now)}.json`;
+      const body = JSON.stringify(backupPayload(now.toISOString()), null, 1);
+      const res = await gh(backupUrl(name), { method: 'PUT', body: JSON.stringify({ message: `Weekly backup ${todayStr(now)}`, content: toB64(body) }) });
+      // 422 means another device saved today's already, which is just as good
+      if (!res.ok && res.status !== 422) throw httpError(res);
+      state.settings.lastAutoBackup = now.toISOString();
+      const all = [{ name, date: todayStr(now) }, ...existing.filter(f => f.name !== name)];
+      for (const old of all.slice(AUTO_BACKUP_KEEP)) {
+        if (!old.sha) continue;
+        await gh(backupUrl(old.name), { method: 'DELETE', body: JSON.stringify({ message: `Remove old backup ${old.date}`, sha: old.sha }) });
+      }
+    }
+    writeLocal();
+    renderBackupNote();
+  } catch {
+    // Quiet on purpose. If this keeps failing, the backup banner comes back after 30 days.
+  }
+  _autoBackupRunning = false;
+}
+
+async function openGitRestore() {
+  if (!syncOn()) { openSync(); return; }
+  openModal('<h3>Restore from GitHub</h3><p class="hint">Looking for backups...</p>');
+  let list;
+  try { list = await listGitBackups(); }
+  catch (e) {
+    openModal(`<h3>Restore from GitHub</h3><div class="alert warn">${esc(e instanceof SyncError ? e.message : 'Could not reach GitHub. Check your internet connection.')}</div>
+      <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" onclick="closeModal()">Close</button></div>`);
+    return;
+  }
+  const label = d => new Date(d + 'T12:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  openModal(`<h3>Restore from GitHub</h3>
+    <p class="hint">The app saves a backup here about once a week and keeps the last ${AUTO_BACKUP_KEEP}. Pick one to see what's in it. Nothing changes until you say yes.</p>
+    ${list.length
+      ? list.map(f => `<button class="btn" style="display:block;width:100%;text-align:left;margin-top:6px" onclick="restoreGitBackup('${f.date}')">${esc(label(f.date))}</button>`).join('')
+      : '<div class="empty">No backups yet. The first one is saved the next time the app opens with sync on.</div>'}
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" onclick="closeModal()">Cancel</button></div>`);
+}
+
+async function restoreGitBackup(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+  try {
+    const res = await gh(`${backupUrl(`open loops backup ${date}.json`)}?t=${Date.now()}`);
+    if (!res.ok) throw httpError(res);
+    const j = await res.json();
+    const payload = JSON.parse(fromB64(j.content || ''));
+    closeModal();
+    restorePayload(payload);
+  } catch (e) {
+    toast(e instanceof SyncError ? e.message : 'Could not load that backup. Try again in a minute.');
+  }
+}
+
 // Pull in changes from other devices when you come back to the tab, and once a minute while it's open
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') runSync([state.current]); });
 setInterval(() => { if (document.visibilityState === 'visible') runSync([state.current]); }, POLL_MS);
@@ -975,9 +1082,15 @@ function daysSince(iso) {
 }
 
 function renderBackupNote() {
-  const d = daysSince(state.settings.lastBackup);
-  document.getElementById('backup-note').textContent =
-    d === Infinity ? 'Never backed up' : d === 0 ? 'Last backup: today' : `Last backup: ${d} day${d === 1 ? '' : 's'} ago`;
+  const ago = n => n === 0 ? 'today' : `${n} day${n === 1 ? '' : 's'} ago`;
+  const dl = daysSince(state.settings.lastBackup);
+  const auto = daysSince(state.settings.lastAutoBackup);
+  const d = Math.min(dl, auto);
+  const parts = [];
+  if (auto !== Infinity) parts.push(`Last GitHub backup: ${ago(auto)}`);
+  if (dl !== Infinity) parts.push(`Last download: ${ago(dl)}`);
+  document.getElementById('backup-note').textContent = parts.length ? parts.join('. ') : 'Never backed up';
+  document.getElementById('gh-restore').style.display = syncOn() ? '' : 'none';
   const box = document.getElementById('backup-alert');
   const active = LIST_NAMES.reduce((n, k) => n + state.lists[k].tasks.filter(t => !t.done).length, 0);
   // With sync on, GitHub keeps every version, so the reminder can wait longer

@@ -10,6 +10,7 @@ Live at: https://ehborden.github.io/open-loops/
 - With sync on, the Work and Home lists are also saved as `work.json` and `home.json` in the private repo `open-loops-data`. Every device that is connected sees the same lists.
 - The access token is stored only in each browser. It is never in this repo or in a backup file.
 - Data > Backup downloads both lists as one file. Data > Restore loads one back.
+- With sync on, the app also saves a backup to the `backups` folder in `open-loops-data` about once a week and keeps the last 12. Data > Restore from GitHub lists them by date. With weekly backups running, the backup reminder stays away.
 
 ## Connecting a device
 
