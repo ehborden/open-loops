@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Open Loops</title>
+<meta name="theme-color" content="#1a4c9f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Open Loops">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
 <style>
   :root {
     --bg: #f7f9fc;
@@ -59,10 +66,13 @@
   header .wrap { padding-bottom: 0; }
   .head-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; flex-wrap: wrap; }
   .brand { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-  .space-tag {
-    font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
-    background: var(--gold); color: #1c212e; border-radius: 999px; padding: 2px 10px;
-  }
+  .list-toggle button { font-weight: 600; padding: 4px 12px; }
+  .seg.list-toggle button.on { background: var(--gold); color: #1c212e; border-color: var(--gold); }
+  .list-toggle .count { font-weight: 400; opacity: 0.75; font-size: 12px; }
+  .sync-pill.ok { color: var(--green); }
+  .sync-pill.offline { color: var(--amber); }
+  .sync-pill.error { color: var(--red); border-color: var(--red); }
+  .sync-pill.off { color: var(--muted); }
   .spacer { flex: 1; }
   nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 10px; }
   nav.tabs button {
@@ -241,8 +251,9 @@
   <div class="wrap">
     <div class="head-row">
       <div class="brand">Open Loops</div>
-      <span class="space-tag" id="space-tag">Work</span>
+      <div class="seg list-toggle" id="list-toggle"></div>
       <div class="spacer"></div>
+      <button class="btn sm sync-pill off" id="sync-pill" onclick="openSync()">Sync off</button>
       <button class="btn sm" id="undo-btn" disabled onclick="undoLastAction()" title="Nothing to undo yet">Undo</button>
       <div class="menu">
         <button class="btn sm" onclick="toggleMenu(event)">Data</button>
@@ -251,6 +262,7 @@
           <label>Restore
             <input type="file" accept=".json,application/json" style="display:none" onchange="importAllData(event);closeMenu()">
           </label>
+          <button onclick="openSync();closeMenu()">Sync settings</button>
           <button onclick="openSettings();closeMenu()">Settings</button>
           <div class="menu-note" id="backup-note"></div>
         </div>
@@ -405,16 +417,20 @@
 <script>
 // ═══════════════════════════════════════════════════════
 //  STORAGE
-//  Everything lives in this browser's localStorage under one
-//  key. Each browser (work computer, home computer) keeps its
-//  own separate list. Backup / Restore moves it as a file.
+//  Everything lives in this browser's localStorage. There are
+//  two lists (Work and Home). With sync turned on, each list is
+//  also saved as a file in your private GitHub repo, so any
+//  device can see it. Backup / Restore still works as a file.
 // ═══════════════════════════════════════════════════════
 
-const STORE_KEY = 'openloops_v1';
+const STORE_KEY = 'openloops_v2';
+const OLD_STORE_KEY = 'openloops_v1';
 const APP_ID = 'open-loops';
+const LIST_NAMES = ['Work', 'Home'];
 const TODAY_LIMIT = 3;
 const OLD_DAYS = 14;
 const BACKUP_NUDGE_DAYS = 7;
+const TOMBSTONE_DAYS = 90;
 
 const ENCOURAGEMENT = [
   'Loop closed. Your brain just got a little quieter.',
@@ -425,32 +441,121 @@ const ENCOURAGEMENT = [
   'One less thing to carry around.'
 ];
 
+function emptyList() { return { tasks: [], deleted: {} }; }
+
 function defaultState() {
+  const lists = {};
+  LIST_NAMES.forEach(n => lists[n] = emptyList());
   return {
     app: APP_ID,
-    version: 1,
-    space: 'Work',
-    tasks: [],
+    version: 2,
+    current: 'Work',
+    lists,
     settings: { sound: true, lastBackup: null },
     timer: null
   };
 }
 
+// Task ids end up inside onclick attributes, so anything that came
+// from a file or from GitHub gets checked before it is used.
+function cleanTask(t) {
+  if (!t || typeof t !== 'object' || typeof t.title !== 'string') return null;
+  if (typeof t.id !== 'string' || !/^[a-z0-9]{1,40}$/.test(t.id)) t.id = uid();
+  if (!t.created || isNaN(new Date(t.created))) t.created = new Date().toISOString();
+  return t;
+}
+
+function cleanList(l) {
+  l = l && typeof l === 'object' ? l : {};
+  return {
+    tasks: (Array.isArray(l.tasks) ? l.tasks : []).map(cleanTask).filter(Boolean),
+    deleted: l.deleted && typeof l.deleted === 'object' ? l.deleted : {}
+  };
+}
+
 function loadState() {
+  const base = defaultState();
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return defaultState();
-    const s = JSON.parse(raw);
-    return Object.assign(defaultState(), s, { settings: Object.assign(defaultState().settings, s.settings || {}) });
-  } catch { return defaultState(); }
+    if (raw) {
+      const s = JSON.parse(raw);
+      const lists = {};
+      LIST_NAMES.forEach(n => lists[n] = cleanList(s.lists && s.lists[n]));
+      return Object.assign(base, s, {
+        lists,
+        current: LIST_NAMES.includes(s.current) ? s.current : 'Work',
+        settings: Object.assign(base.settings, s.settings || {})
+      });
+    }
+    // One-time move from the first version, which had one list per browser
+    const old = localStorage.getItem(OLD_STORE_KEY);
+    if (old) {
+      const o = JSON.parse(old);
+      const name = LIST_NAMES.includes(o.space) ? o.space : 'Work';
+      base.lists[name] = cleanList({ tasks: o.tasks });
+      base.current = name;
+      base.settings = Object.assign(base.settings, o.settings || {});
+      base.timer = o.timer || null;
+    }
+  } catch {}
+  return base;
 }
 
 let state = loadState();
 
-function save() {
+// The list on screen right now
+function L() { return state.lists[state.current]; }
+
+// ── Change tracking ─────────────────────────────────
+// Every save compares each list to how it looked at the last save.
+// Anything new or changed gets a fresh "updated" time, anything
+// removed gets a deletion record. Sync uses those to merge two
+// devices without losing edits from either one.
+
+const _baseline = {};
+const sigOf = t => JSON.stringify(Object.assign({}, t, { updated: undefined }));
+
+function setBaseline(name) {
+  const m = {};
+  state.lists[name].tasks.forEach(t => m[t.id] = sigOf(t));
+  _baseline[name] = m;
+}
+
+function stampChanges(name) {
+  const list = state.lists[name];
+  const base = _baseline[name] || {};
+  const now = Date.now();
+  const seen = {};
+  let changed = false;
+  list.tasks.forEach(t => {
+    const sig = sigOf(t);
+    if (base[t.id] !== sig) { t.updated = now; changed = true; }
+    seen[t.id] = sig;
+    if (list.deleted[t.id]) delete list.deleted[t.id];
+  });
+  Object.keys(base).forEach(id => { if (!seen[id]) { list.deleted[id] = now; changed = true; } });
+  _baseline[name] = seen;
+  return changed;
+}
+
+function writeLocal() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
   catch (e) { toast('Could not save. Your browser storage may be full or blocked. Make a Backup now.'); }
 }
+
+function save() {
+  // Record what the last undoable action changed (see UNDO)
+  const top = _undoStack[_undoStack.length - 1];
+  if (top && top.after == null) top.after = JSON.stringify(state.lists[top.list].tasks);
+  LIST_NAMES.forEach(name => { if (stampChanges(name)) markDirty(name); });
+  writeLocal();
+}
+
+LIST_NAMES.forEach(name => {
+  // Older data has no "updated" times yet; give them one so merges have something to compare
+  state.lists[name].tasks.forEach(t => { if (!t.updated) t.updated = new Date(t.created || Date.now()).getTime(); });
+  setBaseline(name);
+});
 
 // ═══════════════════════════════════════════════════════
 //  UNDO
@@ -463,7 +568,7 @@ const UNDO_LIMIT = 15;
 let _undoStack = [];
 
 function pushUndoSnapshot(label) {
-  _undoStack.push({ label, tasks: JSON.stringify(state.tasks) });
+  _undoStack.push({ label, list: state.current, tasks: JSON.stringify(L().tasks) });
   if (_undoStack.length > UNDO_LIMIT) _undoStack.shift();
   updateUndoButton();
 }
@@ -483,7 +588,20 @@ function updateUndoButton() {
 function undoLastAction() {
   const snap = _undoStack.pop();
   if (!snap) return;
-  state.tasks = JSON.parse(snap.tasks);
+  // Only put back the loops this one action changed, so undo never
+  // wipes out edits that synced in from another device since then
+  const before = new Map(JSON.parse(snap.tasks).map(t => [t.id, t]));
+  const after = new Map(JSON.parse(snap.after || snap.tasks).map(t => [t.id, t]));
+  const list = state.lists[snap.list];
+  new Set([...before.keys(), ...after.keys()]).forEach(id => {
+    if (JSON.stringify(before.get(id)) === JSON.stringify(after.get(id))) return;
+    const i = list.tasks.findIndex(t => t.id === id);
+    if (before.has(id)) {
+      if (i >= 0) list.tasks[i] = before.get(id); else list.tasks.push(before.get(id));
+    } else if (i >= 0) list.tasks.splice(i, 1);
+  });
+  list.tasks.sort(byNewest);
+  if (snap.list !== state.current) state.current = snap.list;
   save();
   renderAll();
   updateUndoButton();
@@ -492,6 +610,10 @@ function undoLastAction() {
 
 // ═══════════════════════════════════════════════════════
 //  BACKUP / RESTORE
+//  Same idea as the coverage tracker: Backup downloads one file
+//  with both lists. Restore checks the file, shows its date, and
+//  asks before replacing anything. The sync token is never put
+//  in a backup file.
 // ═══════════════════════════════════════════════════════
 
 function todayStr(d = new Date()) {
@@ -502,20 +624,21 @@ function todayStr(d = new Date()) {
 function exportAllData() {
   state.settings.lastBackup = new Date().toISOString();
   save();
+  const lists = {};
+  LIST_NAMES.forEach(n => lists[n] = state.lists[n]);
   const payload = {
     app: APP_ID,
     exportedAt: state.settings.lastBackup,
     exportedFrom: window.location.href,
-    version: state.version,
-    space: state.space,
-    tasks: state.tasks,
-    settings: state.settings
+    version: 2,
+    lists,
+    settings: { sound: state.settings.sound }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `open loops backup ${state.space} ${todayStr()}.json`;
+  a.download = `open loops backup ${todayStr()}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -532,20 +655,34 @@ function importAllData(event) {
   reader.onload = function (e) {
     try {
       const payload = JSON.parse(e.target.result);
-      if (payload.app !== APP_ID || !Array.isArray(payload.tasks)) {
+      if (payload.app !== APP_ID || !(payload.lists || Array.isArray(payload.tasks))) {
         alert('This does not appear to be an Open Loops backup file.');
         return;
       }
       const when = payload.exportedAt ? payload.exportedAt.slice(0, 10) : 'unknown date';
-      let msg = `This will replace all current loops with the "${payload.space || 'unknown'}" backup from ${when} (${payload.tasks.length} items).`;
-      if (payload.space && payload.space !== state.space) {
-        msg += `\n\nHeads up: this page is set to "${state.space}" but the backup is from "${payload.space}". Restoring will switch this page to "${payload.space}".`;
+
+      // Backups from the first version hold a single list
+      let incoming = {};
+      if (payload.lists) {
+        LIST_NAMES.forEach(n => { if (payload.lists[n]) incoming[n] = cleanList(payload.lists[n]); });
+      } else {
+        incoming[LIST_NAMES.includes(payload.space) ? payload.space : 'Work'] = cleanList({ tasks: payload.tasks });
       }
+      const names = Object.keys(incoming);
+      if (!names.length) { alert('This backup has no lists in it.'); return; }
+      const summary = names.map(n => `${n}: ${incoming[n].tasks.length} items`).join('\n');
+      let msg = `This will replace your current ${names.join(' and ')} list${names.length > 1 ? 's' : ''} with the backup from ${when}.\n\n${summary}`;
+      if (syncOn()) msg += '\n\nSync is on, so this will also replace the list on your other devices.';
       if (!confirm(msg + '\n\nContinue?')) return;
 
-      state.tasks = payload.tasks;
-      if (payload.space) state.space = payload.space;
-      if (payload.settings) state.settings = Object.assign(state.settings, payload.settings);
+      names.forEach(n => {
+        // Keep the old deletion records so the replaced items stay gone everywhere
+        incoming[n].deleted = Object.assign({}, state.lists[n].deleted, incoming[n].deleted);
+        state.lists[n] = incoming[n];
+        // Force every restored item to count as a fresh edit so it wins any sync merge
+        _baseline[n] = Object.fromEntries(Object.entries(_baseline[n] || {}).map(([id]) => [id, '']));
+      });
+      if (payload.settings && typeof payload.settings.sound === 'boolean') state.settings.sound = payload.settings.sound;
       save();
       clearUndoHistory(); // pre-restore snapshots don't belong to the restored data
       renderAll();
@@ -557,6 +694,256 @@ function importAllData(event) {
   reader.readAsText(file);
 }
 
+// ═══════════════════════════════════════════════════════
+//  SYNC (GitHub)
+//  Each list is one file (work.json, home.json) in a private
+//  repo. Every sync reads the file, merges it with this device
+//  item by item, and writes it back only if something changed.
+//  The token stays in this browser only. It is never put in a
+//  backup file and never sent anywhere except api.github.com.
+// ═══════════════════════════════════════════════════════
+
+const SYNC_KEY = 'openloops_sync';
+const POLL_MS = 60000;
+
+function loadSync() {
+  try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || null; } catch { return null; }
+}
+
+let sync = loadSync();
+let syncStatus = { kind: 'off', msg: '', at: null };
+const _dirty = new Set();
+let _pushTimer = null;
+let _syncing = false;
+let _syncAgain = false;
+
+function syncOn() { return !!(sync && sync.token && sync.owner && sync.repo); }
+
+function markDirty(name) {
+  if (!syncOn()) return;
+  _dirty.add(name);
+  if (!['error', 'offline'].includes(syncStatus.kind)) setSyncStatus('pending');
+  clearTimeout(_pushTimer);
+  _pushTimer = setTimeout(() => runSync(), 1500);
+}
+
+let _lastErrorToast = '';
+function setSyncStatus(kind, msg) {
+  syncStatus = { kind, msg: msg || '', at: kind === 'ok' ? new Date() : syncStatus.at };
+  if (kind === 'error' && msg !== _lastErrorToast) toast(msg);
+  _lastErrorToast = kind === 'error' ? msg : (kind === 'ok' || kind === 'off' ? '' : _lastErrorToast);
+  renderSyncPill();
+}
+
+function renderSyncPill() {
+  const el = document.getElementById('sync-pill');
+  if (!el) return;
+  const k = syncOn() ? syncStatus.kind : 'off';
+  const text = {
+    off: 'Sync off',
+    pending: 'Saving...',
+    busy: 'Syncing...',
+    ok: 'Synced',
+    offline: 'Offline',
+    error: 'Sync problem'
+  }[k] || 'Sync';
+  el.textContent = text;
+  el.className = 'btn sm sync-pill ' + k;
+  el.title = k === 'ok' && syncStatus.at
+    ? 'Last synced ' + syncStatus.at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : k === 'offline' ? 'Cannot reach GitHub. Changes are saved on this device and will sync when it can.'
+    : syncStatus.msg || 'Sync settings';
+}
+
+const filePath = name => `${name.toLowerCase()}.json`;
+
+function gh(path, opts = {}) {
+  const headers = { 'Accept': 'application/vnd.github+json', 'Authorization': `Bearer ${sync.token}` };
+  if (opts.body) headers['Content-Type'] = 'application/json';
+  return fetch(`https://api.github.com/repos/${encodeURIComponent(sync.owner)}/${encodeURIComponent(sync.repo)}${path}`,
+    Object.assign({ cache: 'no-store' }, opts, { headers }));
+}
+
+class SyncError extends Error {
+  constructor(kind, msg) { super(msg); this.kind = kind; }
+}
+
+function httpError(res) {
+  if (res.status === 401) return new SyncError('error', 'Your GitHub token stopped working (it may have expired). Open Sync settings and paste a new one.');
+  if (res.status === 404) return new SyncError('error', `Can't find the repo "${sync.owner}/${sync.repo}", or the token isn't allowed to see it.`);
+  if (res.status === 403 || res.status === 429) return new SyncError('error', 'GitHub refused the save. Check that the token has Contents set to "Read and write".');
+  return new SyncError('error', `GitHub said ${res.status}. Your changes are safe on this device.`);
+}
+
+function toB64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function fromB64(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+}
+
+async function fetchRemote(name) {
+  const res = await gh(`/contents/${filePath(name)}?t=${Date.now()}`);
+  if (res.status === 404) {
+    // Could be "file not made yet" (fine) or "repo not visible" (not fine)
+    const repo = await gh('');
+    if (!repo.ok) throw httpError(repo);
+    return { sha: null, data: null };
+  }
+  if (!res.ok) throw httpError(res);
+  const j = await res.json();
+  return { sha: j.sha, data: JSON.parse(fromB64(j.content || '')) };
+}
+
+const byNewest = (a, b) => String(b.created || '').localeCompare(String(a.created || ''));
+
+function mergeLists(local, remote) {
+  const deleted = Object.assign({}, remote.deleted);
+  Object.entries(local.deleted).forEach(([id, ts]) => { if (!deleted[id] || ts > deleted[id]) deleted[id] = ts; });
+  const byId = new Map();
+  // Local goes second so it wins a tie
+  [...remote.tasks, ...local.tasks].forEach(t => {
+    const cur = byId.get(t.id);
+    if (!cur || (t.updated || 0) >= (cur.updated || 0)) byId.set(t.id, t);
+  });
+  const cutoff = Date.now() - TOMBSTONE_DAYS * 86400000;
+  Object.keys(deleted).forEach(id => { if (deleted[id] < cutoff) delete deleted[id]; });
+  const tasks = [...byId.values()].filter(t => !(deleted[t.id] && deleted[t.id] >= (t.updated || 0)));
+  tasks.sort(byNewest);
+  return { tasks, deleted };
+}
+
+function canon(list) {
+  return JSON.stringify([
+    list.tasks.map(t => JSON.stringify(t)).sort(),
+    Object.keys(list.deleted).sort().map(k => k + ':' + list.deleted[k])
+  ]);
+}
+
+async function syncList(name, attempt = 0) {
+  const remote = await fetchRemote(name);
+  save(); // stamp anything edited while the request was out
+  const before = canon(state.lists[name]);
+  const remoteList = remote.data ? cleanList(remote.data) : emptyList();
+  const merged = mergeLists(state.lists[name], remoteList);
+  state.lists[name] = merged;
+  setBaseline(name);
+  writeLocal();
+  if (name === state.current && canon(merged) !== before) refreshAfterSync();
+
+  if (remote.data && canon(remoteList) === canon(merged)) return;
+  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted }, null, 1);
+  const put = { message: `Update ${name} list`, content: toB64(body) };
+  if (remote.sha) put.sha = remote.sha;
+  const res = await gh(`/contents/${filePath(name)}`, { method: 'PUT', body: JSON.stringify(put) });
+  // 409/422 means another device saved in between; read again and re-merge
+  if ((res.status === 409 || res.status === 422) && attempt < 3) return syncList(name, attempt + 1);
+  if (!res.ok) throw httpError(res);
+}
+
+async function runSync(names) {
+  if (!syncOn()) return;
+  if (_syncing) { names && names.forEach(n => _dirty.add(n)); _syncAgain = true; return; }
+  clearTimeout(_pushTimer);
+  _syncing = true;
+  setSyncStatus('busy');
+  const todo = [...new Set([...(names || []), ..._dirty])];
+  _dirty.clear();
+  try {
+    for (const name of todo) await syncList(name);
+    setSyncStatus('ok');
+  } catch (e) {
+    todo.forEach(n => _dirty.add(n));
+    if (e instanceof SyncError) setSyncStatus(e.kind, e.message);
+    else setSyncStatus('offline', 'Cannot reach GitHub.');
+  }
+  _syncing = false;
+  if (_syncAgain || (_dirty.size && syncStatus.kind === 'ok')) { _syncAgain = false; runSync(); }
+}
+
+// Re-draw with what came in from another device, unless you're typing in an editor right now
+function refreshAfterSync() {
+  const a = document.activeElement;
+  if (a && (a.closest('#task-list') || a.closest('#modal')) && ['INPUT', 'TEXTAREA'].includes(a.tagName)) return;
+  renderAll();
+}
+
+function guessOwner() {
+  const h = location.hostname;
+  return h.endsWith('.github.io') ? h.split('.')[0] : '';
+}
+
+function openSync() {
+  const s = sync || {};
+  openModal(`<h3>Sync with GitHub</h3>
+    <p class="hint">Saves both lists to a private GitHub repo so your phone, work computer, and home computer all see the same thing. Set this up once on each device.</p>
+    <label class="hint" style="display:block;margin:8px 0 4px">GitHub username</label>
+    <input type="text" id="sy-owner" value="${esc(s.owner || guessOwner())}" autocomplete="off" autocapitalize="off">
+    <label class="hint" style="display:block;margin:10px 0 4px">Private repo name</label>
+    <input type="text" id="sy-repo" value="${esc(s.repo || 'open-loops-data')}" autocomplete="off" autocapitalize="off">
+    <label class="hint" style="display:block;margin:10px 0 4px">Access token</label>
+    <input type="password" id="sy-token" value="${esc(s.token || '')}" placeholder="github_pat_..." autocomplete="off">
+    <p class="hint" style="font-size:12px;margin-top:6px">The token is saved only in this browser. It is never put in a backup file.</p>
+    <div id="sy-msg"></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      ${syncOn() ? '<button class="btn danger" onclick="disconnectSync()">Turn off sync</button><div class="spacer"></div>' : ''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" id="sy-go" onclick="connectSync()">${syncOn() ? 'Save' : 'Connect'}</button>
+    </div>`);
+}
+
+async function connectSync() {
+  const owner = document.getElementById('sy-owner').value.trim();
+  const repo = document.getElementById('sy-repo').value.trim();
+  const token = document.getElementById('sy-token').value.trim();
+  const msg = document.getElementById('sy-msg');
+  const show = (cls, text) => msg.innerHTML = `<div class="alert ${cls}">${esc(text)}</div>`;
+  if (!owner || !repo || !token) { show('warn', 'Fill in all three boxes.'); return; }
+  const btn = document.getElementById('sy-go');
+  btn.disabled = true; btn.textContent = 'Checking...';
+  const prev = sync;
+  sync = { owner, repo, token };
+  try {
+    const res = await gh('');
+    if (!res.ok) throw httpError(res);
+    const info = await res.json();
+    if (!info.private) {
+      sync = prev;
+      show('warn', `"${repo}" is public, so anyone could read your tasks. Make it private on GitHub (repo Settings, bottom of the page, Change visibility), then try again.`);
+      btn.disabled = false; btn.textContent = 'Connect';
+      return;
+    }
+  } catch (e) {
+    sync = prev;
+    show('warn', e instanceof SyncError ? e.message : 'Could not reach GitHub. Check your internet connection.');
+    btn.disabled = false; btn.textContent = 'Connect';
+    return;
+  }
+  try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch {}
+  closeModal();
+  toast('Connected. Merging this device with GitHub...');
+  await runSync(LIST_NAMES);
+  if (syncStatus.kind === 'ok') toast('Synced. Both lists are now saved to GitHub.');
+}
+
+function disconnectSync() {
+  if (!confirm('Turn off sync on this device? Your loops stay here, they just stop syncing.')) return;
+  sync = null;
+  try { localStorage.removeItem(SYNC_KEY); } catch {}
+  setSyncStatus('off');
+  closeModal();
+}
+
+// Pull in changes from other devices when you come back to the tab, and once a minute while it's open
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') runSync([state.current]); });
+setInterval(() => { if (document.visibilityState === 'visible') runSync([state.current]); }, POLL_MS);
+window.addEventListener('online', () => runSync([state.current]));
+
 function daysSince(iso) {
   if (!iso) return Infinity;
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -567,8 +954,9 @@ function renderBackupNote() {
   document.getElementById('backup-note').textContent =
     d === Infinity ? 'Never backed up' : d === 0 ? 'Last backup: today' : `Last backup: ${d} day${d === 1 ? '' : 's'} ago`;
   const box = document.getElementById('backup-alert');
-  const active = state.tasks.filter(t => !t.done).length;
-  if (active >= 5 && d >= BACKUP_NUDGE_DAYS) {
+  const active = LIST_NAMES.reduce((n, k) => n + state.lists[k].tasks.filter(t => !t.done).length, 0);
+  // With sync on, GitHub keeps every version, so the reminder can wait longer
+  if (active >= 5 && d >= (syncOn() ? 30 : BACKUP_NUDGE_DAYS)) {
     box.innerHTML = `<div class="alert warn">${d === Infinity ? 'You have never made a backup.' : `Your last backup was ${d} days ago.`}
       If this browser's data gets cleared, your loops go with it.
       <button class="btn sm" style="margin-left:6px" onclick="exportAllData()">Back up now</button></div>`;
@@ -587,19 +975,27 @@ const sizeLabel = m => m === 2 ? '2 min' : m === 60 ? '1 hr+' : m + ' min';
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
+let _lastCreated = 0;
+
 function addTask(title) {
   title = title.trim();
   if (!title) return null;
-  const t = { id: uid(), title, step: '', energy: null, size: null, today: false, created: new Date().toISOString(), snoozeUntil: null, done: null, skips: 0 };
-  state.tasks.unshift(t);
+  // Each new loop gets a slightly later time than the last, so a brain dump keeps its order
+  _lastCreated = Math.max(Date.now(), _lastCreated + 1);
+  const t = { id: uid(), title, step: '', energy: null, size: null, today: false, created: new Date(_lastCreated).toISOString(), snoozeUntil: null, done: null, skips: 0 };
+  L().tasks.unshift(t);
   return t;
 }
 
-function findTask(id) { return state.tasks.find(t => t.id === id); }
+// Looks in both lists, so a running timer still finds its loop after you switch lists
+function findTask(id) {
+  for (const n of LIST_NAMES) { const t = state.lists[n].tasks.find(x => x.id === id); if (t) return t; }
+  return null;
+}
 
 function isSnoozed(t) { return t.snoozeUntil && t.snoozeUntil > todayStr(); }
 
-function activeTasks() { return state.tasks.filter(t => !t.done && !isSnoozed(t)); }
+function activeTasks() { return L().tasks.filter(t => !t.done && !isSnoozed(t)); }
 
 function completeTask(id) {
   const t = findTask(id);
@@ -616,7 +1012,7 @@ function letGo(id) {
   const t = findTask(id);
   if (!t) return;
   pushUndoSnapshot('let go of "' + t.title + '"');
-  state.tasks = state.tasks.filter(x => x.id !== id);
+  L().tasks = L().tasks.filter(x => x.id !== id);
   save();
   renderAll();
   toast('Let go. Deciding not to do something also closes the loop.');
@@ -637,7 +1033,7 @@ function snooze(id) {
 function toggleToday(id) {
   const t = findTask(id);
   if (!t) return;
-  if (!t.today && state.tasks.filter(x => x.today && !x.done).length >= TODAY_LIMIT) {
+  if (!t.today && L().tasks.filter(x => x.today && !x.done).length >= TODAY_LIMIT) {
     toast(`Today is capped at ${TODAY_LIMIT}. Finish or unpick one first. Fewer picks means you actually finish them.`);
     return;
   }
@@ -758,7 +1154,7 @@ function toggleEditor(id) {
 }
 
 function renderTaskList() {
-  const open = state.tasks.filter(t => !t.done);
+  const open = L().tasks.filter(t => !t.done);
   const today = open.filter(t => t.today);
   const quick = open.filter(t => !t.today && t.size === 2 && !isSnoozed(t));
   const rest = open.filter(t => !t.today && t.size !== 2 && !isSnoozed(t));
@@ -1248,7 +1644,7 @@ function celebrate() {
 }
 
 function renderWins() {
-  const done = state.tasks.filter(t => t.done).sort((a, b) => b.done.localeCompare(a.done));
+  const done = L().tasks.filter(t => t.done).sort((a, b) => b.done.localeCompare(a.done));
   const today = todayStr();
   const dayOf = iso => todayStr(new Date(iso));
   const weekAgo = Date.now() - 7 * 86400000;
@@ -1283,11 +1679,11 @@ function reopen(id) {
 
 function clearOldWins() {
   const cutoff = Date.now() - 30 * 86400000;
-  const n = state.tasks.filter(t => t.done && new Date(t.done).getTime() < cutoff).length;
+  const n = L().tasks.filter(t => t.done && new Date(t.done).getTime() < cutoff).length;
   if (!n) { toast('Nothing older than 30 days.'); return; }
   if (!confirm(`Remove ${n} wins older than 30 days? A Backup first keeps a copy.`)) return;
   pushUndoSnapshot(`clear ${n} old wins`);
-  state.tasks = state.tasks.filter(t => !(t.done && new Date(t.done).getTime() < cutoff));
+  L().tasks = L().tasks.filter(t => !(t.done && new Date(t.done).getTime() < cutoff));
   save();
   renderAll();
 }
@@ -1298,13 +1694,7 @@ function clearOldWins() {
 
 function openSettings() {
   openModal(`<h3>Settings</h3>
-    <label class="hint" style="display:block;margin:8px 0 4px">Which computer is this?</label>
-    <p class="hint" style="font-size:12px">This label shows at the top and goes into the backup file name, so you can tell Work and Home backups apart.</p>
-    <input type="text" id="set-space" value="${esc(state.space)}">
-    <div class="seg" style="margin-top:6px">
-      <button onclick="document.getElementById('set-space').value='Work'">Work</button>
-      <button onclick="document.getElementById('set-space').value='Home'">Home</button>
-    </div>
+    <p class="hint">Switch between Work and Home with the toggle at the top. Each device remembers the last one you used.</p>
     <label style="display:flex;gap:6px;align-items:center;margin-top:14px">
       <input type="checkbox" id="set-sound" ${state.settings.sound ? 'checked' : ''}> Sounds (timer chime, completion ding)
     </label>
@@ -1315,7 +1705,6 @@ function openSettings() {
 }
 
 function saveSettings() {
-  state.space = document.getElementById('set-space').value.trim() || 'Work';
   state.settings.sound = document.getElementById('set-sound').checked;
   save();
   closeModal();
@@ -1361,8 +1750,28 @@ function toast(msg) {
   _toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
+function renderListToggle() {
+  document.getElementById('list-toggle').innerHTML = LIST_NAMES.map(n => {
+    const open = state.lists[n].tasks.filter(t => !t.done).length;
+    return `<button class="${n === state.current ? 'on' : ''}" onclick="switchList('${n}')">${n}${open ? ` <span class="count">${open}</span>` : ''}</button>`;
+  }).join('');
+}
+
+function switchList(name) {
+  if (name === state.current) return;
+  state.current = name;
+  writeLocal();
+  _openEditor = null;
+  deck = []; _deckShuffled = false; pickedId = null;
+  ['wheel-result', 'random-result'].forEach(id => document.getElementById(id).textContent = '');
+  ['wheel-go', 'random-go'].forEach(id => document.getElementById(id).style.display = 'none');
+  renderAll();
+  runSync([name]);
+}
+
 function renderAll() {
-  document.getElementById('space-tag').textContent = state.space;
+  renderListToggle();
+  renderSyncPill();
   renderTaskList();
   renderBackupNote();
   const active = document.querySelector('.screen.active')?.id;
@@ -1373,12 +1782,14 @@ function renderAll() {
 
 // Keep two open tabs of the same page in step
 window.addEventListener('storage', e => {
-  if (e.key === STORE_KEY) { state = loadState(); renderAll(); if (state.timer) ensureTick(); }
+  if (e.key === STORE_KEY) { state = loadState(); LIST_NAMES.forEach(setBaseline); renderAll(); if (state.timer) ensureTick(); }
+  if (e.key === SYNC_KEY) { sync = loadSync(); renderSyncPill(); }
 });
 
 renderAll();
 if (state.timer) { focusId = state.timer.taskId; ensureTick(); showScreen('focus'); }
 document.getElementById('quick-add').focus();
+if (syncOn()) runSync(LIST_NAMES);
 </script>
 </body>
 </html>
