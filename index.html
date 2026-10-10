@@ -1,0 +1,1384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Loops</title>
+<style>
+  :root {
+    --bg: #f7f9fc;
+    --card: #ffffff;
+    --ink: #1c212e;
+    --muted: #5b6b82;
+    --line: #dde4ed;
+    --accent: #1a4c9f;
+    --accent-ink: #ffffff;
+    --gold: #f7cb57;
+    --green: #1a6b3c;
+    --green-bg: #e6f4ec;
+    --red: #c1121f;
+    --red-bg: #fdecea;
+    --amber: #9a6200;
+    --amber-bg: #fdf3dc;
+    --shadow: 0 2px 10px rgba(28,33,46,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c;
+      --card: #1c212e;
+      --ink: #e8edf5;
+      --muted: #97a6bc;
+      --line: #2c3446;
+      --accent: #6f9be0;
+      --accent-ink: #0d1424;
+      --green: #6fcf97;
+      --green-bg: #183325;
+      --red: #ff7a7a;
+      --red-bg: #3a1c1f;
+      --amber: #f0c060;
+      --amber-bg: #3a2f16;
+      --shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
+
+  /* Header */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  header .wrap { padding-bottom: 0; }
+  .head-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; flex-wrap: wrap; }
+  .brand { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .space-tag {
+    font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+    background: var(--gold); color: #1c212e; border-radius: 999px; padding: 2px 10px;
+  }
+  .spacer { flex: 1; }
+  nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 10px; }
+  nav.tabs button {
+    border: 1px solid var(--line); background: var(--card); border-radius: 999px;
+    padding: 6px 14px; cursor: pointer; white-space: nowrap;
+  }
+  nav.tabs button.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .btn {
+    border: 1px solid var(--line); background: var(--card); border-radius: 10px;
+    padding: 8px 14px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .btn.big { padding: 14px 22px; font-size: 18px; border-radius: 14px; }
+  .btn.sm { padding: 4px 10px; font-size: 13px; border-radius: 8px; }
+  .btn.danger { color: var(--red); }
+  .btn[disabled] { opacity: 0.35; pointer-events: none; }
+
+  .menu { position: relative; }
+  .menu-list {
+    position: absolute; right: 0; top: calc(100% + 6px); min-width: 200px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 6px; display: none; z-index: 30;
+  }
+  .menu-list.open { display: block; }
+  .menu-list button, .menu-list label {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  .menu-list button:hover, .menu-list label:hover { background: var(--bg); }
+  .menu-note { font-size: 12px; color: var(--muted); padding: 4px 12px 6px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; margin-top: 16px; box-shadow: var(--shadow);
+  }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  input[type=text], textarea, select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--bg);
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+
+  .alert { border-radius: 10px; padding: 10px 14px; margin-top: 12px; font-size: 14px; }
+  .alert.warn { background: var(--amber-bg); color: var(--amber); }
+  .alert.ok { background: var(--green-bg); color: var(--green); }
+
+  /* Task list */
+  .task {
+    border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 8px;
+    background: var(--card);
+  }
+  .task-top { display: flex; align-items: center; gap: 10px; }
+  .check {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--muted);
+    background: none; cursor: pointer; flex: none; padding: 0;
+  }
+  .check:hover { border-color: var(--green); background: var(--green-bg); }
+  .task-title { flex: 1; cursor: pointer; word-break: break-word; }
+  .task-step { font-size: 13px; color: var(--muted); margin: 2px 0 0 34px; }
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; }
+  .chip {
+    font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px;
+    background: var(--bg); color: var(--muted); border: 1px solid var(--line); white-space: nowrap;
+  }
+  .chip.today { background: var(--gold); color: #1c212e; border-color: var(--gold); }
+  .chip.old { background: var(--amber-bg); color: var(--amber); border-color: transparent; }
+  .task-edit { margin-top: 10px; display: grid; gap: 8px; }
+  .task-edit label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .seg { display: flex; gap: 4px; flex-wrap: wrap; }
+  .seg button {
+    border: 1px solid var(--line); background: var(--bg); border-radius: 8px;
+    padding: 4px 10px; cursor: pointer; font-size: 13px;
+  }
+  .seg button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .section-label {
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px;
+    color: var(--muted); margin: 18px 0 2px;
+  }
+  .empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
+
+  /* Swipe */
+  .deck { position: relative; height: 300px; margin: 16px auto 0; max-width: 420px; touch-action: none; }
+  .swipe-card {
+    position: absolute; inset: 0; background: var(--card); border: 1px solid var(--line);
+    border-radius: 20px; box-shadow: var(--shadow); padding: 24px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+    cursor: grab; user-select: none;
+  }
+  .swipe-card.behind { transform: scale(0.95) translateY(10px); opacity: 0.6; pointer-events: none; }
+  .swipe-card .t { font-size: 22px; font-weight: 600; }
+  .swipe-card .s { font-size: 14px; color: var(--muted); margin-top: 10px; }
+  .stamp {
+    position: absolute; top: 18px; font-weight: 800; font-size: 20px; letter-spacing: 1px;
+    padding: 4px 10px; border-radius: 8px; border: 3px solid; opacity: 0;
+  }
+  .stamp.yes { left: 18px; color: var(--green); border-color: var(--green); transform: rotate(-12deg); }
+  .stamp.no { right: 18px; color: var(--red); border-color: var(--red); transform: rotate(12deg); }
+  .swipe-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  /* Wheel */
+  .wheel-wrap { position: relative; width: min(340px, 100%); margin: 16px auto 0; aspect-ratio: 1; }
+  .wheel-wrap canvas { width: 100%; height: 100%; display: block; }
+  .pointer {
+    position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent;
+    border-top: 26px solid var(--ink); z-index: 2;
+  }
+  .result {
+    text-align: center; margin-top: 16px; font-size: 20px; font-weight: 600; min-height: 30px;
+  }
+
+  /* Focus */
+  .focus-task { text-align: center; font-size: 22px; font-weight: 600; margin-top: 8px; }
+  .focus-step {
+    text-align: center; margin: 10px auto 0; max-width: 480px; font-size: 15px;
+    background: var(--bg); border-radius: 10px; padding: 10px 14px;
+  }
+  .ring-wrap { position: relative; width: 240px; height: 240px; margin: 20px auto 0; }
+  .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring-time {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-variant-numeric: tabular-nums;
+  }
+  .ring-time .big { font-size: 46px; font-weight: 700; }
+  .ring-time .small { font-size: 13px; color: var(--muted); }
+  .presets { display: flex; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+  .controls { display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+  /* Wins */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: var(--bg); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat .n { font-size: 28px; font-weight: 700; }
+  .stat .l { font-size: 12px; color: var(--muted); }
+  .win { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 15px; display: flex; gap: 8px; }
+  .win time { color: var(--muted); font-size: 13px; margin-left: auto; white-space: nowrap; }
+
+  /* Modal + toast */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none;
+    align-items: center; justify-content: center; z-index: 50; padding: 16px;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--card); border-radius: 16px; padding: 20px; max-width: 440px; width: 100%;
+    box-shadow: var(--shadow);
+  }
+  .modal h3 { margin: 0 0 8px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120px);
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px;
+    transition: transform 0.25s, visibility 0.25s; visibility: hidden; z-index: 60; max-width: calc(100% - 32px); font-size: 14px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); visibility: visible; }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  @media (max-width: 480px) {
+    .stats { grid-template-columns: repeat(3, 1fr); }
+    .stat .n { font-size: 22px; }
+    .ring-wrap { width: 200px; height: 200px; }
+    .ring-time .big { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="head-row">
+      <div class="brand">Open Loops</div>
+      <span class="space-tag" id="space-tag">Work</span>
+      <div class="spacer"></div>
+      <button class="btn sm" id="undo-btn" disabled onclick="undoLastAction()" title="Nothing to undo yet">Undo</button>
+      <div class="menu">
+        <button class="btn sm" onclick="toggleMenu(event)">Data</button>
+        <div class="menu-list" id="data-menu">
+          <button onclick="exportAllData();closeMenu()">Backup</button>
+          <label>Restore
+            <input type="file" accept=".json,application/json" style="display:none" onchange="importAllData(event);closeMenu()">
+          </label>
+          <button onclick="openSettings();closeMenu()">Settings</button>
+          <div class="menu-note" id="backup-note"></div>
+        </div>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-screen="capture" class="active">Loops</button>
+      <button data-screen="pick">Pick one</button>
+      <button data-screen="focus">Focus</button>
+      <button data-screen="wins">Wins</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- LOOPS -->
+  <section class="screen active" id="screen-capture">
+    <div id="backup-alert"></div>
+    <div class="card">
+      <h2>Get it out of your head</h2>
+      <p class="hint">Type it and press Enter. Don't sort it yet. You can add details later, or never.</p>
+      <input type="text" id="quick-add" placeholder="Something on your mind..." autocomplete="off">
+      <div class="row" style="margin-top:10px">
+        <button class="btn sm" onclick="toggleDump()">Brain dump (many at once)</button>
+      </div>
+      <div id="dump-box" style="display:none;margin-top:10px">
+        <textarea id="dump-text" placeholder="One loop per line. Dump everything."></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn primary" onclick="addDump()">Add all</button>
+          <button class="btn" onclick="toggleDump()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <h2 style="flex:1">Your loops</h2>
+        <span class="hint" style="margin:0" id="loop-count"></span>
+      </div>
+      <div id="task-list"></div>
+    </div>
+  </section>
+
+  <!-- PICK -->
+  <section class="screen" id="screen-pick">
+    <div class="card">
+      <h2>Right now I have...</h2>
+      <p class="hint">Picking is the hard part. Tell it how you feel and let it narrow things down.</p>
+      <label class="hint" style="display:block;margin:0 0 4px">Energy</label>
+      <div class="seg" id="f-energy"></div>
+      <label class="hint" style="display:block;margin:10px 0 4px">Time</label>
+      <div class="seg" id="f-time"></div>
+      <label style="display:flex;gap:6px;align-items:center;margin-top:10px;font-size:14px">
+        <input type="checkbox" id="f-today"> Only today's picks
+      </label>
+      <p class="hint" style="margin:10px 0 0" id="pool-count"></p>
+    </div>
+
+    <div class="card">
+      <div class="seg" id="pick-mode">
+        <button data-mode="swipe" class="on">Swipe</button>
+        <button data-mode="wheel">Spin the wheel</button>
+        <button data-mode="random">Just pick for me</button>
+      </div>
+
+      <div id="mode-swipe">
+        <p class="hint" style="margin-top:12px">Swipe right (or press the right arrow) for "doing it". Swipe left to skip. No pressure, it comes back around.</p>
+        <div class="deck" id="deck"></div>
+        <div class="swipe-buttons">
+          <button class="btn" onclick="swipeDecide(false)">Skip</button>
+          <button class="btn" onclick="snoozeTop()">Not today</button>
+          <button class="btn primary" onclick="swipeDecide(true)">Doing it</button>
+        </div>
+      </div>
+
+      <div id="mode-wheel" style="display:none">
+        <div class="wheel-wrap">
+          <div class="pointer"></div>
+          <canvas id="wheel" width="680" height="680"></canvas>
+        </div>
+        <div class="result" id="wheel-result"></div>
+        <div class="controls">
+          <button class="btn primary big" id="spin-btn" onclick="spinWheel()">Spin</button>
+          <button class="btn big" id="wheel-go" style="display:none" onclick="startFromPick()">Start this</button>
+        </div>
+      </div>
+
+      <div id="mode-random" style="display:none">
+        <div class="result" id="random-result" style="margin-top:24px"></div>
+        <div class="controls">
+          <button class="btn primary big" onclick="randomPick()">Pick for me</button>
+          <button class="btn big" id="random-go" style="display:none" onclick="startFromPick()">Start this</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOCUS -->
+  <section class="screen" id="screen-focus">
+    <div class="card">
+      <div id="focus-empty">
+        <h2>Focus</h2>
+        <p class="hint">Pick a loop first, or start a timer with nothing attached. Promise yourself only 5 minutes. Starting is the hard part, and you're allowed to stop after 5.</p>
+        <select id="focus-select"></select>
+      </div>
+      <div id="focus-on" style="display:none">
+        <div class="hint" style="text-align:center;margin:0">Working on</div>
+        <div class="focus-task" id="focus-title"></div>
+        <div class="focus-step" id="focus-step"></div>
+      </div>
+
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="8"/>
+          <circle id="ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="8"
+                  stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/>
+        </svg>
+        <div class="ring-time">
+          <div class="big" id="clock">5:00</div>
+          <div class="small" id="clock-sub">ready</div>
+        </div>
+      </div>
+
+      <div class="presets" id="presets"></div>
+      <div class="controls" id="timer-controls"></div>
+    </div>
+  </section>
+
+  <!-- WINS -->
+  <section class="screen" id="screen-wins">
+    <div class="card">
+      <h2>Closed loops</h2>
+      <p class="hint">Proof that you did things. Look here when your brain says you did nothing today.</p>
+      <div class="stats">
+        <div class="stat"><div class="n" id="s-today">0</div><div class="l">today</div></div>
+        <div class="stat"><div class="n" id="s-week">0</div><div class="l">last 7 days</div></div>
+        <div class="stat"><div class="n" id="s-streak">0</div><div class="l">day streak</div></div>
+      </div>
+      <div id="wins-list" style="margin-top:12px"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+<canvas id="confetti"></canvas>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STORAGE
+//  Everything lives in this browser's localStorage under one
+//  key. Each browser (work computer, home computer) keeps its
+//  own separate list. Backup / Restore moves it as a file.
+// ═══════════════════════════════════════════════════════
+
+const STORE_KEY = 'openloops_v1';
+const APP_ID = 'open-loops';
+const TODAY_LIMIT = 3;
+const OLD_DAYS = 14;
+const BACKUP_NUDGE_DAYS = 7;
+
+const ENCOURAGEMENT = [
+  'Loop closed. Your brain just got a little quieter.',
+  'Done. That one is off your plate for good.',
+  'Nice. Momentum is real, want another?',
+  'Closed. Future you says thanks.',
+  'That counts. Every single one counts.',
+  'One less thing to carry around.'
+];
+
+function defaultState() {
+  return {
+    app: APP_ID,
+    version: 1,
+    space: 'Work',
+    tasks: [],
+    settings: { sound: true, lastBackup: null },
+    timer: null
+  };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return defaultState();
+    const s = JSON.parse(raw);
+    return Object.assign(defaultState(), s, { settings: Object.assign(defaultState().settings, s.settings || {}) });
+  } catch { return defaultState(); }
+}
+
+let state = loadState();
+
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch (e) { toast('Could not save. Your browser storage may be full or blocked. Make a Backup now.'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  UNDO
+//  Short in-memory history, same idea as the coverage
+//  tracker: catches an "oops" within a session. A page
+//  refresh clears it. Restore clears it too.
+// ═══════════════════════════════════════════════════════
+
+const UNDO_LIMIT = 15;
+let _undoStack = [];
+
+function pushUndoSnapshot(label) {
+  _undoStack.push({ label, tasks: JSON.stringify(state.tasks) });
+  if (_undoStack.length > UNDO_LIMIT) _undoStack.shift();
+  updateUndoButton();
+}
+
+function clearUndoHistory() {
+  _undoStack = [];
+  updateUndoButton();
+}
+
+function updateUndoButton() {
+  const btn = document.getElementById('undo-btn');
+  const top = _undoStack[_undoStack.length - 1];
+  btn.disabled = !top;
+  btn.title = top ? 'Undo: ' + top.label : 'Nothing to undo yet';
+}
+
+function undoLastAction() {
+  const snap = _undoStack.pop();
+  if (!snap) return;
+  state.tasks = JSON.parse(snap.tasks);
+  save();
+  renderAll();
+  updateUndoButton();
+  toast('Undone: ' + snap.label);
+}
+
+// ═══════════════════════════════════════════════════════
+//  BACKUP / RESTORE
+// ═══════════════════════════════════════════════════════
+
+function todayStr(d = new Date()) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function exportAllData() {
+  state.settings.lastBackup = new Date().toISOString();
+  save();
+  const payload = {
+    app: APP_ID,
+    exportedAt: state.settings.lastBackup,
+    exportedFrom: window.location.href,
+    version: state.version,
+    space: state.space,
+    tasks: state.tasks,
+    settings: state.settings
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `open loops backup ${state.space} ${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  renderBackupNote();
+  toast('Backup downloaded. Check your Downloads folder.');
+}
+
+function importAllData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if (payload.app !== APP_ID || !Array.isArray(payload.tasks)) {
+        alert('This does not appear to be an Open Loops backup file.');
+        return;
+      }
+      const when = payload.exportedAt ? payload.exportedAt.slice(0, 10) : 'unknown date';
+      let msg = `This will replace all current loops with the "${payload.space || 'unknown'}" backup from ${when} (${payload.tasks.length} items).`;
+      if (payload.space && payload.space !== state.space) {
+        msg += `\n\nHeads up: this page is set to "${state.space}" but the backup is from "${payload.space}". Restoring will switch this page to "${payload.space}".`;
+      }
+      if (!confirm(msg + '\n\nContinue?')) return;
+
+      state.tasks = payload.tasks;
+      if (payload.space) state.space = payload.space;
+      if (payload.settings) state.settings = Object.assign(state.settings, payload.settings);
+      save();
+      clearUndoHistory(); // pre-restore snapshots don't belong to the restored data
+      renderAll();
+      alert('Restore complete!');
+    } catch (err) {
+      alert('Could not restore data: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function daysSince(iso) {
+  if (!iso) return Infinity;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+
+function renderBackupNote() {
+  const d = daysSince(state.settings.lastBackup);
+  document.getElementById('backup-note').textContent =
+    d === Infinity ? 'Never backed up' : d === 0 ? 'Last backup: today' : `Last backup: ${d} day${d === 1 ? '' : 's'} ago`;
+  const box = document.getElementById('backup-alert');
+  const active = state.tasks.filter(t => !t.done).length;
+  if (active >= 5 && d >= BACKUP_NUDGE_DAYS) {
+    box.innerHTML = `<div class="alert warn">${d === Infinity ? 'You have never made a backup.' : `Your last backup was ${d} days ago.`}
+      If this browser's data gets cleared, your loops go with it.
+      <button class="btn sm" style="margin-left:6px" onclick="exportAllData()">Back up now</button></div>`;
+  } else {
+    box.innerHTML = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  TASKS
+// ═══════════════════════════════════════════════════════
+
+const ENERGY = { low: 'Low energy', med: 'Some energy', high: 'High energy' };
+const SIZES = [2, 15, 30, 60];
+const sizeLabel = m => m === 2 ? '2 min' : m === 60 ? '1 hr+' : m + ' min';
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function addTask(title) {
+  title = title.trim();
+  if (!title) return null;
+  const t = { id: uid(), title, step: '', energy: null, size: null, today: false, created: new Date().toISOString(), snoozeUntil: null, done: null, skips: 0 };
+  state.tasks.unshift(t);
+  return t;
+}
+
+function findTask(id) { return state.tasks.find(t => t.id === id); }
+
+function isSnoozed(t) { return t.snoozeUntil && t.snoozeUntil > todayStr(); }
+
+function activeTasks() { return state.tasks.filter(t => !t.done && !isSnoozed(t)); }
+
+function completeTask(id) {
+  const t = findTask(id);
+  if (!t || t.done) return;
+  pushUndoSnapshot('complete "' + t.title + '"');
+  t.done = new Date().toISOString();
+  t.today = false;
+  save();
+  celebrate();
+  renderAll();
+}
+
+function letGo(id) {
+  const t = findTask(id);
+  if (!t) return;
+  pushUndoSnapshot('let go of "' + t.title + '"');
+  state.tasks = state.tasks.filter(x => x.id !== id);
+  save();
+  renderAll();
+  toast('Let go. Deciding not to do something also closes the loop.');
+}
+
+function snooze(id) {
+  const t = findTask(id);
+  if (!t) return;
+  pushUndoSnapshot('snooze "' + t.title + '"');
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  t.snoozeUntil = todayStr(d);
+  t.today = false;
+  save();
+  renderAll();
+  toast('Hidden until tomorrow.');
+}
+
+function toggleToday(id) {
+  const t = findTask(id);
+  if (!t) return;
+  if (!t.today && state.tasks.filter(x => x.today && !x.done).length >= TODAY_LIMIT) {
+    toast(`Today is capped at ${TODAY_LIMIT}. Finish or unpick one first. Fewer picks means you actually finish them.`);
+    return;
+  }
+  pushUndoSnapshot((t.today ? 'unpick ' : 'pick ') + '"' + t.title + '"');
+  t.today = !t.today;
+  save();
+  renderAll();
+}
+
+function updateField(id, field, value) {
+  const t = findTask(id);
+  if (!t) return;
+  t[field] = value;
+  save();
+}
+
+function renameTask(id, input) {
+  const t = findTask(id);
+  if (!t) return;
+  const v = input.value.trim();
+  if (!v) { input.value = t.title; return; }
+  t.title = v;
+  save();
+}
+
+function setFieldAndRender(id, field, value) {
+  const t = findTask(id);
+  if (!t) return;
+  t[field] = t[field] === value ? null : value;
+  save();
+  renderTaskList();
+  renderPickPool();
+}
+
+// ── Capture ─────────────────────────────────────────
+
+document.getElementById('quick-add').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const t = addTask(e.target.value);
+    if (t) {
+      e.target.value = '';
+      save();
+      renderAll();
+      toast('Captured.');
+    }
+  }
+});
+
+function toggleDump() {
+  const box = document.getElementById('dump-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if (box.style.display === 'block') document.getElementById('dump-text').focus();
+}
+
+function addDump() {
+  const lines = document.getElementById('dump-text').value.split('\n').map(s => s.replace(/^[-*\u2022\d.)\s]+/, '').trim()).filter(Boolean);
+  if (!lines.length) return;
+  pushUndoSnapshot(`brain dump (${lines.length})`);
+  lines.reverse().forEach(addTask);
+  save();
+  document.getElementById('dump-text').value = '';
+  toggleDump();
+  renderAll();
+  toast(`${lines.length} loops captured. Your head has more room now.`);
+}
+
+// ── List rendering ──────────────────────────────────
+
+let _openEditor = null;
+
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function taskHTML(t) {
+  const chips = [];
+  if (t.today) chips.push('<span class="chip today">Today</span>');
+  if (t.size) chips.push(`<span class="chip">${sizeLabel(t.size)}</span>`);
+  if (t.energy) chips.push(`<span class="chip">${ENERGY[t.energy]}</span>`);
+  if (isSnoozed(t)) chips.push('<span class="chip">Snoozed</span>');
+  const age = daysSince(t.created);
+  if (age >= OLD_DAYS) chips.push(`<span class="chip old">${age} days open</span>`);
+
+  const editing = _openEditor === t.id;
+  let html = `<div class="task" data-id="${t.id}">
+    <div class="task-top">
+      <button class="check" title="Done" onclick="completeTask('${t.id}')"></button>
+      <div class="task-title" onclick="toggleEditor('${t.id}')">${esc(t.title)}</div>
+      <div class="chips">${chips.join('')}</div>
+    </div>`;
+  if (t.step && !editing) html += `<div class="task-step">First step: ${esc(t.step)}</div>`;
+  if (editing) {
+    html += `<div class="task-edit">
+      <div><label>Name</label><input type="text" value="${esc(t.title)}" onchange="renameTask('${t.id}',this)"></div>
+      <div><label>Smallest first step (so small it feels silly)</label>
+        <input type="text" value="${esc(t.step)}" placeholder="e.g. open the email" onchange="updateField('${t.id}','step',this.value.trim())"></div>
+      <div><label>How long?</label><div class="seg">${SIZES.map(m =>
+        `<button class="${t.size === m ? 'on' : ''}" onclick="setFieldAndRender('${t.id}','size',${m})">${sizeLabel(m)}</button>`).join('')}</div></div>
+      <div><label>Energy it needs</label><div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
+        `<button class="${t.energy === k ? 'on' : ''}" onclick="setFieldAndRender('${t.id}','energy','${k}')">${v}</button>`).join('')}</div></div>
+      <div class="row">
+        <button class="btn sm" onclick="toggleToday('${t.id}')">${t.today ? 'Remove from today' : 'Pick for today'}</button>
+        <button class="btn sm" onclick="goFocus('${t.id}')">Focus on this</button>
+        <button class="btn sm" onclick="snooze('${t.id}')">Not today</button>
+        <button class="btn sm danger" onclick="letGo('${t.id}')">Let it go</button>
+        <div class="spacer"></div>
+        <button class="btn sm" onclick="toggleEditor(null)">Close</button>
+      </div>
+    </div>`;
+  }
+  return html + '</div>';
+}
+
+function toggleEditor(id) {
+  _openEditor = _openEditor === id ? null : id;
+  renderTaskList();
+}
+
+function renderTaskList() {
+  const open = state.tasks.filter(t => !t.done);
+  const today = open.filter(t => t.today);
+  const quick = open.filter(t => !t.today && t.size === 2 && !isSnoozed(t));
+  const rest = open.filter(t => !t.today && t.size !== 2 && !isSnoozed(t));
+  const snoozed = open.filter(t => isSnoozed(t) && !t.today);
+
+  let html = '';
+  if (!open.length) {
+    html = '<div class="empty">Nothing open. Either you are done, or it is all still in your head. Type it above.</div>';
+  } else {
+    html += `<div class="section-label">Today (${today.length}/${TODAY_LIMIT})</div>`;
+    html += today.length ? today.map(taskHTML).join('') : '<div class="empty">Pick up to 3. Tap a loop and choose "Pick for today."</div>';
+    if (quick.length) {
+      html += '<div class="section-label">2-minute loops: just do these now</div>' + quick.map(taskHTML).join('');
+    }
+    if (rest.length) html += '<div class="section-label">Everything else</div>' + rest.map(taskHTML).join('');
+    if (snoozed.length) html += '<div class="section-label">Back tomorrow</div>' + snoozed.map(taskHTML).join('');
+  }
+  document.getElementById('task-list').innerHTML = html;
+  document.getElementById('loop-count').textContent = open.length ? `${open.length} open` : '';
+}
+
+// ═══════════════════════════════════════════════════════
+//  PICK: filters, swipe, wheel, random
+// ═══════════════════════════════════════════════════════
+
+const filters = { energy: 'any', time: 'any', today: false };
+let pickMode = 'swipe';
+let pickedId = null;
+
+function renderFilterButtons() {
+  const e = [['any', 'Any'], ['low', 'Low'], ['med', 'Some'], ['high', 'Lots']];
+  document.getElementById('f-energy').innerHTML = e.map(([k, v]) =>
+    `<button class="${filters.energy === k ? 'on' : ''}" onclick="setFilter('energy','${k}')">${v}</button>`).join('');
+  const tm = [['any', 'Any'], ['2', '2 min'], ['15', '15 min'], ['30', '30 min'], ['60', 'An hour+']];
+  document.getElementById('f-time').innerHTML = tm.map(([k, v]) =>
+    `<button class="${filters.time === k ? 'on' : ''}" onclick="setFilter('time','${k}')">${v}</button>`).join('');
+}
+
+function setFilter(k, v) {
+  filters[k] = v;
+  renderFilterButtons();
+  renderPickPool();
+}
+
+document.getElementById('f-today').addEventListener('change', e => { filters.today = e.target.checked; renderPickPool(); });
+
+function pool() {
+  const rank = { low: 1, med: 2, high: 3 };
+  return activeTasks().filter(t => {
+    if (filters.today && !t.today) return false;
+    // Untagged tasks always stay in the pool so tagging is never required
+    if (filters.energy !== 'any' && t.energy && rank[t.energy] > rank[filters.energy]) return false;
+    if (filters.time !== 'any' && t.size && t.size > Number(filters.time)) return false;
+    return true;
+  });
+}
+
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+let deck = [];
+
+function renderPickPool() {
+  const p = pool();
+  document.getElementById('pool-count').textContent =
+    p.length ? `${p.length} loop${p.length === 1 ? '' : 's'} fit right now.` : 'Nothing fits these filters. Loosen them, or add a loop.';
+  const ids = new Set(p.map(t => t.id));
+  deck = deck.filter(id => ids.has(id));
+  p.forEach(t => { if (!deck.includes(t.id)) deck.push(t.id); });
+  if (deck.length && !_deckShuffled) { deck = shuffle(deck); _deckShuffled = true; }
+  renderDeck();
+  drawWheel();
+}
+let _deckShuffled = false;
+
+document.querySelectorAll('#pick-mode button').forEach(b => b.addEventListener('click', () => {
+  pickMode = b.dataset.mode;
+  document.querySelectorAll('#pick-mode button').forEach(x => x.classList.toggle('on', x === b));
+  ['swipe', 'wheel', 'random'].forEach(m => document.getElementById('mode-' + m).style.display = m === pickMode ? 'block' : 'none');
+  if (pickMode === 'wheel') drawWheel();
+}));
+
+// ── Swipe ───────────────────────────────────────────
+
+function renderDeck() {
+  const el = document.getElementById('deck');
+  if (!deck.length) {
+    el.innerHTML = '<div class="swipe-card" style="cursor:default"><div class="s">No cards. Change the filters above or capture a loop.</div></div>';
+    return;
+  }
+  const [a, b] = deck;
+  const card = (t, cls) => {
+    let s = t.step ? `First step: ${esc(t.step)}` : '';
+    if (t.skips >= 3) s += `<br><br>Skipped ${t.skips} times. Maybe it needs a smaller first step, or maybe you can let it go.`;
+    const meta = [t.size ? sizeLabel(t.size) : '', t.energy ? ENERGY[t.energy] : ''].filter(Boolean).join(' / ');
+    return `<div class="swipe-card ${cls}" data-id="${t.id}">
+      <div class="stamp yes">DOING IT</div><div class="stamp no">SKIP</div>
+      <div class="t">${esc(t.title)}</div>
+      ${meta ? `<div class="s">${meta}</div>` : ''}
+      ${s ? `<div class="s">${s}</div>` : ''}
+    </div>`;
+  };
+  el.innerHTML = (b ? card(findTask(b), 'behind') : '') + card(findTask(a), 'top');
+  attachDrag(el.querySelector('.swipe-card.top'));
+}
+
+function attachDrag(cardEl) {
+  let startX = 0, dx = 0, dragging = false;
+  const yes = cardEl.querySelector('.stamp.yes'), no = cardEl.querySelector('.stamp.no');
+  cardEl.addEventListener('pointerdown', e => {
+    dragging = true; startX = e.clientX; dx = 0;
+    cardEl.setPointerCapture(e.pointerId);
+    cardEl.style.transition = 'none';
+  });
+  cardEl.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    dx = e.clientX - startX;
+    cardEl.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`;
+    yes.style.opacity = Math.max(0, Math.min(1, dx / 100));
+    no.style.opacity = Math.max(0, Math.min(1, -dx / 100));
+  });
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (dx > 100) flyOut(cardEl, 1, () => swipeDecide(true, true));
+    else if (dx < -100) flyOut(cardEl, -1, () => swipeDecide(false, true));
+    else {
+      cardEl.style.transition = 'transform 0.2s';
+      cardEl.style.transform = '';
+      yes.style.opacity = 0; no.style.opacity = 0;
+    }
+  };
+  cardEl.addEventListener('pointerup', end);
+  cardEl.addEventListener('pointercancel', end);
+}
+
+function flyOut(cardEl, dir, cb) {
+  cardEl.style.transition = 'transform 0.25s ease-in';
+  cardEl.style.transform = `translateX(${dir * 600}px) rotate(${dir * 30}deg)`;
+  setTimeout(cb, 220);
+}
+
+function swipeDecide(yes, animated) {
+  if (!deck.length) return;
+  const id = deck[0];
+  if (!animated) {
+    const c = document.querySelector('#deck .swipe-card.top');
+    if (c) { flyOut(c, yes ? 1 : -1, () => swipeDecide(yes, true)); return; }
+  }
+  if (yes) {
+    pickedId = id;
+    startFromPick();
+  } else {
+    const t = findTask(id);
+    if (t) { t.skips = (t.skips || 0) + 1; save(); }
+    deck.push(deck.shift());
+    renderDeck();
+  }
+}
+
+function snoozeTop() {
+  if (!deck.length) return;
+  snooze(deck[0]);
+}
+
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('screen-pick').classList.contains('active') || pickMode !== 'swipe') return;
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+  if (e.key === 'ArrowRight') swipeDecide(true);
+  if (e.key === 'ArrowLeft') swipeDecide(false);
+});
+
+// ── Wheel ───────────────────────────────────────────
+
+const WHEEL_COLORS = ['#1a4c9f', '#f7cb57', '#6699cc', '#e0b640', '#2558b5', '#fad978', '#4d6480', '#f2a65a'];
+const WHEEL_MAX = 12;
+let wheelAngle = 0, spinning = false, wheelItems = [];
+
+function drawWheel() {
+  const cv = document.getElementById('wheel');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, R = W / 2 - 6;
+  if (!spinning) wheelItems = shuffle(pool()).slice(0, WHEEL_MAX);
+  ctx.clearRect(0, 0, W, W);
+  const ink = getComputedStyle(document.body).color;
+  if (!wheelItems.length) {
+    ctx.fillStyle = ink; ctx.font = '28px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Nothing to spin', W / 2, W / 2);
+    return;
+  }
+  const n = wheelItems.length, slice = Math.PI * 2 / n;
+  ctx.save();
+  ctx.translate(W / 2, W / 2);
+  ctx.rotate(wheelAngle);
+  wheelItems.forEach((t, i) => {
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.arc(0, 0, R, i * slice, (i + 1) * slice);
+    const col = n === 1 ? WHEEL_COLORS[0] : WHEEL_COLORS[i % WHEEL_COLORS.length];
+    ctx.fillStyle = col; ctx.fill();
+    ctx.save();
+    ctx.rotate(i * slice + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = ['#f7cb57', '#e0b640', '#fad978', '#6699cc', '#f2a65a'].includes(col) ? '#1c212e' : '#ffffff';
+    ctx.font = `600 ${n > 8 ? 22 : 26}px sans-serif`;
+    let label = t.title.length > 22 ? t.title.slice(0, 21) + '...' : t.title;
+    ctx.fillText(label, R - 20, 9);
+    ctx.restore();
+  });
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(W / 2, W / 2, 28, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+}
+
+function spinWheel() {
+  if (spinning || !wheelItems.length) return;
+  spinning = true;
+  document.getElementById('wheel-result').textContent = '';
+  document.getElementById('wheel-go').style.display = 'none';
+  const n = wheelItems.length, slice = Math.PI * 2 / n;
+  const target = Math.floor(Math.random() * n);
+  // Pointer sits at the top (angle -PI/2). Land the middle of the target slice there.
+  const desired = -Math.PI / 2 - (target * slice + slice / 2);
+  const start = wheelAngle;
+  let end = desired;
+  while (end < start + Math.PI * 2 * 5) end += Math.PI * 2;
+  const dur = 3800, t0 = performance.now();
+  const step = now => {
+    const p = Math.min(1, (now - t0) / dur);
+    const ease = 1 - Math.pow(1 - p, 4);
+    wheelAngle = start + (end - start) * ease;
+    drawWheel();
+    if (p < 1) requestAnimationFrame(step);
+    else {
+      spinning = false;
+      wheelAngle = end % (Math.PI * 2);
+      pickedId = wheelItems[target].id;
+      document.getElementById('wheel-result').textContent = wheelItems[target].title;
+      document.getElementById('wheel-go').style.display = '';
+      document.getElementById('spin-btn').textContent = 'Spin again';
+      chime(660, 0.15);
+    }
+  };
+  requestAnimationFrame(step);
+}
+
+// ── Random ──────────────────────────────────────────
+
+function randomPick() {
+  const p = pool();
+  const out = document.getElementById('random-result');
+  if (!p.length) { out.textContent = 'Nothing fits. Loosen the filters.'; return; }
+  // Today's picks get a heavier weight, older loops get a slight bump
+  const weighted = [];
+  p.forEach(t => {
+    const w = 1 + (t.today ? 3 : 0) + Math.min(3, Math.floor(daysSince(t.created) / 7));
+    for (let i = 0; i < w; i++) weighted.push(t);
+  });
+  const t = weighted[Math.floor(Math.random() * weighted.length)];
+  pickedId = t.id;
+  out.textContent = t.title;
+  document.getElementById('random-go').style.display = '';
+}
+
+function startFromPick() {
+  if (!pickedId || !findTask(pickedId)) return;
+  goFocus(pickedId);
+}
+
+// ═══════════════════════════════════════════════════════
+//  FOCUS TIMER
+//  Stores the end time (not a countdown) so a refresh or a
+//  sleeping laptop doesn't lose or distort the timer.
+// ═══════════════════════════════════════════════════════
+
+const PRESETS = [5, 10, 15, 25, 45];
+let focusId = null;
+let chosenMinutes = 5;
+let tick = null;
+const CIRC = 276.46;
+
+function goFocus(id) {
+  if (state.timer && state.timer.taskId !== id && !confirm('A timer is already running. Switch to this loop?')) return;
+  if (state.timer && state.timer.taskId !== id) stopTimer(true);
+  focusId = id;
+  const t = findTask(id);
+  if (t && t.size && !state.timer) chosenMinutes = Math.min(25, Math.max(5, t.size === 2 ? 5 : t.size));
+  showScreen('focus');
+}
+
+function renderFocus() {
+  const id = state.timer ? state.timer.taskId : focusId;
+  const t = id ? findTask(id) : null;
+  document.getElementById('focus-empty').style.display = t ? 'none' : 'block';
+  document.getElementById('focus-on').style.display = t ? 'block' : 'none';
+  if (t) {
+    document.getElementById('focus-title').textContent = t.title;
+    document.getElementById('focus-step').innerHTML = t.step
+      ? `<strong>Start with:</strong> ${esc(t.step)}`
+      : 'What is the very first physical action? Open the file, find the email, stand up. Just do that.';
+  } else {
+    const sel = document.getElementById('focus-select');
+    const opts = activeTasks();
+    sel.innerHTML = '<option value="">Timer only, no loop attached</option>' +
+      opts.map(o => `<option value="${o.id}">${esc(o.title)}</option>`).join('');
+    sel.onchange = () => { focusId = sel.value || null; renderFocus(); };
+  }
+  document.getElementById('presets').innerHTML = state.timer ? '' : PRESETS.map(m =>
+    `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? 'Just 5 min' : m + ' min'}</button>`).join('');
+  renderControls();
+  updateClock();
+}
+
+function renderControls() {
+  const c = document.getElementById('timer-controls');
+  const tm = state.timer;
+  const hasTask = !!(tm ? tm.taskId : focusId);
+  if (!tm) {
+    c.innerHTML = `<button class="btn primary big" onclick="startTimer()">Start</button>` +
+      (hasTask ? `<button class="btn big" onclick="focusId=null;renderFocus()">Clear</button>` : '');
+  } else if (tm.finished) {
+    c.innerHTML = (hasTask ? `<button class="btn primary big" onclick="finishFocus(true)">I finished it</button>` : '') +
+      `<button class="btn big" onclick="addMinutes(5, true)">5 more min</button>
+       <button class="btn big" onclick="finishFocus(false)">Stop here</button>`;
+  } else {
+    c.innerHTML = `<button class="btn big" onclick="togglePause()">${tm.pausedLeft != null ? 'Resume' : 'Pause'}</button>
+      <button class="btn big" onclick="addMinutes(5)">+5 min</button>` +
+      (hasTask ? `<button class="btn primary big" onclick="finishFocus(true)">Done</button>` : '') +
+      `<button class="btn big" onclick="finishFocus(false)">Stop</button>`;
+  }
+}
+
+function startTimer() {
+  const ms = chosenMinutes * 60000;
+  state.timer = { taskId: focusId, total: ms, endsAt: Date.now() + ms, pausedLeft: null, finished: false };
+  save();
+  ensureTick();
+  renderFocus();
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+}
+
+function timeLeft() {
+  const tm = state.timer;
+  if (!tm) return chosenMinutes * 60000;
+  if (tm.pausedLeft != null) return tm.pausedLeft;
+  return Math.max(0, tm.endsAt - Date.now());
+}
+
+function togglePause() {
+  const tm = state.timer;
+  if (!tm) return;
+  if (tm.pausedLeft != null) { tm.endsAt = Date.now() + tm.pausedLeft; tm.pausedLeft = null; }
+  else tm.pausedLeft = Math.max(0, tm.endsAt - Date.now());
+  save();
+  renderControls();
+}
+
+function addMinutes(m, restart) {
+  const tm = state.timer;
+  if (!tm) return;
+  if (restart) { tm.finished = false; tm.endsAt = Date.now() + m * 60000; tm.total = m * 60000; tm.pausedLeft = null; }
+  else if (tm.pausedLeft != null) { tm.pausedLeft += m * 60000; tm.total += m * 60000; }
+  else { tm.endsAt += m * 60000; tm.total += m * 60000; }
+  save();
+  ensureTick();
+  renderFocus();
+}
+
+function stopTimer(silent) {
+  state.timer = null;
+  save();
+  document.title = 'Open Loops';
+  if (!silent) renderFocus();
+}
+
+function finishFocus(completed) {
+  const id = state.timer ? state.timer.taskId : focusId;
+  stopTimer(true);
+  if (completed && id) {
+    completeTask(id);
+    focusId = null;
+    renderFocus();
+    return;
+  }
+  renderFocus();
+  if (id && findTask(id)) {
+    const t = findTask(id);
+    openModal(`<h3>Leave a note for future you</h3>
+      <p class="hint">Where did you stop? What is the next tiny step? This makes it much easier to start again.</p>
+      <input type="text" id="park-note" value="${esc(t.step)}" placeholder="e.g. finish paragraph 2">
+      <div class="row" style="margin-top:12px;justify-content:flex-end">
+        <button class="btn" onclick="closeModal()">Skip</button>
+        <button class="btn primary" onclick="updateField('${id}','step',document.getElementById('park-note').value.trim());closeModal();renderAll();toast('Saved. It will be waiting for you.')">Save note</button>
+      </div>`);
+    setTimeout(() => document.getElementById('park-note')?.focus(), 50);
+  }
+}
+
+function fmt(ms) {
+  const s = Math.ceil(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function updateClock() {
+  const tm = state.timer;
+  const left = timeLeft();
+  const total = tm ? tm.total : chosenMinutes * 60000;
+  document.getElementById('clock').textContent = fmt(left);
+  document.getElementById('clock-sub').textContent = !tm ? 'ready' : tm.finished ? 'time is up' : tm.pausedLeft != null ? 'paused' : 'remaining';
+  document.getElementById('ring').style.strokeDashoffset = CIRC * (1 - left / total);
+  if (tm && !tm.finished) document.title = `${fmt(left)} ${tm.pausedLeft != null ? '(paused)' : ''} Open Loops`;
+  if (tm && !tm.finished && tm.pausedLeft == null && left <= 0) timerDone();
+}
+
+function ensureTick() {
+  if (tick) return;
+  tick = setInterval(() => {
+    if (!state.timer) { clearInterval(tick); tick = null; return; }
+    updateClock();
+  }, 250);
+}
+
+function timerDone() {
+  state.timer.finished = true;
+  save();
+  document.title = 'Time is up! Open Loops';
+  chime(523, 0.25); setTimeout(() => chime(659, 0.25), 260); setTimeout(() => chime(784, 0.4), 520);
+  const t = state.timer.taskId ? findTask(state.timer.taskId) : null;
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Time is up', { body: t ? t.title : 'Focus session done' });
+    }
+  } catch {}
+  renderFocus();
+}
+
+// ── Sound ───────────────────────────────────────────
+
+let _audio = null;
+function chime(freq, dur) {
+  if (!state.settings.sound) return;
+  try {
+    _audio = _audio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = _audio.createOscillator(), g = _audio.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, _audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.25, _audio.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, _audio.currentTime + dur);
+    o.connect(g); g.connect(_audio.destination);
+    o.start(); o.stop(_audio.currentTime + dur + 0.05);
+  } catch {}
+}
+
+// ═══════════════════════════════════════════════════════
+//  CELEBRATION + WINS
+// ═══════════════════════════════════════════════════════
+
+function celebrate() {
+  chime(784, 0.12); setTimeout(() => chime(1047, 0.2), 110);
+  toast(ENCOURAGEMENT[Math.floor(Math.random() * ENCOURAGEMENT.length)]);
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cv = document.getElementById('confetti');
+  const ctx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const colors = ['#1a4c9f', '#f7cb57', '#6699cc', '#1a6b3c', '#f2a65a'];
+  const parts = Array.from({ length: 120 }, () => ({
+    x: innerWidth / 2, y: innerHeight * 0.6,
+    vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 4,
+    r: Math.random() * 5 + 3, c: colors[Math.floor(Math.random() * colors.length)], a: Math.random() * 6
+  }));
+  const t0 = performance.now();
+  const frame = now => {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    parts.forEach(p => {
+      p.vy += 0.35; p.x += p.vx; p.y += p.vy; p.a += 0.2;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+      ctx.restore();
+    });
+    if (now - t0 < 1800) requestAnimationFrame(frame);
+    else ctx.clearRect(0, 0, cv.width, cv.height);
+  };
+  requestAnimationFrame(frame);
+}
+
+function renderWins() {
+  const done = state.tasks.filter(t => t.done).sort((a, b) => b.done.localeCompare(a.done));
+  const today = todayStr();
+  const dayOf = iso => todayStr(new Date(iso));
+  const weekAgo = Date.now() - 7 * 86400000;
+  document.getElementById('s-today').textContent = done.filter(t => dayOf(t.done) === today).length;
+  document.getElementById('s-week').textContent = done.filter(t => new Date(t.done).getTime() >= weekAgo).length;
+
+  const days = new Set(done.map(t => dayOf(t.done)));
+  let streak = 0;
+  const d = new Date();
+  if (!days.has(todayStr(d))) d.setDate(d.getDate() - 1); // today not over yet, so the streak can still continue
+  while (days.has(todayStr(d))) { streak++; d.setDate(d.getDate() - 1); }
+  document.getElementById('s-streak').textContent = streak;
+
+  const list = document.getElementById('wins-list');
+  if (!done.length) { list.innerHTML = '<div class="empty">Nothing closed yet. Your first one goes here.</div>'; return; }
+  list.innerHTML = done.slice(0, 50).map(t => {
+    const dt = new Date(t.done);
+    const label = dayOf(t.done) === today ? dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return `<div class="win"><span>${esc(t.title)}</span><time>${label}</time>
+      <button class="btn sm" title="Reopen" onclick="reopen('${t.id}')">Reopen</button></div>`;
+  }).join('') + `<div class="row" style="margin-top:12px"><button class="btn sm" onclick="clearOldWins()">Clear wins older than 30 days</button></div>`;
+}
+
+function reopen(id) {
+  const t = findTask(id);
+  if (!t) return;
+  pushUndoSnapshot('reopen "' + t.title + '"');
+  t.done = null;
+  save();
+  renderAll();
+}
+
+function clearOldWins() {
+  const cutoff = Date.now() - 30 * 86400000;
+  const n = state.tasks.filter(t => t.done && new Date(t.done).getTime() < cutoff).length;
+  if (!n) { toast('Nothing older than 30 days.'); return; }
+  if (!confirm(`Remove ${n} wins older than 30 days? A Backup first keeps a copy.`)) return;
+  pushUndoSnapshot(`clear ${n} old wins`);
+  state.tasks = state.tasks.filter(t => !(t.done && new Date(t.done).getTime() < cutoff));
+  save();
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════
+
+function openSettings() {
+  openModal(`<h3>Settings</h3>
+    <label class="hint" style="display:block;margin:8px 0 4px">Which computer is this?</label>
+    <p class="hint" style="font-size:12px">This label shows at the top and goes into the backup file name, so you can tell Work and Home backups apart.</p>
+    <input type="text" id="set-space" value="${esc(state.space)}">
+    <div class="seg" style="margin-top:6px">
+      <button onclick="document.getElementById('set-space').value='Work'">Work</button>
+      <button onclick="document.getElementById('set-space').value='Home'">Home</button>
+    </div>
+    <label style="display:flex;gap:6px;align-items:center;margin-top:14px">
+      <input type="checkbox" id="set-sound" ${state.settings.sound ? 'checked' : ''}> Sounds (timer chime, completion ding)
+    </label>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveSettings()">Save</button>
+    </div>`);
+}
+
+function saveSettings() {
+  state.space = document.getElementById('set-space').value.trim() || 'Work';
+  state.settings.sound = document.getElementById('set-sound').checked;
+  save();
+  closeModal();
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════
+//  UI PLUMBING
+// ═══════════════════════════════════════════════════════
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+  if (name === 'pick') { renderFilterButtons(); renderPickPool(); }
+  if (name === 'focus') renderFocus();
+  if (name === 'wins') renderWins();
+  window.scrollTo(0, 0);
+}
+
+document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => showScreen(b.dataset.screen)));
+
+function toggleMenu(e) {
+  e.stopPropagation();
+  renderBackupNote();
+  document.getElementById('data-menu').classList.toggle('open');
+}
+function closeMenu() { document.getElementById('data-menu').classList.remove('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('.menu')) closeMenu(); });
+
+function openModal(html) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+document.getElementById('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') closeModal(); });
+
+let _toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+function renderAll() {
+  document.getElementById('space-tag').textContent = state.space;
+  renderTaskList();
+  renderBackupNote();
+  const active = document.querySelector('.screen.active')?.id;
+  if (active === 'screen-pick') renderPickPool();
+  if (active === 'screen-focus') renderFocus();
+  if (active === 'screen-wins') renderWins();
+}
+
+// Keep two open tabs of the same page in step
+window.addEventListener('storage', e => {
+  if (e.key === STORE_KEY) { state = loadState(); renderAll(); if (state.timer) ensureTick(); }
+});
+
+renderAll();
+if (state.timer) { focusId = state.timer.taskId; ensureTick(); showScreen('focus'); }
+document.getElementById('quick-add').focus();
+</script>
+</body>
+</html>
