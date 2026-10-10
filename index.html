@@ -226,6 +226,25 @@
     box-shadow: var(--shadow);
   }
   .modal h3 { margin: 0 0 8px; }
+  .modal h4 { margin: 18px 0 4px; font-size: 15px; }
+  .modal.wide { max-width: 640px; max-height: 88vh; overflow-y: auto; }
+
+  /* Review + quick sort */
+  .review-item {
+    border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-top: 8px;
+    display: grid; gap: 6px;
+  }
+  .review-top { display: flex; gap: 6px; align-items: center; }
+  .review-top input, .review-top .review-title { flex: 1; }
+  .review-title { font-weight: 600; word-break: break-word; }
+  .review-foot {
+    position: sticky; bottom: -20px; background: var(--card); padding: 12px 0 0; margin-top: 12px;
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center;
+  }
+  .step-row { display: flex; gap: 6px; align-items: center; }
+  .step-row input { flex: 1; }
+  .qs-title { font-size: 20px; font-weight: 600; margin: 6px 0 10px; word-break: break-word; }
+  .qs-label { font-size: 12px; color: var(--muted); font-weight: 600; margin: 10px 0 4px; }
   .toast {
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120px);
     background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px;
@@ -287,12 +306,15 @@
       <p class="hint">Type it and press Enter. Don't sort it yet. You can add details later, or never.</p>
       <input type="text" id="quick-add" placeholder="Something on your mind..." autocomplete="off">
       <div class="row" style="margin-top:10px">
-        <button class="btn sm" onclick="toggleDump()">Brain dump (many at once)</button>
+        <button class="btn sm" onclick="toggleDump()">Talk it out (many at once)</button>
+        <button class="btn sm" id="qs-btn" style="display:none" onclick="openQuickSort()"></button>
       </div>
       <div id="dump-box" style="display:none;margin-top:10px">
-        <textarea id="dump-text" placeholder="One loop per line. Dump everything."></textarea>
+        <p class="hint">Tap the mic on your keyboard and talk. Say "next" between loops, or put each one on its own line. You'll check everything before it's added.</p>
+        <textarea id="dump-text" placeholder="email Dana about the field trip, that's quick, next, grade the essays, that'll take forever and I need to be fresh, next, call the dentist today"></textarea>
         <div class="row" style="margin-top:8px">
-          <button class="btn primary" onclick="addDump()">Add all</button>
+          <button class="btn primary" id="ai-btn" onclick="aiExtract()">AI extract</button>
+          <button class="btn" onclick="parseDump()">Sort it (no AI)</button>
           <button class="btn" onclick="toggleDump()">Cancel</button>
         </div>
       </div>
@@ -869,7 +891,7 @@ async function runSync(names) {
 // Re-draw with what came in from another device, unless you're typing in an editor right now
 function refreshAfterSync() {
   const a = document.activeElement;
-  if (a && (a.closest('#task-list') || a.closest('#modal')) && ['INPUT', 'TEXTAREA'].includes(a.tagName)) return;
+  if (a && (a.closest('#task-list') || a.closest('#modal') || a.closest('#focus-step')) && ['INPUT', 'TEXTAREA'].includes(a.tagName)) return;
   renderAll();
 }
 
@@ -1088,16 +1110,408 @@ function toggleDump() {
   if (box.style.display === 'block') document.getElementById('dump-text').focus();
 }
 
-function addDump() {
-  const lines = document.getElementById('dump-text').value.split('\n').map(s => s.replace(/^[-*\u2022\d.)\s]+/, '').trim()).filter(Boolean);
-  if (!lines.length) return;
-  pushUndoSnapshot(`brain dump (${lines.length})`);
-  lines.reverse().forEach(addTask);
+// \u2500\u2500 Talk it out: the no-AI sorter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Splits on new lines and on the word "next", then picks up
+// time, energy, "today" and "first step is..." from what you said.
+// It's rule-based, so it only catches the phrases below. The
+// review step is where anything it missed gets fixed.
+
+// "next" doesn't split when it's clearly part of the task ("the next draft", "next week")
+const NEXT_KEEP_AFTER = /\b(the|a|my|this|that|your|our|his|her|their)\s*$/i;
+const NEXT_KEEP_BEFORE = /^\s*(week|weekend|month|year|time|day|days|morning|afternoon|evening|night|monday|tuesday|wednesday|thursday|friday|saturday|sunday|step|steps|meeting|class|period|semester|quarter|term|unit|lesson|chapter|draft|round)\b/i;
+
+function splitLoops(text) {
+  const out = [];
+  text.split('\n').forEach(line => {
+    const parts = line.split(/(\bnext\b[,.:;!]?)/i);
+    let buf = '';
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) { buf += parts[i]; continue; }
+      if (NEXT_KEEP_AFTER.test(buf) || NEXT_KEEP_BEFORE.test(parts[i + 1] || '')) { buf += parts[i]; continue; }
+      out.push(buf); buf = '';
+    }
+    out.push(buf);
+  });
+  return out.map(s => s.replace(/^[-*\u2022\d.)\s]+/, '').trim()).filter(s => /[a-z0-9]/i.test(s));
+}
+
+const minBucket = n => n <= 5 ? 2 : n <= 15 ? 15 : n <= 30 ? 30 : 60;
+const WORD_MINS = { two: 2, three: 2, five: 2, ten: 15, fifteen: 15, twenty: 30, 'twenty five': 30, thirty: 30, 'forty five': 60 };
+
+const SIZE_RULES = [
+  [/\b(\d+)\s*-?\s*(?:min(?:ute)?s?)\b/i, m => minBucket(+m[1])],
+  [/\bhalf(?:\s+an)?\s+(?:hour|hr)\b/i, () => 30],
+  [/\b(two|three|five|ten|fifteen|twenty(?: five)?|thirty|forty five)\s+min(?:ute)?s?\b/i, m => WORD_MINS[m[1].toLowerCase()]],
+  [/\bquarter\s+(?:of\s+an\s+)?hour\b/i, () => 15],
+  [/\b(?:\d+(?:\.\d+)?|an?|one|two|few|couple(?: of)?)\s+(?:hours?|hrs?)\b|\ball day\b|\bforever\b|\ba while\b|\bages\b|\bbig one\b|\bbig project\b/i, () => 60],
+  [/\b(?:super |real |really |very )?(?:quick(?:ly)?|fast|tiny|quickie)\b|\b2 ?min\b/i, () => 2]
+];
+
+const ENERGY_RULES = [
+  [/\b(?:low[- ]energy|when i'?m tired|(?:i'?m |when )?tired|brain ?dead|mindless|no brain(?:power)?|zombie mode|easy(?: one)?)\b/i, 'low'],
+  [/\b(?:high[- ]energy|(?:i )?need to be fresh|when i'?m fresh|fresh|need(?:s)? (?:to )?focus|deep work|(?:it'?s|that'?s|this is|really) hard|brain ?power|lots of energy)\b/i, 'high'],
+  [/\b(?:some energy|medium energy|medium|moderate)\b/i, 'med']
+];
+
+const TODAY_RE = /\b(today|tonight|this (?:morning|afternoon|evening)|asap|urgent(?:ly)?|right away)\b/i;
+const STEP_RE = /[,.;]?\s*\b(?:(?:the|my)\s+)?(?:first\s+step(?:\s+is|\s+would\s+be|\s+will\s+be)?|start\s+(?:by|with)|step\s+one(?:\s+is)?)\s*[:,-]?\s*/i;
+const LEAD_JUNK = /^(?:um+|uh+|so|okay|ok|and|also|then|oh|like|i need to|i have to|i've got to|i got to|i gotta|gotta|need to|have to|i should|i want to|remember to|don't forget to|dont forget to)\b[\s,.]*/i;
+const TRAIL_JUNK = /[\s,.;:!-]*\b(?:and|that'?s|that|it'?s|it|this|which(?: is)?|will(?: take)?|that'?ll(?: take)?|it'?ll(?: take)?|takes?|should(?: take)?|is|be|like|about|maybe|probably|only|just|when|i'?m|so|gonna(?: take| be)?|going to(?: take| be)?|needs?|i need|and i need|of)\s*$/i;
+
+function tidy(s) {
+  s = s.replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').replace(/([,;:])[,;:\s]+/g, '$1 ').trim();
+  let prev;
+  do { prev = s; s = s.replace(LEAD_JUNK, '').replace(TRAIL_JUNK, '').replace(/^[\s,.;:!-]+|[\s,;:-]+$/g, '').trim(); } while (s !== prev);
+  return s.replace(/\.$/, '');
+}
+
+const capFirst = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+
+function parseLoop(raw) {
+  const item = { title: '', step: '', size: null, energy: null, today: false };
+  let s = raw;
+  const sm = s.match(STEP_RE);
+  if (sm) { item.step = tidy(s.slice(sm.index + sm[0].length)); s = s.slice(0, sm.index); }
+  if (TODAY_RE.test(s)) { item.today = true; s = s.replace(TODAY_RE, ' '); }
+  for (const [re, val] of SIZE_RULES) {
+    const m = s.match(re);
+    if (m) { item.size = val(m); s = s.replace(re, ' '); break; }
+  }
+  for (const [re, val] of ENERGY_RULES) {
+    if (re.test(s)) { item.energy = val; s = s.replace(re, ' '); break; }
+  }
+  item.title = capFirst(tidy(s)) || capFirst(raw.trim());
+  item.step = capFirst(item.step);
+  return item;
+}
+
+function parseDump() {
+  const text = document.getElementById('dump-text').value;
+  const items = splitLoops(text).map(parseLoop);
+  if (!items.length) { toast('Nothing to sort yet. Talk or type something first.'); return; }
+  openReview(items, 'add');
+}
+
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+//  AI (Claude)
+//  Optional. Uses your own Claude API key, saved only in this
+//  browser (never in a backup or synced to GitHub). Only the
+//  text you choose to send goes to Anthropic.
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+const AI_KEY = 'openloops_ai';
+const AI_MODELS = { 'claude-haiku-5-5': 'Claude Haiku 5.5 (cheapest, fine for most dumps)', 'claude-opus-5-5': 'Claude Opus 5.5 (best results, costs more)' };
+const AI_DEFAULT_MODEL = 'claude-haiku-5-5';
+
+function loadAi() {
+  try { return JSON.parse(localStorage.getItem(AI_KEY)) || {}; } catch { return {}; }
+}
+let ai = loadAi();
+function aiOn() { return !!ai.key; }
+
+const AI_FIELDS = `For each loop:
+- step: the smallest first physical action, so small it feels silly and takes under 2 minutes (e.g. "open the email thread", "find the form"). If they said a first step, use theirs.
+- size: how long the whole task takes: "2" (2 minutes), "15", "30", or "60" (an hour or more). Use what they said; otherwise make your best guess.
+- energy: "low" (can do it tired), "med", or "high" (needs a fresh, focused brain). Use what they said; otherwise make your best guess.`;
+
+const EXTRACT_SYSTEM = `You turn a spoken brain dump into a list of open loops (tasks) for a personal task app. The text was dictated, so expect run-on sentences, filler words, and transcription mistakes.
+
+Splitting: the word "next" said between tasks means a new loop starts, and line breaks also separate loops. When they don't say "next", split on natural task boundaries. Don't merge separate tasks, and don't break one task into its sub-steps. If you're unsure whether something is a task, include it.
+
+${AI_FIELDS}
+- title: a short name in the person's own words. Drop filler ("um", "I need to", "I gotta") and the time/energy/today remarks, but keep their phrasing. Don't add details they didn't say.
+- today: true only if they said it's for today, tonight, urgent, or ASAP.`;
+
+const FILL_SYSTEM = `You fill in missing details for loops (tasks) in a personal task app. You get a numbered list of loop titles, some with a first step already written. Return one entry per loop with the same index. Keep any first step that's already written exactly as it is.
+
+${AI_FIELDS}`;
+
+const STEP_SYSTEM = `You help someone get started on a task they're stuck on. Given the task, reply with the smallest first physical action, so small it feels silly and takes under 2 minutes (e.g. "open the email thread", "put the form on the desk"). Use plain words, no more than about 10 words.`;
+
+const AI_FIELD_SCHEMA = {
+  step: { type: 'string' },
+  size: { type: 'string', enum: ['2', '15', '30', '60'] },
+  energy: { type: 'string', enum: ['low', 'med', 'high'] }
+};
+const listSchema = (props, required) => ({
+  type: 'object', additionalProperties: false, required: ['loops'],
+  properties: { loops: { type: 'array', items: { type: 'object', additionalProperties: false, required, properties: props } } }
+});
+const EXTRACT_SCHEMA = listSchema(Object.assign({ title: { type: 'string' } }, AI_FIELD_SCHEMA, { today: { type: 'boolean' } }), ['title', 'step', 'size', 'energy', 'today']);
+const FILL_SCHEMA = listSchema(Object.assign({ index: { type: 'integer' } }, AI_FIELD_SCHEMA), ['index', 'step', 'size', 'energy']);
+const STEP_SCHEMA = { type: 'object', additionalProperties: false, required: ['step'], properties: { step: { type: 'string' } } };
+
+async function callClaude(system, text, schema) {
+  const model = AI_MODELS[ai.model] ? ai.model : AI_DEFAULT_MODEL;
+  const body = {
+    model, max_tokens: 16000, system,
+    messages: [{ role: 'user', content: text }],
+    output_config: { effort: 'low', format: { type: 'json_schema', schema } }
+  };
+  const headers = {
+    'content-type': 'application/json',
+    'x-api-key': ai.key,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+  // If Opus declines, let the API retry on its recommended fallback model
+  if (model === 'claude-opus-5-5') { body.fallbacks = 'default'; headers['anthropic-beta'] = 'server-side-fallback-2026-07-01'; }
+  let res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(body) });
+  } catch {
+    throw new Error('Could not reach Claude. Check your internet connection, or use Sort it.');
+  }
+  if (!res.ok) {
+    let detail = '';
+    try { detail = (await res.json()).error?.message || ''; } catch {}
+    if (res.status === 401) throw new Error('Claude did not accept the API key. Check it in Data > Settings.');
+    if (res.status === 429) throw new Error('Claude is rate limiting right now. Wait a minute and try again.');
+    if (res.status >= 500) throw new Error('Claude is busy or down right now. Try again in a minute, or use Sort it.');
+    throw new Error(`Claude said ${res.status}${detail ? ': ' + detail : ''}`);
+  }
+  const msg = await res.json();
+  if (msg.stop_reason === 'refusal') throw new Error('Claude declined this one. Try Sort it instead.');
+  if (msg.stop_reason === 'max_tokens') throw new Error('That was too long for one go. Try sending half at a time.');
+  const out = (msg.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  try { return JSON.parse(out); } catch { throw new Error('Claude sent back something unreadable. Try again.'); }
+}
+
+// Turn Claude's answer into the app's field values
+function fromAi(x) {
+  return {
+    step: typeof x.step === 'string' ? x.step.trim() : '',
+    size: SIZES.includes(Number(x.size)) ? Number(x.size) : null,
+    energy: ENERGY[x.energy] ? x.energy : null
+  };
+}
+
+function needAiKey() {
+  if (aiOn()) return false;
+  openSettings('Add your Claude API key to use AI. Until then, Sort it (no AI) works without one.');
+  return true;
+}
+
+async function withBusy(btnId, label, fn) {
+  const btn = btnId && document.getElementById(btnId);
+  const old = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = label; }
+  try { await fn(); }
+  catch (e) { toast(e.message); }
+  finally { if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = old; } }
+}
+
+function aiExtract() {
+  const text = document.getElementById('dump-text').value.trim();
+  if (!text) { toast('Nothing to send yet. Talk or type something first.'); return; }
+  if (needAiKey()) return;
+  withBusy('ai-btn', 'Thinking...', async () => {
+    const r = await callClaude(EXTRACT_SYSTEM, text, EXTRACT_SCHEMA);
+    const items = (r.loops || []).filter(x => x && typeof x.title === 'string' && x.title.trim())
+      .map(x => Object.assign({ title: x.title.trim(), today: !!x.today }, fromAi(x)));
+    if (!items.length) { toast('Claude did not find any loops in that.'); return; }
+    openReview(items, 'add');
+  });
+}
+
+// Fill in details for loops that are already on the list
+function aiFillMissing() {
+  if (needAiKey()) return;
+  const tasks = needsDetails();
+  if (!tasks.length) { toast('Every loop already has its details.'); return; }
+  const text = tasks.map((t, i) => `${i + 1}. ${t.title}${t.step ? ` (first step already: ${t.step})` : ''}`).join('\n');
+  withBusy('qs-ai', 'Thinking...', async () => {
+    const r = await callClaude(FILL_SYSTEM, text, FILL_SCHEMA);
+    const byIndex = new Map((r.loops || []).map(x => [Number(x.index), fromAi(x)]));
+    const items = tasks.map((t, i) => {
+      const g = byIndex.get(i + 1) || {};
+      return { id: t.id, title: t.title, step: t.step || g.step || '', size: t.size || g.size || null, energy: t.energy || g.energy || null };
+    });
+    openReview(items, 'fill');
+  });
+}
+
+// One loop: suggest a first step and drop it into an input box
+function aiSuggestStep(id, inputId, btnId) {
+  const t = findTask(id);
+  if (!t || needAiKey()) return;
+  withBusy(btnId, '...', async () => {
+    const r = await callClaude(STEP_SYSTEM, t.title, STEP_SCHEMA);
+    const step = capFirst((r.step || '').trim());
+    if (!step) return;
+    const input = document.getElementById(inputId);
+    if (input) { input.value = step; input.focus(); }
+  });
+}
+
+// \u2500\u2500 Review \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Everything from Sort it, AI extract, and AI fill lands here
+// first, so nothing is added or changed until you say so.
+
+let _review = null;
+
+function openReview(items, mode) {
+  _review = { mode, items };
+  renderReview();
+}
+
+function renderReview() {
+  const r = _review;
+  const adding = r.mode === 'add';
+  const rows = r.items.map((it, i) => `<div class="review-item">
+      <div class="review-top">
+        ${adding
+          ? `<input type="text" value="${esc(it.title)}" oninput="_review.items[${i}].title=this.value" aria-label="Name">`
+          : `<div class="review-title">${esc(it.title)}</div>`}
+        <button class="btn sm" onclick="reviewRemove(${i})">${adding ? 'Remove' : 'Skip'}</button>
+      </div>
+      <input type="text" value="${esc(it.step)}" placeholder="Smallest first step (optional)" oninput="_review.items[${i}].step=this.value" aria-label="First step">
+      <div class="seg">${SIZES.map(m =>
+        `<button class="${it.size === m ? 'on' : ''}" onclick="reviewSet(${i},'size',${m})">${sizeLabel(m)}</button>`).join('')}</div>
+      <div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
+        `<button class="${it.energy === k ? 'on' : ''}" onclick="reviewSet(${i},'energy','${k}')">${v}</button>`).join('')}
+        ${adding ? `<button class="${it.today ? 'on' : ''}" onclick="reviewSet(${i},'today',true)">Today</button>` : ''}</div>
+    </div>`).join('');
+  const n = r.items.length;
+  const go = adding ? `Add ${n} to ${state.current}` : `Save ${n}`;
+  openModal(`<h3>${adding ? 'Check these over' : 'Check the details'}</h3>
+    <p class="hint">Fix anything that's off. Tap a button again to clear it. ${adding ? 'Nothing is added until you press Add.' : 'Nothing changes until you press Save.'}</p>
+    ${rows || '<div class="empty">Nothing left.</div>'}
+    <div class="review-foot">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" ${n ? '' : 'disabled'} onclick="commitReview()">${go}</button>
+    </div>`, true);
+}
+
+function reviewSet(i, field, value) {
+  const it = _review.items[i];
+  it[field] = it[field] === value ? (field === 'today' ? false : null) : value;
+  renderReview();
+}
+
+function reviewRemove(i) {
+  _review.items.splice(i, 1);
+  renderReview();
+}
+
+function commitReview() {
+  const r = _review;
+  if (!r) return;
+  const items = r.items.filter(it => (it.title || '').trim());
+  if (!items.length) { closeModal(); return; }
+  if (r.mode === 'add') {
+    pushUndoSnapshot(`add ${items.length} loop${items.length === 1 ? '' : 's'}`);
+    let room = TODAY_LIMIT - L().tasks.filter(x => x.today && !x.done).length;
+    let overCap = 0;
+    // Today picks go in list order until the cap is hit
+    const wantsToday = items.map(it => {
+      if (!it.today) return false;
+      if (room > 0) { room--; return true; }
+      overCap++; return false;
+    });
+    // Added last-to-first so the first one you said ends up on top
+    items.map((it, i) => [it, wantsToday[i]]).reverse().forEach(([it, today]) => {
+      const t = addTask(it.title);
+      if (!t) return;
+      t.step = (it.step || '').trim();
+      t.size = it.size || null;
+      t.energy = it.energy || null;
+      t.today = today;
+    });
+    save();
+    document.getElementById('dump-text').value = '';
+    document.getElementById('dump-box').style.display = 'none';
+    closeModal();
+    renderAll();
+    toast(overCap
+      ? `${items.length} added. Today was full, so ${overCap} went to the main list.`
+      : `${items.length} loop${items.length === 1 ? '' : 's'} captured. Your head has more room now.`);
+  } else {
+    pushUndoSnapshot(`fill details for ${items.length}`);
+    items.forEach(it => {
+      const t = findTask(it.id);
+      if (!t) return;
+      t.step = (it.step || '').trim();
+      t.size = it.size || null;
+      t.energy = it.energy || null;
+    });
+    save();
+    closeModal();
+    if (_qs) closeQuickSort(true);
+    renderAll();
+    toast(`Details saved for ${items.length} loop${items.length === 1 ? '' : 's'}.`);
+  }
+  _review = null;
+}
+
+// \u2500\u2500 Quick sort \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// One loop at a time, big buttons, for loops missing time or energy.
+
+let _qs = null;
+
+function needsDetails() { return activeTasks().filter(t => !t.size || !t.energy); }
+
+function openQuickSort() {
+  const ids = needsDetails().map(t => t.id);
+  if (!ids.length) { toast('Every loop already has its details.'); return; }
+  _qs = { ids, i: 0, done: 0 };
+  renderQuickSort();
+}
+
+function renderQuickSort() {
+  if (!_qs) return;
+  while (_qs.i < _qs.ids.length && !findTask(_qs.ids[_qs.i])) _qs.i++;
+  if (_qs.i >= _qs.ids.length) { closeQuickSort(); return; }
+  const t = findTask(_qs.ids[_qs.i]);
+  openModal(`<div class="row"><h3 style="flex:1;margin:0">Quick sort</h3>
+      <span class="hint" style="margin:0">${_qs.i + 1} of ${_qs.ids.length}</span></div>
+    <div class="qs-title">${esc(t.title)}</div>
+    <div class="qs-label">How long?</div>
+    <div class="seg">${SIZES.map(m =>
+      `<button class="${t.size === m ? 'on' : ''}" onclick="qsSet('size',${m})">${sizeLabel(m)}</button>`).join('')}</div>
+    <div class="qs-label">Energy it needs</div>
+    <div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
+      `<button class="${t.energy === k ? 'on' : ''}" onclick="qsSet('energy','${k}')">${v}</button>`).join('')}</div>
+    <div class="qs-label">Smallest first step (optional)</div>
+    <div class="step-row">
+      <input type="text" id="qs-step" value="${esc(t.step)}" placeholder="e.g. open the email" onchange="updateField('${t.id}','step',this.value.trim())">
+      ${aiOn() ? `<button class="btn sm" id="qs-suggest" onclick="aiSuggestStep('${t.id}','qs-step','qs-suggest')">Suggest</button>` : ''}
+    </div>
+    <div class="review-foot">
+      <button class="btn" id="qs-ai" onclick="aiFillMissing()">${aiOn() ? 'Let AI fill all' : 'AI fill all'}</button>
+      <div class="spacer"></div>
+      <button class="btn" onclick="closeQuickSort()">Done</button>
+      <button class="btn primary" onclick="qsNext()">Next</button>
+    </div>`, true);
+}
+
+function qsSet(field, value) {
+  const t = findTask(_qs.ids[_qs.i]);
+  if (!t) return;
+  t[field] = t[field] === value ? null : value;
   save();
-  document.getElementById('dump-text').value = '';
-  toggleDump();
+  clearTimeout(_qs.advance);
+  renderQuickSort();
+  // Both picked: move on by itself
+  if (t.size && t.energy) _qs.advance = setTimeout(qsNext, 250);
+}
+
+function qsNext() {
+  if (!_qs) return;
+  clearTimeout(_qs.advance);
+  const input = document.getElementById('qs-step');
+  const t = findTask(_qs.ids[_qs.i]);
+  if (input && t && input.value.trim() !== (t.step || '')) updateField(t.id, 'step', input.value.trim());
+  _qs.i++;
+  renderQuickSort();
+}
+
+function closeQuickSort(quiet) {
+  const sorted = _qs ? _qs.ids.filter(id => { const t = findTask(id); return t && t.size && t.energy; }).length : 0;
+  _qs = null;
+  if (!quiet) closeModal();
   renderAll();
-  toast(`${lines.length} loops captured. Your head has more room now.`);
+  if (!quiet && sorted) toast(`${sorted} sorted. Pick one now has more to work with.`);
 }
 
 // ── List rendering ──────────────────────────────────
@@ -1130,7 +1544,10 @@ function taskHTML(t) {
     html += `<div class="task-edit">
       <div><label>Name</label><input type="text" value="${esc(t.title)}" onchange="renameTask('${t.id}',this)"></div>
       <div><label>Smallest first step (so small it feels silly)</label>
-        <input type="text" value="${esc(t.step)}" placeholder="e.g. open the email" onchange="updateField('${t.id}','step',this.value.trim())"></div>
+        <div class="step-row">
+          <input type="text" id="step-${t.id}" value="${esc(t.step)}" placeholder="e.g. open the email" onchange="updateField('${t.id}','step',this.value.trim())">
+          ${aiOn() ? `<button class="btn sm" id="sug-${t.id}" onclick="aiSuggestStep('${t.id}','step-${t.id}','sug-${t.id}')">Suggest</button>` : ''}
+        </div></div>
       <div><label>How long?</label><div class="seg">${SIZES.map(m =>
         `<button class="${t.size === m ? 'on' : ''}" onclick="setFieldAndRender('${t.id}','size',${m})">${sizeLabel(m)}</button>`).join('')}</div></div>
       <div><label>Energy it needs</label><div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
@@ -1173,6 +1590,10 @@ function renderTaskList() {
     if (snoozed.length) html += '<div class="section-label">Back tomorrow</div>' + snoozed.map(taskHTML).join('');
   }
   document.getElementById('task-list').innerHTML = html;
+  const missing = needsDetails().length;
+  const qs = document.getElementById('qs-btn');
+  qs.style.display = missing ? '' : 'none';
+  qs.textContent = `Quick sort (${missing} missing details)`;
   document.getElementById('loop-count').textContent = open.length ? `${open.length} open` : '';
 }
 
@@ -1457,7 +1878,12 @@ function renderFocus() {
     document.getElementById('focus-title').textContent = t.title;
     document.getElementById('focus-step').innerHTML = t.step
       ? `<strong>Start with:</strong> ${esc(t.step)}`
-      : 'What is the very first physical action? Open the file, find the email, stand up. Just do that.';
+      : `What is the very first physical action? Open the file, find the email, stand up. Just do that.
+        <div class="step-row" style="margin-top:8px">
+          <input type="text" id="focus-step-input" placeholder="e.g. open the file">
+          <button class="btn sm" onclick="saveFocusStep('${t.id}')">Save</button>
+          ${aiOn() ? `<button class="btn sm" id="focus-sug" onclick="aiSuggestStep('${t.id}','focus-step-input','focus-sug')">Suggest</button>` : ''}
+        </div>`;
   } else {
     const sel = document.getElementById('focus-select');
     const opts = activeTasks();
@@ -1469,6 +1895,13 @@ function renderFocus() {
     `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? 'Just 5 min' : m + ' min'}</button>`).join('');
   renderControls();
   updateClock();
+}
+
+function saveFocusStep(id) {
+  const v = document.getElementById('focus-step-input').value.trim();
+  if (!v) return;
+  updateField(id, 'step', v);
+  renderFocus();
 }
 
 function renderControls() {
@@ -1692,12 +2125,20 @@ function clearOldWins() {
 //  SETTINGS
 // ═══════════════════════════════════════════════════════
 
-function openSettings() {
+function openSettings(note) {
   openModal(`<h3>Settings</h3>
+    ${note ? `<div class="alert warn" style="margin:0 0 12px">${esc(note)}</div>` : ''}
     <p class="hint">Switch between Work and Home with the toggle at the top. Each device remembers the last one you used.</p>
     <label style="display:flex;gap:6px;align-items:center;margin-top:14px">
       <input type="checkbox" id="set-sound" ${state.settings.sound ? 'checked' : ''}> Sounds (timer chime, completion ding)
     </label>
+    <h4>AI (optional)</h4>
+    <p class="hint">Powers AI extract, AI fill, and Suggest. Get a key at console.anthropic.com. The key is saved only in this browser, never in a backup or synced, so add it on each device. Text you send with AI goes to Anthropic.</p>
+    <label class="hint" style="display:block;margin:8px 0 4px">Claude API key</label>
+    <input type="password" id="set-ai-key" value="${esc(ai.key || '')}" placeholder="sk-ant-..." autocomplete="off">
+    <label class="hint" style="display:block;margin:10px 0 4px">Model</label>
+    <select id="set-ai-model">${Object.entries(AI_MODELS).map(([k, v]) =>
+      `<option value="${k}" ${(ai.model || AI_DEFAULT_MODEL) === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <div class="row" style="margin-top:16px;justify-content:flex-end">
       <button class="btn" onclick="closeModal()">Cancel</button>
       <button class="btn primary" onclick="saveSettings()">Save</button>
@@ -1706,6 +2147,8 @@ function openSettings() {
 
 function saveSettings() {
   state.settings.sound = document.getElementById('set-sound').checked;
+  ai = { key: document.getElementById('set-ai-key').value.trim(), model: document.getElementById('set-ai-model').value };
+  try { if (ai.key) localStorage.setItem(AI_KEY, JSON.stringify(ai)); else localStorage.removeItem(AI_KEY); } catch {}
   save();
   closeModal();
   renderAll();
@@ -1734,8 +2177,10 @@ function toggleMenu(e) {
 function closeMenu() { document.getElementById('data-menu').classList.remove('open'); }
 document.addEventListener('click', e => { if (!e.target.closest('.menu')) closeMenu(); });
 
-function openModal(html) {
-  document.getElementById('modal').innerHTML = html;
+function openModal(html, wide) {
+  const m = document.getElementById('modal');
+  m.classList.toggle('wide', !!wide);
+  m.innerHTML = html;
   document.getElementById('overlay').classList.add('open');
 }
 function closeModal() { document.getElementById('overlay').classList.remove('open'); }
@@ -1784,6 +2229,7 @@ function renderAll() {
 window.addEventListener('storage', e => {
   if (e.key === STORE_KEY) { state = loadState(); LIST_NAMES.forEach(setBaseline); renderAll(); if (state.timer) ensureTick(); }
   if (e.key === SYNC_KEY) { sync = loadSync(); renderSyncPill(); }
+  if (e.key === AI_KEY) ai = loadAi();
 });
 
 renderAll();
