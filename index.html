@@ -138,8 +138,34 @@
     background: none; cursor: pointer; flex: none; padding: 0;
   }
   .check:hover { border-color: var(--green); background: var(--green-bg); }
-  .task-title { flex: 1; cursor: pointer; word-break: break-word; }
-  .task-step { font-size: 13px; color: var(--muted); margin: 2px 0 0 34px; }
+  .task-main { flex: 1; min-width: 0; }
+  .task-title { cursor: pointer; word-break: break-word; }
+  .task-main .chips { margin-top: 4px; }
+  .start-btn { flex: none; }
+  .task-steps { margin: 6px 0 0 34px; display: grid; gap: 6px; }
+  .step-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  .step-item span { word-break: break-word; }
+  .step-item.done span { text-decoration: line-through; opacity: 0.6; }
+  .step-check {
+    width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--muted);
+    background: none; padding: 0; cursor: pointer; flex: none; position: relative;
+  }
+  .step-check:hover { border-color: var(--green); }
+  .step-check.on { background: var(--green); border-color: var(--green); }
+  .step-check.on::after {
+    content: ''; position: absolute; left: 5px; top: 1px; width: 5px; height: 10px;
+    border: solid var(--card); border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .step-count { font-size: 12px; white-space: nowrap; opacity: 0.85; }
+  .step-arrow {
+    background: none; border: none; color: var(--muted); padding: 2px 4px; cursor: pointer;
+    margin-left: auto; flex: none; display: flex; align-items: center;
+  }
+  .step-arrow svg { transition: transform 0.15s; }
+  .step-arrow.open svg { transform: rotate(180deg); }
+  .step-edit { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .step-edit input { flex: 1; }
+  .step-edit.done input { text-decoration: line-through; opacity: 0.6; }
   .chips { display: flex; gap: 4px; flex-wrap: wrap; }
   .chip {
     font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px;
@@ -245,6 +271,7 @@
   }
   .step-row { display: flex; gap: 6px; align-items: center; }
   .step-row input { flex: 1; }
+  .btn.icon { padding: 4px 9px; line-height: 1.2; }
   .qs-title { font-size: 20px; font-weight: 600; margin: 6px 0 10px; word-break: break-word; }
   .qs-label { font-size: 12px; color: var(--muted); font-weight: 600; margin: 10px 0 4px; }
   .toast {
@@ -255,6 +282,25 @@
   .toast.show { transform: translateX(-50%) translateY(0); visibility: visible; }
   #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
 
+  .focus-sheet {
+    position: fixed; inset: 0; z-index: 40; background: var(--bg);
+    overflow-y: auto; display: none; padding-bottom: 40px;
+  }
+  .focus-sheet.open { display: block; }
+  body.sheet-open { overflow: hidden; }
+  .focus-now { text-align: center; margin: 10px auto 0; max-width: 480px; }
+  .focus-now .label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
+  .focus-now .text { font-size: 18px; font-weight: 600; margin: 4px 0 10px; word-break: break-word; }
+  .timer-bar {
+    position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 35;
+    background: var(--accent); color: var(--accent-ink); border: none; border-radius: 999px;
+    padding: 10px 18px; font-weight: 600; box-shadow: var(--shadow); cursor: pointer;
+    max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: none; font-variant-numeric: tabular-nums;
+  }
+  body.has-bar .timer-bar { display: block; }
+  body.has-bar .toast { bottom: 74px; }
+  body.has-bar main { padding-bottom: 120px; }
   .screen { display: none; }
   .screen.active { display: block; }
 
@@ -314,8 +360,8 @@
         <button class="btn sm" id="qs-btn" style="display:none" onclick="openQuickSort()"></button>
       </div>
       <div id="dump-box" style="display:none;margin-top:10px">
-        <p class="hint">Tap the mic on your keyboard and talk. Say "next" between loops, or put each one on its own line. You'll check everything before it's added.</p>
-        <textarea id="dump-text" placeholder="email Dana about the field trip, that's quick, next, grade the essays, that'll take forever and I need to be fresh, next, call the dentist today"></textarea>
+        <p class="hint">Tap the mic on your keyboard and talk. Say "next" between loops, or put each one on its own line. To list steps, say "steps" and put "then" between them. You'll check everything before it's added.</p>
+        <textarea id="dump-text" placeholder="email Dana about the field trip, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"></textarea>
         <div class="row" style="margin-top:8px">
           <button class="btn primary" id="ai-btn" onclick="aiExtract()">AI extract</button>
           <button class="btn" onclick="parseDump()">Sort it (no AI)</button>
@@ -387,11 +433,30 @@
     </div>
   </section>
 
-  <!-- FOCUS -->
-  <section class="screen" id="screen-focus">
+  <!-- WINS -->
+  <section class="screen" id="screen-wins">
     <div class="card">
+      <h2>Closed loops</h2>
+      <p class="hint">Proof that you did things. Look here when your brain says you did nothing today.</p>
+      <div class="stats">
+        <div class="stat"><div class="n" id="s-today">0</div><div class="l">today</div></div>
+        <div class="stat"><div class="n" id="s-week">0</div><div class="l">last 7 days</div></div>
+        <div class="stat"><div class="n" id="s-streak">0</div><div class="l">day streak</div></div>
+      </div>
+      <div id="wins-list" style="margin-top:12px"></div>
+    </div>
+  </section>
+</main>
+
+<!-- FOCUS: opens on top of whatever screen you were on -->
+<div class="focus-sheet" id="focus-sheet" role="dialog" aria-label="Focus">
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="margin-bottom:6px">
+        <h2 style="flex:1;margin:0">Focus</h2>
+        <button class="btn sm" onclick="closeFocusSheet()">Back to list</button>
+      </div>
       <div id="focus-empty">
-        <h2>Focus</h2>
         <p class="hint">Pick a loop first, or start a timer with nothing attached. Promise yourself only 5 minutes. Starting is the hard part, and you're allowed to stop after 5.</p>
         <select id="focus-select"></select>
       </div>
@@ -416,22 +481,9 @@
       <div class="presets" id="presets"></div>
       <div class="controls" id="timer-controls"></div>
     </div>
-  </section>
-
-  <!-- WINS -->
-  <section class="screen" id="screen-wins">
-    <div class="card">
-      <h2>Closed loops</h2>
-      <p class="hint">Proof that you did things. Look here when your brain says you did nothing today.</p>
-      <div class="stats">
-        <div class="stat"><div class="n" id="s-today">0</div><div class="l">today</div></div>
-        <div class="stat"><div class="n" id="s-week">0</div><div class="l">last 7 days</div></div>
-        <div class="stat"><div class="n" id="s-streak">0</div><div class="l">day streak</div></div>
-      </div>
-      <div id="wins-list" style="margin-top:12px"></div>
-    </div>
-  </section>
-</main>
+  </div>
+</div>
+<button class="timer-bar" id="timer-bar" onclick="openFocusSheet()"></button>
 
 <!-- Modal -->
 <div class="overlay" id="overlay">
@@ -488,6 +540,14 @@ function cleanTask(t) {
   if (!t || typeof t !== 'object' || typeof t.title !== 'string') return null;
   if (typeof t.id !== 'string' || !/^[a-z0-9]{1,40}$/.test(t.id)) t.id = uid();
   if (!t.created || isNaN(new Date(t.created))) t.created = new Date().toISOString();
+  if (t.steps !== undefined) {
+    const okStep = x => x && typeof x.text === 'string' && typeof x.id === 'string' && /^[a-z0-9]{1,40}$/.test(x.id);
+    if (!Array.isArray(t.steps)) delete t.steps;
+    else if (!t.steps.every(okStep)) {
+      t.steps = t.steps.filter(x => x && typeof x.text === 'string')
+        .map(x => ({ id: typeof x.id === 'string' && /^[a-z0-9]{1,40}$/.test(x.id) ? x.id : uid(), text: x.text, done: !!x.done }));
+    }
+  }
   return t;
 }
 
@@ -910,7 +970,7 @@ async function runSync(names) {
 // Re-draw with what came in from another device, unless you're typing in an editor right now
 function refreshAfterSync() {
   const a = document.activeElement;
-  if (a && (a.closest('#task-list') || a.closest('#modal') || a.closest('#focus-step')) && ['INPUT', 'TEXTAREA'].includes(a.tagName)) return;
+  if (a && (a.closest('#task-list') || a.closest('#modal') || a.closest('#focus-sheet')) && ['INPUT', 'TEXTAREA'].includes(a.tagName)) return;
   renderAll();
 }
 
@@ -1206,6 +1266,127 @@ function setFieldAndRender(id, field, value) {
   renderPickPool();
 }
 
+// ── Steps ───────────────────────────────────────────
+// A loop can have a checklist in `steps` ([{id, text, done}]).
+// `step` stays as a copy of the next unchecked step, so data from
+// before steps existed (and older copies of the app on another
+// device) still show the right thing. Change steps only through
+// setSteps() so the two never drift apart.
+
+function getSteps(t) {
+  if (!Array.isArray(t.steps)) return t.step ? [{ id: 'first', text: t.step, done: false }] : [];
+  const steps = t.steps.map(x => Object.assign({}, x));
+  // An older copy of the app may have changed `step` on its own
+  const cur = steps.find(x => !x.done);
+  if (t.step && !(cur && cur.text === t.step)) {
+    if (cur) cur.text = t.step; else steps.push({ id: 'first', text: t.step, done: false });
+  }
+  return steps;
+}
+
+function currentStep(t) { return getSteps(t).find(x => !x.done) || null; }
+
+function setSteps(t, steps) {
+  t.steps = steps.filter(x => x.text && x.text.trim())
+    .map(x => ({ id: x.id && x.id !== 'first' ? x.id : uid(), text: x.text.trim(), done: !!x.done }));
+  const cur = t.steps.find(x => !x.done);
+  t.step = cur ? cur.text : '';
+}
+
+const newSteps = texts => texts.map(x => (x || '').trim()).filter(Boolean).map(text => ({ id: uid(), text, done: false }));
+
+function toggleStep(id, sid) {
+  const t = findTask(id);
+  if (!t) return;
+  const steps = getSteps(t);
+  const st = steps.find(x => x.id === sid);
+  if (!st) return;
+  pushUndoSnapshot((st.done ? 'uncheck "' : 'check off "') + st.text + '"');
+  st.done = !st.done;
+  setSteps(t, steps);
+  save();
+  if (st.done) chime(660, 0.1);
+  renderAll();
+  if (st.done && steps.every(x => x.done)) askCloseLoop(id);
+}
+
+function askCloseLoop(id) {
+  const t = findTask(id);
+  if (!t || t.done) return;
+  openModal(`<h3>That was the last step</h3>
+    <p class="hint">${esc(t.title)}. Close the loop?</p>
+    <div class="row" style="margin-top:12px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Not yet</button>
+      <button class="btn primary" onclick="closeModal();closeLoopFromSteps('${t.id}')">Close it</button>
+    </div>`);
+}
+
+function closeLoopFromSteps(id) {
+  if (state.timer && state.timer.taskId === id) finishFocus(true);
+  else { completeTask(id); if (focusId === id) { focusId = null; closeFocusSheet(); } }
+}
+
+function addStep(id, input) {
+  const t = findTask(id);
+  const v = input.value.trim();
+  if (!t || !v) return;
+  const steps = getSteps(t);
+  steps.push({ id: uid(), text: v, done: false });
+  setSteps(t, steps);
+  save();
+  input.value = '';
+  renderAll();
+  document.getElementById('add-step-' + id)?.focus();
+}
+
+function editStep(id, sid, input) {
+  const t = findTask(id);
+  if (!t) return;
+  const steps = getSteps(t);
+  const st = steps.find(x => x.id === sid);
+  if (!st) return;
+  const v = input.value.trim();
+  if (!v) { input.value = st.text; return; }
+  st.text = v;
+  setSteps(t, steps);
+  save();
+}
+
+function removeStep(id, sid) {
+  const t = findTask(id);
+  if (!t) return;
+  const steps = getSteps(t);
+  const st = steps.find(x => x.id === sid);
+  if (!st) return;
+  pushUndoSnapshot('remove step "' + st.text + '"');
+  setSteps(t, steps.filter(x => x !== st));
+  save();
+  renderAll();
+}
+
+// Puts a step in front of the remaining ones, so it's the one that shows next
+function insertNextStep(id, text) {
+  const t = findTask(id);
+  text = (text || '').trim();
+  if (!t || !text) return;
+  const steps = getSteps(t);
+  const i = steps.findIndex(x => !x.done);
+  if (i >= 0 && steps[i].text === text) return;
+  steps.splice(i >= 0 ? i : steps.length, 0, { id: uid(), text, done: false });
+  setSteps(t, steps);
+  save();
+}
+
+const _openSteps = new Set();
+let _editorMore = false;
+
+function toggleStepsOpen(id) {
+  if (_openSteps.has(id)) _openSteps.delete(id); else _openSteps.add(id);
+  renderTaskList();
+}
+
+function startLoop(id) { goFocus(id, true); }
+
 // ── Capture ─────────────────────────────────────────
 
 document.getElementById('quick-add').addEventListener('keydown', e => {
@@ -1283,11 +1464,34 @@ function tidy(s) {
 
 const capFirst = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 
+// "steps" starts a step list only when it's clearly a cue ("steps, ...", "steps are", or a "then" follows),
+// so "fix the porch steps" stays a plain task
+const STEPS_KEEP_AFTER = /\b(?:the|my|a|front|back|porch|stair|these|those|some|few|two|three|\d+)\s*$/i;
+
+function findStepsCue(s) {
+  const re = /\bsteps\b/gi;
+  let m;
+  while ((m = re.exec(s))) {
+    const before = s.slice(0, m.index), after = s.slice(m.index + m[0].length);
+    if (STEPS_KEEP_AFTER.test(before)) continue;
+    if (/^\s*(?:are\b|is\b|[:,.;-])/i.test(after) || /\bthen\b/i.test(after)) {
+      return { index: m.index, rest: after.replace(/^\s*(?:are\b|is\b)?\s*[:,.;-]?\s*/i, '') };
+    }
+  }
+  return null;
+}
+
+const splitThen = text => text.split(/[\s,;.]*\b(?:and\s+)?then\b[\s,;:.]*/i).map(x => capFirst(tidy(x))).filter(Boolean);
+
 function parseLoop(raw) {
-  const item = { title: '', step: '', size: null, energy: null, today: false };
+  const item = { title: '', steps: [], size: null, energy: null, today: false };
   let s = raw;
-  const sm = s.match(STEP_RE);
-  if (sm) { item.step = tidy(s.slice(sm.index + sm[0].length)); s = s.slice(0, sm.index); }
+  const cue = findStepsCue(s);
+  if (cue) { item.steps = splitThen(cue.rest); s = s.slice(0, cue.index); }
+  else {
+    const sm = s.match(STEP_RE);
+    if (sm) { item.steps = splitThen(s.slice(sm.index + sm[0].length)); s = s.slice(0, sm.index); }
+  }
   if (TODAY_RE.test(s)) { item.today = true; s = s.replace(TODAY_RE, ' '); }
   for (const [re, val] of SIZE_RULES) {
     const m = s.match(re);
@@ -1297,7 +1501,6 @@ function parseLoop(raw) {
     if (re.test(s)) { item.energy = val; s = s.replace(re, ' '); break; }
   }
   item.title = capFirst(tidy(s)) || capFirst(raw.trim());
-  item.step = capFirst(item.step);
   return item;
 }
 
@@ -1325,37 +1528,41 @@ function loadAi() {
 let ai = loadAi();
 function aiOn() { return !!ai.key; }
 
-const AI_FIELDS = `For each loop:
-- step: the smallest first physical action, so small it feels silly and takes under 2 minutes (e.g. "open the email thread", "find the form"). If they said a first step, use theirs.
-- size: how long the whole task takes: "2" (2 minutes), "15", "30", or "60" (an hour or more). Use what they said; otherwise make your best guess.
+const FIRST_STEP = 'the smallest first physical action, so small it feels silly and takes under 2 minutes (e.g. "open the email thread", "find the form")';
+
+const SIZE_ENERGY = `- size: how long the whole task takes: "2" (2 minutes), "15", "30", or "60" (an hour or more). Use what they said; otherwise make your best guess.
 - energy: "low" (can do it tired), "med", or "high" (needs a fresh, focused brain). Use what they said; otherwise make your best guess.`;
 
 const EXTRACT_SYSTEM = `You turn a spoken brain dump into a list of open loops (tasks) for a personal task app. The text was dictated, so expect run-on sentences, filler words, and transcription mistakes.
 
-Splitting: the word "next" said between tasks means a new loop starts, and line breaks also separate loops. When they don't say "next", split on natural task boundaries. Don't merge separate tasks, and don't break one task into its sub-steps. If you're unsure whether something is a task, include it.
+Splitting: the word "next" said between tasks means a new loop starts, and line breaks also separate loops. When they don't say "next", split on natural task boundaries. Don't merge separate tasks. If you're unsure whether something is a task, include it.
 
-${AI_FIELDS}
-- title: a short name in the person's own words. Drop filler ("um", "I need to", "I gotta") and the time/energy/today remarks, but keep their phrasing. Don't add details they didn't say.
+For each loop:
+- title: a short name in the person's own words. Drop filler ("um", "I need to", "I gotta") and the time/energy/today/steps remarks, but keep their phrasing. Don't add details they didn't say.
+- steps: if they listed steps for this loop (usually after the word "steps", with "then" between them), return those, in order and in their words. Otherwise return exactly one step: ${FIRST_STEP}. If they said a first step, use theirs. Don't make up extra steps.
+${SIZE_ENERGY}
 - today: true only if they said it's for today, tonight, urgent, or ASAP.`;
 
-const FILL_SYSTEM = `You fill in missing details for loops (tasks) in a personal task app. You get a numbered list of loop titles, some with a first step already written. Return one entry per loop with the same index. Keep any first step that's already written exactly as it is.
+const FILL_SYSTEM = `You fill in missing details for loops (tasks) in a personal task app. You get a numbered list of loop titles, some with a next step already written. Return one entry per loop with the same index.
 
-${AI_FIELDS}`;
+For each loop:
+- step: ${FIRST_STEP}. If a next step is already written, return it exactly as it is.
+${SIZE_ENERGY}`;
 
-const STEP_SYSTEM = `You help someone get started on a task they're stuck on. Given the task, reply with the smallest first physical action, so small it feels silly and takes under 2 minutes (e.g. "open the email thread", "put the form on the desk"). Use plain words, no more than about 10 words.`;
+const BREAK_SYSTEM = `You help someone break a task they're putting off into small steps. Return 3 to 5 steps in order, or just 1 or 2 if the task is already small. The first step is ${FIRST_STEP}. Each step is a short, concrete action in plain words, about 10 words at most. Leave out steps they've already done.`;
 
-const AI_FIELD_SCHEMA = {
-  step: { type: 'string' },
+const SIZE_ENERGY_SCHEMA = {
   size: { type: 'string', enum: ['2', '15', '30', '60'] },
   energy: { type: 'string', enum: ['low', 'med', 'high'] }
 };
+const STEP_LIST = { type: 'array', items: { type: 'string' } };
 const listSchema = (props, required) => ({
   type: 'object', additionalProperties: false, required: ['loops'],
   properties: { loops: { type: 'array', items: { type: 'object', additionalProperties: false, required, properties: props } } }
 });
-const EXTRACT_SCHEMA = listSchema(Object.assign({ title: { type: 'string' } }, AI_FIELD_SCHEMA, { today: { type: 'boolean' } }), ['title', 'step', 'size', 'energy', 'today']);
-const FILL_SCHEMA = listSchema(Object.assign({ index: { type: 'integer' } }, AI_FIELD_SCHEMA), ['index', 'step', 'size', 'energy']);
-const STEP_SCHEMA = { type: 'object', additionalProperties: false, required: ['step'], properties: { step: { type: 'string' } } };
+const EXTRACT_SCHEMA = listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA, { today: { type: 'boolean' } }), ['title', 'steps', 'size', 'energy', 'today']);
+const FILL_SCHEMA = listSchema(Object.assign({ index: { type: 'integer' }, step: { type: 'string' } }, SIZE_ENERGY_SCHEMA), ['index', 'step', 'size', 'energy']);
+const BREAK_SCHEMA = { type: 'object', additionalProperties: false, required: ['steps'], properties: { steps: STEP_LIST } };
 
 async function callClaude(system, text, schema) {
   const model = AI_MODELS[ai.model] ? ai.model : AI_DEFAULT_MODEL;
@@ -1395,8 +1602,9 @@ async function callClaude(system, text, schema) {
 
 // Turn Claude's answer into the app's field values
 function fromAi(x) {
+  const texts = Array.isArray(x.steps) ? x.steps : [x.step];
   return {
-    step: typeof x.step === 'string' ? x.step.trim() : '',
+    steps: texts.filter(v => typeof v === 'string').map(v => capFirst(v.trim())).filter(Boolean),
     size: SIZES.includes(Number(x.size)) ? Number(x.size) : null,
     energy: ENERGY[x.energy] ? x.energy : null
   };
@@ -1435,29 +1643,65 @@ function aiFillMissing() {
   if (needAiKey()) return;
   const tasks = needsDetails();
   if (!tasks.length) { toast('Every loop already has its details.'); return; }
-  const text = tasks.map((t, i) => `${i + 1}. ${t.title}${t.step ? ` (first step already: ${t.step})` : ''}`).join('\n');
+  const text = tasks.map((t, i) => { const c = currentStep(t); return `${i + 1}. ${t.title}${c ? ` (next step already: ${c.text})` : ''}`; }).join('\n');
   withBusy('qs-ai', 'Thinking...', async () => {
     const r = await callClaude(FILL_SYSTEM, text, FILL_SCHEMA);
     const byIndex = new Map((r.loops || []).map(x => [Number(x.index), fromAi(x)]));
     const items = tasks.map((t, i) => {
       const g = byIndex.get(i + 1) || {};
-      return { id: t.id, title: t.title, step: t.step || g.step || '', size: t.size || g.size || null, energy: t.energy || g.energy || null };
+      const has = getSteps(t).length > 0;
+      return { id: t.id, title: t.title, hasSteps: has, steps: has ? [] : (g.steps || []).slice(0, 1), size: t.size || g.size || null, energy: t.energy || g.energy || null };
     });
     openReview(items, 'fill');
   });
 }
 
 // One loop: suggest a first step and drop it into an input box
-function aiSuggestStep(id, inputId, btnId) {
+// Asks Claude to split one loop into small steps, then lets you check them first
+function aiBreakDown(id, btnId) {
   const t = findTask(id);
   if (!t || needAiKey()) return;
-  withBusy(btnId, '...', async () => {
-    const r = await callClaude(STEP_SYSTEM, t.title, STEP_SCHEMA);
-    const step = capFirst((r.step || '').trim());
-    if (!step) return;
-    const input = document.getElementById(inputId);
-    if (input) { input.value = step; input.focus(); }
+  const steps = getSteps(t);
+  const done = steps.filter(x => x.done).map(x => x.text);
+  const left = steps.filter(x => !x.done).map(x => x.text);
+  let text = 'Task: ' + t.title;
+  if (done.length) text += '\nAlready done: ' + done.join('; ');
+  if (left.length) text += '\nSteps they wrote so far (use or improve them): ' + left.join('; ');
+  withBusy(btnId, 'Thinking...', async () => {
+    const r = await callClaude(BREAK_SYSTEM, text, BREAK_SCHEMA);
+    const got = fromAi(r).steps;
+    if (!got.length) { toast('Claude did not come up with steps for that one.'); return; }
+    _bd = { id, steps: got, replacing: left.length };
+    renderBreakDown();
   });
+}
+
+let _bd = null;
+
+function renderBreakDown() {
+  const t = findTask(_bd.id);
+  if (!t) return;
+  openModal(`<h3>Break it down</h3>
+    <p class="hint">${esc(t.title)}. Fix or remove anything. ${_bd.replacing ? 'These replace the steps you haven\'t checked off yet.' : ''}</p>
+    ${_bd.steps.map((v, j) => `<div class="step-edit">
+      <input type="text" value="${esc(v)}" aria-label="Step" oninput="_bd.steps[${j}]=this.value">
+      <button class="btn sm icon" title="Remove step" aria-label="Remove step" onclick="_bd.steps.splice(${j},1);renderBreakDown()">&times;</button>
+    </div>`).join('')}
+    <div class="review-foot">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="commitBreakDown()">Use these steps</button>
+    </div>`, true);
+}
+
+function commitBreakDown() {
+  const t = _bd && findTask(_bd.id);
+  if (!t) { closeModal(); return; }
+  pushUndoSnapshot('break down "' + t.title + '"');
+  setSteps(t, getSteps(t).filter(x => x.done).concat(newSteps(_bd.steps)));
+  save();
+  _bd = null;
+  closeModal();
+  renderAll();
 }
 
 // \u2500\u2500 Review \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -1481,7 +1725,7 @@ function renderReview() {
           : `<div class="review-title">${esc(it.title)}</div>`}
         <button class="btn sm" onclick="reviewRemove(${i})">${adding ? 'Remove' : 'Skip'}</button>
       </div>
-      <input type="text" value="${esc(it.step)}" placeholder="Smallest first step (optional)" oninput="_review.items[${i}].step=this.value" aria-label="First step">
+      ${reviewStepsHTML(it, i)}
       <div class="seg">${SIZES.map(m =>
         `<button class="${it.size === m ? 'on' : ''}" onclick="reviewSet(${i},'size',${m})">${sizeLabel(m)}</button>`).join('')}</div>
       <div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
@@ -1497,6 +1741,17 @@ function renderReview() {
       <button class="btn" onclick="closeModal()">Cancel</button>
       <button class="btn primary" ${n ? '' : 'disabled'} onclick="commitReview()">${go}</button>
     </div>`, true);
+}
+
+function reviewStepsHTML(it, i) {
+  if (it.hasSteps) return '<div class="hint" style="margin:0">Already has steps.</div>';
+  const list = it.steps.length ? it.steps : [''];
+  const canAdd = _review.mode === 'add';
+  return list.map((v, j) => `<div class="step-edit" style="margin-top:0">
+      <input type="text" value="${esc(v)}" placeholder="${j ? 'Step' : 'Smallest first step (optional)'}" aria-label="Step" oninput="_review.items[${i}].steps[${j}]=this.value">
+      ${list.length > 1 ? `<button class="btn sm icon" title="Remove step" aria-label="Remove step" onclick="_review.items[${i}].steps.splice(${j},1);renderReview()">&times;</button>` : ''}
+    </div>`).join('') +
+    (canAdd ? `<div><button class="btn sm" onclick="_review.items[${i}].steps.length||_review.items[${i}].steps.push('');_review.items[${i}].steps.push('');renderReview()">Add a step</button></div>` : '');
 }
 
 function reviewSet(i, field, value) {
@@ -1529,7 +1784,7 @@ function commitReview() {
     items.map((it, i) => [it, wantsToday[i]]).reverse().forEach(([it, today]) => {
       const t = addTask(it.title);
       if (!t) return;
-      t.step = (it.step || '').trim();
+      setSteps(t, newSteps(it.steps || []));
       t.size = it.size || null;
       t.energy = it.energy || null;
       t.today = today;
@@ -1547,7 +1802,7 @@ function commitReview() {
     items.forEach(it => {
       const t = findTask(it.id);
       if (!t) return;
-      t.step = (it.step || '').trim();
+      if (!it.hasSteps && !getSteps(t).length) setSteps(t, newSteps(it.steps || []));
       t.size = it.size || null;
       t.energy = it.energy || null;
     });
@@ -1588,11 +1843,12 @@ function renderQuickSort() {
     <div class="qs-label">Energy it needs</div>
     <div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
       `<button class="${t.energy === k ? 'on' : ''}" onclick="qsSet('energy','${k}')">${v}</button>`).join('')}</div>
-    <div class="qs-label">Smallest first step (optional)</div>
+    ${currentStep(t)
+      ? `<div class="qs-label">Next step</div><div>${esc(currentStep(t).text)}</div>`
+      : `<div class="qs-label">Smallest first step (optional)</div>
     <div class="step-row">
-      <input type="text" id="qs-step" value="${esc(t.step)}" placeholder="e.g. open the email" onchange="updateField('${t.id}','step',this.value.trim())">
-      ${aiOn() ? `<button class="btn sm" id="qs-suggest" onclick="aiSuggestStep('${t.id}','qs-step','qs-suggest')">Suggest</button>` : ''}
-    </div>
+      <input type="text" id="qs-step" placeholder="e.g. open the email" onchange="qsSaveStep('${t.id}',this)">
+    </div>`}
     <div class="review-foot">
       <button class="btn" id="qs-ai" onclick="aiFillMissing()">${aiOn() ? 'Let AI fill all' : 'AI fill all'}</button>
       <div class="spacer"></div>
@@ -1616,10 +1872,16 @@ function qsNext() {
   if (!_qs) return;
   clearTimeout(_qs.advance);
   const input = document.getElementById('qs-step');
-  const t = findTask(_qs.ids[_qs.i]);
-  if (input && t && input.value.trim() !== (t.step || '')) updateField(t.id, 'step', input.value.trim());
+  if (input) qsSaveStep(_qs.ids[_qs.i], input);
   _qs.i++;
   renderQuickSort();
+}
+
+function qsSaveStep(id, input) {
+  const t = findTask(id);
+  if (!t || !input.value.trim() || getSteps(t).length) return;
+  setSteps(t, newSteps([input.value]));
+  save();
 }
 
 function closeQuickSort(quiet) {
@@ -1639,6 +1901,14 @@ function esc(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+const ARROW = '<svg width="14" height="9" viewBox="0 0 14 9" aria-hidden="true"><path d="M1.5 1.5l5.5 5.5 5.5-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function stepItemHTML(t, st, extra) {
+  return `<div class="step-item ${st.done ? 'done' : ''}">
+      <button class="step-check ${st.done ? 'on' : ''}" title="${st.done ? 'Mark not done' : 'Step done'}" onclick="toggleStep('${t.id}','${st.id}')"></button>
+      <span>${esc(st.text)}</span>${extra || ''}</div>`;
+}
+
 function taskHTML(t) {
   const chips = [];
   if (t.today) chips.push('<span class="chip today">Today</span>');
@@ -1649,33 +1919,63 @@ function taskHTML(t) {
   if (age >= OLD_DAYS) chips.push(`<span class="chip old">${age} days open</span>`);
 
   const editing = _openEditor === t.id;
+  const steps = getSteps(t);
   let html = `<div class="task" data-id="${t.id}">
     <div class="task-top">
       <button class="check" title="Done" onclick="completeTask('${t.id}')"></button>
-      <div class="task-title" onclick="toggleEditor('${t.id}')">${esc(t.title)}</div>
-      <div class="chips">${chips.join('')}</div>
+      <div class="task-main">
+        <div class="task-title" onclick="toggleEditor('${t.id}')">${esc(t.title)}</div>
+        ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
+      </div>
+      <button class="btn sm start-btn" onclick="startLoop('${t.id}')">Start</button>
     </div>`;
-  if (t.step && !editing) html += `<div class="task-step">First step: ${esc(t.step)}</div>`;
+
+  if (steps.length && !editing) {
+    const open = _openSteps.has(t.id) && steps.length > 1;
+    const arrow = steps.length > 1
+      ? `<button class="step-arrow ${open ? 'open' : ''}" title="${open ? 'Hide steps' : 'Show all steps'}" onclick="toggleStepsOpen('${t.id}')">${ARROW}</button>` : '';
+    html += '<div class="task-steps">';
+    if (open) {
+      html += steps.map((st, i) => stepItemHTML(t, st, i === 0 ? arrow : '')).join('');
+    } else {
+      const i = steps.findIndex(x => !x.done);
+      const count = steps.length > 1 ? `<span class="step-count">${i < 0 ? steps.length : i + 1} of ${steps.length}</span>` : '';
+      html += i < 0
+        ? `<div class="step-item"><span>All steps done.</span>${arrow}</div>`
+        : stepItemHTML(t, steps[i], count + arrow);
+    }
+    html += '</div>';
+  }
+
   if (editing) {
+    const stepRows = steps.map(st => `<div class="step-edit ${st.done ? 'done' : ''}">
+        <button class="step-check ${st.done ? 'on' : ''}" title="${st.done ? 'Mark not done' : 'Step done'}" onclick="toggleStep('${t.id}','${st.id}')"></button>
+        <input type="text" value="${esc(st.text)}" aria-label="Step" onchange="editStep('${t.id}','${st.id}',this)">
+        <button class="btn sm icon" title="Remove step" aria-label="Remove step" onclick="removeStep('${t.id}','${st.id}')">&times;</button>
+      </div>`).join('');
     html += `<div class="task-edit">
       <div><label>Name</label><input type="text" value="${esc(t.title)}" onchange="renameTask('${t.id}',this)"></div>
-      <div><label>Smallest first step (so small it feels silly)</label>
-        <div class="step-row">
-          <input type="text" id="step-${t.id}" value="${esc(t.step)}" placeholder="e.g. open the email" onchange="updateField('${t.id}','step',this.value.trim())">
-          ${aiOn() ? `<button class="btn sm" id="sug-${t.id}" onclick="aiSuggestStep('${t.id}','step-${t.id}','sug-${t.id}')">Suggest</button>` : ''}
+      <div><label>Steps</label>
+        ${stepRows}
+        <div class="step-edit">
+          <input type="text" id="add-step-${t.id}" placeholder="${steps.length ? 'Add a step' : 'Smallest first step (so small it feels silly)'}"
+            onkeydown="if(event.key==='Enter')addStep('${t.id}',this)" onchange="addStep('${t.id}',this)">
+          ${aiOn() ? `<button class="btn sm" id="bd-${t.id}" onclick="aiBreakDown('${t.id}','bd-${t.id}')">Break it down</button>` : ''}
         </div></div>
       <div><label>How long?</label><div class="seg">${SIZES.map(m =>
         `<button class="${t.size === m ? 'on' : ''}" onclick="setFieldAndRender('${t.id}','size',${m})">${sizeLabel(m)}</button>`).join('')}</div></div>
       <div><label>Energy it needs</label><div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
         `<button class="${t.energy === k ? 'on' : ''}" onclick="setFieldAndRender('${t.id}','energy','${k}')">${v}</button>`).join('')}</div></div>
       <div class="row">
-        <button class="btn sm" onclick="toggleToday('${t.id}')">${t.today ? 'Remove from today' : 'Pick for today'}</button>
-        <button class="btn sm" onclick="goFocus('${t.id}')">Focus on this</button>
+        <button class="btn sm ${t.today ? 'primary' : ''}" onclick="toggleToday('${t.id}')">${t.today ? 'Picked for today' : 'Pick for today'}</button>
+        <button class="btn sm" onclick="_editorMore=!_editorMore;renderTaskList()">${_editorMore ? 'Less' : 'More'}</button>
+        <div class="spacer"></div>
+        <button class="btn sm primary" onclick="toggleEditor(null)">Done</button>
+      </div>
+      ${_editorMore ? `<div class="row">
         <button class="btn sm" onclick="snooze('${t.id}')">Not today</button>
         <button class="btn sm danger" onclick="letGo('${t.id}')">Let it go</button>
-        <div class="spacer"></div>
-        <button class="btn sm" onclick="toggleEditor(null)">Close</button>
-      </div>
+      </div>` : ''}
     </div>`;
   }
   return html + '</div>';
@@ -1683,6 +1983,7 @@ function taskHTML(t) {
 
 function toggleEditor(id) {
   _openEditor = _openEditor === id ? null : id;
+  _editorMore = false;
   renderTaskList();
 }
 
@@ -1698,7 +1999,7 @@ function renderTaskList() {
     html = '<div class="empty">Nothing open. Either you are done, or it is all still in your head. Type it above.</div>';
   } else {
     html += `<div class="section-label">Today (${today.length}/${TODAY_LIMIT})</div>`;
-    html += today.length ? today.map(taskHTML).join('') : '<div class="empty">Pick up to 3. Tap a loop and choose "Pick for today."</div>';
+    html += today.length ? today.map(taskHTML).join('') : '<div class="empty">Pick up to 3. Tap a loop\'s name and choose "Pick for today."</div>';
     if (quick.length) {
       html += '<div class="section-label">2-minute loops: just do these now</div>' + quick.map(taskHTML).join('');
     }
@@ -1787,7 +2088,8 @@ function renderDeck() {
   }
   const [a, b] = deck;
   const card = (t, cls) => {
-    let s = t.step ? `First step: ${esc(t.step)}` : '';
+    const steps = getSteps(t), i = steps.findIndex(x => !x.done);
+    let s = i < 0 ? '' : `${steps.length > 1 ? `Step ${i + 1} of ${steps.length}` : 'First step'}: ${esc(steps[i].text)}`;
     if (t.skips >= 3) s += `<br><br>Skipped ${t.skips} times. Maybe it needs a smaller first step, or maybe you can let it go.`;
     const meta = [t.size ? sizeLabel(t.size) : '', t.energy ? ENERGY[t.energy] : ''].filter(Boolean).join(' / ');
     return `<div class="swipe-card ${cls}" data-id="${t.id}">
@@ -1861,7 +2163,7 @@ function snoozeTop() {
 }
 
 document.addEventListener('keydown', e => {
-  if (!document.getElementById('screen-pick').classList.contains('active') || pickMode !== 'swipe') return;
+  if (!document.getElementById('screen-pick').classList.contains('active') || pickMode !== 'swipe' || sheetOpen()) return;
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
   if (e.key === 'ArrowRight') swipeDecide(true);
   if (e.key === 'ArrowLeft') swipeDecide(false);
@@ -1961,7 +2263,7 @@ function randomPick() {
 
 function startFromPick() {
   if (!pickedId || !findTask(pickedId)) return;
-  goFocus(pickedId);
+  goFocus(pickedId, true);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1976,13 +2278,15 @@ let chosenMinutes = 5;
 let tick = null;
 const CIRC = 276.46;
 
-function goFocus(id) {
+// Opens Focus on top of the list. With start, the timer begins right away.
+function goFocus(id, start) {
   if (state.timer && state.timer.taskId !== id && !confirm('A timer is already running. Switch to this loop?')) return;
   if (state.timer && state.timer.taskId !== id) stopTimer(true);
   focusId = id;
   const t = findTask(id);
   if (t && t.size && !state.timer) chosenMinutes = Math.min(25, Math.max(5, t.size === 2 ? 5 : t.size));
-  showScreen('focus');
+  openFocusSheet();
+  if (start && !state.timer) startTimer();
 }
 
 function renderFocus() {
@@ -1992,14 +2296,26 @@ function renderFocus() {
   document.getElementById('focus-on').style.display = t ? 'block' : 'none';
   if (t) {
     document.getElementById('focus-title').textContent = t.title;
-    document.getElementById('focus-step').innerHTML = t.step
-      ? `<strong>Start with:</strong> ${esc(t.step)}`
-      : `What is the very first physical action? Open the file, find the email, stand up. Just do that.
-        <div class="step-row" style="margin-top:8px">
-          <input type="text" id="focus-step-input" placeholder="e.g. open the file">
-          <button class="btn sm" onclick="saveFocusStep('${t.id}')">Save</button>
-          ${aiOn() ? `<button class="btn sm" id="focus-sug" onclick="aiSuggestStep('${t.id}','focus-step-input','focus-sug')">Suggest</button>` : ''}
+    const steps = getSteps(t);
+    const i = steps.findIndex(x => !x.done);
+    const el = document.getElementById('focus-step');
+    if (i >= 0) {
+      el.innerHTML = `<div class="focus-now">
+          <div class="label">${steps.length > 1 ? `Step ${i + 1} of ${steps.length}` : 'Start with'}</div>
+          <div class="text">${esc(steps[i].text)}</div>
+          <button class="btn primary" onclick="toggleStep('${t.id}','${steps[i].id}')">Step done</button>
         </div>`;
+    } else if (steps.length) {
+      el.innerHTML = `<div class="focus-now"><div class="text">All steps done.</div>
+          <button class="btn primary" onclick="closeLoopFromSteps('${t.id}')">Close the loop</button></div>`;
+    } else {
+      el.innerHTML = `What is the very first physical action? Open the file, find the email, stand up. Just do that.
+        <div class="step-row" style="margin-top:8px">
+          <input type="text" id="focus-step-input" placeholder="e.g. open the file" onkeydown="if(event.key==='Enter')saveFocusStep('${t.id}')">
+          <button class="btn sm" onclick="saveFocusStep('${t.id}')">Save</button>
+          ${aiOn() ? `<button class="btn sm" id="focus-bd" onclick="aiBreakDown('${t.id}','focus-bd')">Break it down</button>` : ''}
+        </div>`;
+    }
   } else {
     const sel = document.getElementById('focus-select');
     const opts = activeTasks();
@@ -2016,8 +2332,8 @@ function renderFocus() {
 function saveFocusStep(id) {
   const v = document.getElementById('focus-step-input').value.trim();
   if (!v) return;
-  updateField(id, 'step', v);
-  renderFocus();
+  insertNextStep(id, v);
+  renderAll();
 }
 
 function renderControls() {
@@ -2034,7 +2350,7 @@ function renderControls() {
   } else {
     c.innerHTML = `<button class="btn big" onclick="togglePause()">${tm.pausedLeft != null ? 'Resume' : 'Pause'}</button>
       <button class="btn big" onclick="addMinutes(5)">+5 min</button>` +
-      (hasTask ? `<button class="btn primary big" onclick="finishFocus(true)">Done</button>` : '') +
+      (hasTask ? `<button class="btn primary big" onclick="finishFocus(true)">Close loop</button>` : '') +
       `<button class="btn big" onclick="finishFocus(false)">Stop</button>`;
   }
 }
@@ -2079,6 +2395,7 @@ function stopTimer(silent) {
   state.timer = null;
   save();
   document.title = 'Open Loops';
+  updateTimerBar();
   if (!silent) renderFocus();
 }
 
@@ -2086,23 +2403,23 @@ function finishFocus(completed) {
   const id = state.timer ? state.timer.taskId : focusId;
   stopTimer(true);
   if (completed && id) {
-    completeTask(id);
     focusId = null;
-    renderFocus();
+    closeFocusSheet();
+    completeTask(id);
     return;
   }
-  renderFocus();
-  if (id && findTask(id)) {
-    const t = findTask(id);
-    openModal(`<h3>Leave a note for future you</h3>
-      <p class="hint">Where did you stop? What is the next tiny step? This makes it much easier to start again.</p>
-      <input type="text" id="park-note" value="${esc(t.step)}" placeholder="e.g. finish paragraph 2">
-      <div class="row" style="margin-top:12px;justify-content:flex-end">
-        <button class="btn" onclick="closeModal()">Skip</button>
-        <button class="btn primary" onclick="updateField('${id}','step',document.getElementById('park-note').value.trim());closeModal();renderAll();toast('Saved. It will be waiting for you.')">Save note</button>
-      </div>`);
-    setTimeout(() => document.getElementById('park-note')?.focus(), 50);
-  }
+  if (!(id && findTask(id))) { renderFocus(); updateTimerBar(); return; }
+  closeFocusSheet();
+  const t = findTask(id);
+  const cur = currentStep(t);
+  openModal(`<h3>Leave a note for future you</h3>
+    <p class="hint">Where did you stop? What is the next tiny step? This makes it much easier to start again.</p>
+    <input type="text" id="park-note" value="${esc(cur ? cur.text : '')}" placeholder="e.g. finish paragraph 2">
+    <div class="row" style="margin-top:12px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Skip</button>
+      <button class="btn primary" onclick="insertNextStep('${id}',document.getElementById('park-note').value);closeModal();renderAll();toast('Saved. It will be waiting for you.')">Save note</button>
+    </div>`);
+  setTimeout(() => document.getElementById('park-note')?.focus(), 50);
 }
 
 function fmt(ms) {
@@ -2119,6 +2436,7 @@ function updateClock() {
   document.getElementById('ring').style.strokeDashoffset = CIRC * (1 - left / total);
   if (tm && !tm.finished) document.title = `${fmt(left)} ${tm.pausedLeft != null ? '(paused)' : ''} Open Loops`;
   if (tm && !tm.finished && tm.pausedLeft == null && left <= 0) timerDone();
+  updateTimerBar();
 }
 
 function ensureTick() {
@@ -2140,7 +2458,7 @@ function timerDone() {
       new Notification('Time is up', { body: t ? t.title : 'Focus session done' });
     }
   } catch {}
-  renderFocus();
+  openFocusSheet();
 }
 
 // ── Sound ───────────────────────────────────────────
@@ -2275,13 +2593,42 @@ function saveSettings() {
 // ═══════════════════════════════════════════════════════
 
 function showScreen(name) {
+  if (name === 'focus') { openFocusSheet(); return; }
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
   if (name === 'pick') { renderFilterButtons(); renderPickPool(); }
-  if (name === 'focus') renderFocus();
   if (name === 'wins') renderWins();
   window.scrollTo(0, 0);
 }
+
+function sheetOpen() { return document.getElementById('focus-sheet').classList.contains('open'); }
+
+function openFocusSheet() {
+  document.getElementById('focus-sheet').classList.add('open');
+  document.body.classList.add('sheet-open');
+  renderFocus();
+  updateTimerBar();
+}
+
+// Back to exactly where you were. A running timer keeps going in the bar at the bottom.
+function closeFocusSheet() {
+  document.getElementById('focus-sheet').classList.remove('open');
+  document.body.classList.remove('sheet-open');
+  updateTimerBar();
+  renderAll();
+}
+
+function updateTimerBar() {
+  const tm = state.timer;
+  const show = !!tm && !sheetOpen();
+  document.body.classList.toggle('has-bar', show);
+  if (!show) return;
+  const t = tm.taskId ? findTask(tm.taskId) : null;
+  const time = tm.finished ? 'Time is up' : fmt(timeLeft()) + (tm.pausedLeft != null ? ' paused' : '');
+  document.getElementById('timer-bar').textContent = time + (t ? '  |  ' + t.title : '  |  Focus');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetOpen() && !document.getElementById('overlay').classList.contains('open')) closeFocusSheet(); });
 
 document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => showScreen(b.dataset.screen)));
 
@@ -2337,8 +2684,9 @@ function renderAll() {
   renderBackupNote();
   const active = document.querySelector('.screen.active')?.id;
   if (active === 'screen-pick') renderPickPool();
-  if (active === 'screen-focus') renderFocus();
   if (active === 'screen-wins') renderWins();
+  if (sheetOpen()) renderFocus();
+  updateTimerBar();
 }
 
 // Keep two open tabs of the same page in step
@@ -2349,7 +2697,7 @@ window.addEventListener('storage', e => {
 });
 
 renderAll();
-if (state.timer) { focusId = state.timer.taskId; ensureTick(); showScreen('focus'); }
+if (state.timer) { focusId = state.timer.taskId; ensureTick(); openFocusSheet(); }
 document.getElementById('quick-add').focus();
 if (syncOn()) runSync(LIST_NAMES);
 </script>
