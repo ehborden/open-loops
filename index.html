@@ -74,6 +74,8 @@
   .sync-pill.error { color: var(--red); border-color: var(--red); }
   .sync-pill.off { color: var(--muted); }
   .spacer { flex: 1; }
+  /* Kept together on the right, so the Data menu always opens on screen when the header wraps */
+  .head-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
   nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 10px; }
   nav.tabs button {
     border: 1px solid var(--line); background: var(--card); border-radius: 999px;
@@ -271,7 +273,7 @@
     <div class="head-row">
       <div class="brand">Open Loops</div>
       <div class="seg list-toggle" id="list-toggle"></div>
-      <div class="spacer"></div>
+      <div class="head-actions">
       <button class="btn sm sync-pill off" id="sync-pill" onclick="openSync()">Sync off</button>
       <button class="btn sm" id="undo-btn" disabled onclick="undoLastAction()" title="Nothing to undo yet">Undo</button>
       <div class="menu">
@@ -285,6 +287,7 @@
           <button onclick="openSettings();closeMenu()">Settings</button>
           <div class="menu-note" id="backup-note"></div>
         </div>
+      </div>
       </div>
     </div>
     <nav class="tabs" id="tabs">
