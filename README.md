@@ -32,6 +32,6 @@ Tap "Talk it out," then use the mic on your phone keyboard and talk. Say "next" 
 
 - Each loop can have a checklist of steps. The list shows the next one; tap the arrow to see them all. Tap a box to check a step off. Checking off the last one asks if you want to close the loop.
 - Tap a loop's name to edit it: name, steps, time, energy, and Pick for today. Not today and Let it go are under More.
-- Start begins a timer right away. Focus opens on top of whatever screen you were on, with a Step done button. Back to list keeps the timer going in a bar at the bottom; tap the bar to return.
+- Start begins a timer right away. On a computer, Focus is always on the right with your Wins under it, so the list stays in view. On a phone, Focus shows as a card at the top of the page; if you scroll down while a timer runs, a bar at the bottom shows the time, and tapping it scrolls back up.
 
 The AI features (AI extract, AI fill, Break it down) need a Claude API key (Data > Settings). Like the GitHub token, it's saved only in that browser. It's never in a backup or synced, so you add it on each device. Only the text you send with AI goes to Anthropic.

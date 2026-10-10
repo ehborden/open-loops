@@ -282,12 +282,45 @@
   .toast.show { transform: translateX(-50%) translateY(0); visibility: visible; }
   #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
 
-  .focus-sheet {
-    position: fixed; inset: 0; z-index: 40; background: var(--bg);
-    overflow-y: auto; display: none; padding-bottom: 40px;
+  /* Layout: one column on a phone, list + Focus/Wins side by side on a computer */
+  .layout { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; }
+  .layout > main.wrap { max-width: none; margin: 0; width: 100%; }
+  .side { order: -1; padding: 0 16px; }
+  .focus-card { display: none; scroll-margin-top: var(--head-h, 110px); }
+  body.focus-active .focus-card { display: block; }
+  .wins-mini { display: none; }
+  .wins-mini .stat .n { font-size: 22px; }
+  .wins-mini .win { font-size: 14px; }
+  .steps-today { font-size: 14px; color: var(--muted); margin: 10px 0 0; text-align: center; }
+  .focus-card .btn.big { padding: 9px 16px; font-size: 16px; border-radius: 12px; }
+  .focus-card .focus-step { margin-top: 8px; padding: 8px 12px; }
+  .focus-card .focus-now { margin-top: 0; }
+  .focus-card .focus-now .text { margin: 2px 0 8px; }
+  @media (max-width: 979px) {
+    .focus-card .working-on { display: none; }
+    .focus-card .focus-task { font-size: 19px; margin-top: 0; }
+    .focus-card .timer-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+    .focus-card .ring-wrap { width: 112px; height: 112px; margin: 0; flex: none; }
+    .focus-card .ring-time .big { font-size: 26px; }
+    .focus-card .ring-time .small { font-size: 11px; }
+    .focus-card .timer-side { flex: 1; min-width: 0; }
+    .focus-card .presets, .focus-card .controls { justify-content: flex-start; margin-top: 0; gap: 6px; }
+    .focus-card .presets + .controls { margin-top: 8px; }
+    .focus-card .btn.big { padding: 8px 12px; font-size: 15px; }
   }
-  .focus-sheet.open { display: block; }
-  body.sheet-open { overflow: hidden; }
+  @media (min-width: 980px) {
+    header .wrap, .layout { max-width: 1200px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
+    .side {
+      order: 0; position: sticky; top: var(--head-h, 110px); padding: 0 16px 24px 0;
+      max-height: calc(100vh - var(--head-h, 110px)); overflow-y: auto;
+    }
+    .focus-card, .wins-mini { display: block; }
+    #focus-close, nav.tabs button[data-screen="focus"] { display: none; }
+    .focus-card .ring-wrap { width: 160px; height: 160px; margin-top: 14px; }
+    .focus-card .ring-time .big { font-size: 34px; }
+    .focus-card .presets, .focus-card .controls { margin-top: 12px; }
+  }
   .focus-now { text-align: center; margin: 10px auto 0; max-width: 480px; }
   .focus-now .label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
   .focus-now .text { font-size: 18px; font-weight: 600; margin: 4px 0 10px; word-break: break-word; }
@@ -300,7 +333,7 @@
   }
   body.has-bar .timer-bar { display: block; }
   body.has-bar .toast { bottom: 74px; }
-  body.has-bar main { padding-bottom: 120px; }
+  body.has-bar .layout { padding-bottom: 80px; }
   .screen { display: none; }
   .screen.active { display: block; }
 
@@ -346,6 +379,7 @@
   </div>
 </header>
 
+<div class="layout">
 <main class="wrap">
 
   <!-- LOOPS -->
@@ -448,24 +482,24 @@
   </section>
 </main>
 
-<!-- FOCUS: opens on top of whatever screen you were on -->
-<div class="focus-sheet" id="focus-sheet" role="dialog" aria-label="Focus">
-  <div class="wrap">
-    <div class="card">
+<!-- FOCUS + WINS: a column on the right on a computer; on a phone, Focus is a card at the top -->
+<aside class="side" id="side">
+  <div class="card focus-card" id="focus-card">
       <div class="row" style="margin-bottom:6px">
         <h2 style="flex:1;margin:0">Focus</h2>
-        <button class="btn sm" onclick="closeFocusSheet()">Back to list</button>
+        <button class="btn sm" id="focus-close" onclick="hideFocus()">Close</button>
       </div>
       <div id="focus-empty">
-        <p class="hint">Pick a loop first, or start a timer with nothing attached. Promise yourself only 5 minutes. Starting is the hard part, and you're allowed to stop after 5.</p>
+        <p class="hint">Press Start on a loop, or start a timer with nothing attached. Promise yourself only 5 minutes. Starting is the hard part, and you're allowed to stop after 5.</p>
         <select id="focus-select"></select>
       </div>
       <div id="focus-on" style="display:none">
-        <div class="hint" style="text-align:center;margin:0">Working on</div>
+        <div class="hint working-on" style="text-align:center;margin:0">Working on</div>
         <div class="focus-task" id="focus-title"></div>
         <div class="focus-step" id="focus-step"></div>
       </div>
 
+      <div class="timer-row">
       <div class="ring-wrap">
         <svg viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="8"/>
@@ -478,12 +512,17 @@
         </div>
       </div>
 
-      <div class="presets" id="presets"></div>
-      <div class="controls" id="timer-controls"></div>
-    </div>
+      <div class="timer-side">
+        <div class="presets" id="presets"></div>
+        <div class="controls" id="timer-controls"></div>
+      </div>
+      </div>
   </div>
+  <div class="card wins-mini" id="wins-mini"></div>
+</aside>
 </div>
-<button class="timer-bar" id="timer-bar" onclick="openFocusSheet()"></button>
+
+<button class="timer-bar" id="timer-bar" onclick="scrollToFocus()"></button>
 
 <!-- Modal -->
 <div class="overlay" id="overlay">
@@ -970,7 +1009,7 @@ async function runSync(names) {
 // Re-draw with what came in from another device, unless you're typing in an editor right now
 function refreshAfterSync() {
   const a = document.activeElement;
-  if (a && (a.closest('#task-list') || a.closest('#modal') || a.closest('#focus-sheet')) && ['INPUT', 'TEXTAREA'].includes(a.tagName)) return;
+  if (a && (a.closest('#task-list') || a.closest('#modal') || a.closest('#side')) && ['INPUT', 'TEXTAREA'].includes(a.tagName)) return;
   renderAll();
 }
 
@@ -1288,7 +1327,11 @@ function currentStep(t) { return getSteps(t).find(x => !x.done) || null; }
 
 function setSteps(t, steps) {
   t.steps = steps.filter(x => x.text && x.text.trim())
-    .map(x => ({ id: x.id && x.id !== 'first' ? x.id : uid(), text: x.text.trim(), done: !!x.done }));
+    .map(x => {
+      const o = { id: x.id && x.id !== 'first' ? x.id : uid(), text: x.text.trim(), done: !!x.done };
+      if (o.done && typeof x.doneAt === 'number') o.doneAt = x.doneAt;
+      return o;
+    });
   const cur = t.steps.find(x => !x.done);
   t.step = cur ? cur.text : '';
 }
@@ -1303,6 +1346,7 @@ function toggleStep(id, sid) {
   if (!st) return;
   pushUndoSnapshot((st.done ? 'uncheck "' : 'check off "') + st.text + '"');
   st.done = !st.done;
+  st.doneAt = st.done ? Date.now() : undefined;
   setSteps(t, steps);
   save();
   if (st.done) chime(660, 0.1);
@@ -1323,7 +1367,7 @@ function askCloseLoop(id) {
 
 function closeLoopFromSteps(id) {
   if (state.timer && state.timer.taskId === id) finishFocus(true);
-  else { completeTask(id); if (focusId === id) { focusId = null; closeFocusSheet(); } }
+  else { if (focusId === id) { focusId = null; _focusShown = false; } completeTask(id); }
 }
 
 function addStep(id, input) {
@@ -2148,6 +2192,7 @@ function swipeDecide(yes, animated) {
   }
   if (yes) {
     pickedId = id;
+    renderDeck(); // put the card back, since Pick one stays on screen next to Focus
     startFromPick();
   } else {
     const t = findTask(id);
@@ -2163,7 +2208,7 @@ function snoozeTop() {
 }
 
 document.addEventListener('keydown', e => {
-  if (!document.getElementById('screen-pick').classList.contains('active') || pickMode !== 'swipe' || sheetOpen()) return;
+  if (!document.getElementById('screen-pick').classList.contains('active') || pickMode !== 'swipe') return;
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
   if (e.key === 'ArrowRight') swipeDecide(true);
   if (e.key === 'ArrowLeft') swipeDecide(false);
@@ -2285,7 +2330,7 @@ function goFocus(id, start) {
   focusId = id;
   const t = findTask(id);
   if (t && t.size && !state.timer) chosenMinutes = Math.min(25, Math.max(5, t.size === 2 ? 5 : t.size));
-  openFocusSheet();
+  showFocus();
   if (start && !state.timer) startTimer();
 }
 
@@ -2321,12 +2366,13 @@ function renderFocus() {
     const opts = activeTasks();
     sel.innerHTML = '<option value="">Timer only, no loop attached</option>' +
       opts.map(o => `<option value="${o.id}">${esc(o.title)}</option>`).join('');
-    sel.onchange = () => { focusId = sel.value || null; renderFocus(); };
+    sel.onchange = () => { focusId = sel.value || null; updateFocusVisibility(); renderFocus(); };
   }
   document.getElementById('presets').innerHTML = state.timer ? '' : PRESETS.map(m =>
     `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? 'Just 5 min' : m + ' min'}</button>`).join('');
   renderControls();
   updateClock();
+  updateFocusVisibility();
 }
 
 function saveFocusStep(id) {
@@ -2342,7 +2388,7 @@ function renderControls() {
   const hasTask = !!(tm ? tm.taskId : focusId);
   if (!tm) {
     c.innerHTML = `<button class="btn primary big" onclick="startTimer()">Start</button>` +
-      (hasTask ? `<button class="btn big" onclick="focusId=null;renderFocus()">Clear</button>` : '');
+      (hasTask ? `<button class="btn big" onclick="focusId=null;updateFocusVisibility();renderFocus()">Clear</button>` : '');
   } else if (tm.finished) {
     c.innerHTML = (hasTask ? `<button class="btn primary big" onclick="finishFocus(true)">I finished it</button>` : '') +
       `<button class="btn big" onclick="addMinutes(5, true)">5 more min</button>
@@ -2402,14 +2448,11 @@ function stopTimer(silent) {
 function finishFocus(completed) {
   const id = state.timer ? state.timer.taskId : focusId;
   stopTimer(true);
-  if (completed && id) {
-    focusId = null;
-    closeFocusSheet();
-    completeTask(id);
-    return;
-  }
-  if (!(id && findTask(id))) { renderFocus(); updateTimerBar(); return; }
-  closeFocusSheet();
+  focusId = null;
+  _focusShown = false;
+  if (completed && id) { completeTask(id); return; }
+  renderAll();
+  if (!(id && findTask(id))) return;
   const t = findTask(id);
   const cur = currentStep(t);
   openModal(`<h3>Leave a note for future you</h3>
@@ -2458,7 +2501,7 @@ function timerDone() {
       new Notification('Time is up', { body: t ? t.title : 'Focus session done' });
     }
   } catch {}
-  openFocusSheet();
+  showFocus();
 }
 
 // ── Sound ───────────────────────────────────────────
@@ -2510,29 +2553,59 @@ function celebrate() {
   requestAnimationFrame(frame);
 }
 
-function renderWins() {
+function winStats() {
   const done = L().tasks.filter(t => t.done).sort((a, b) => b.done.localeCompare(a.done));
   const today = todayStr();
   const dayOf = iso => todayStr(new Date(iso));
   const weekAgo = Date.now() - 7 * 86400000;
-  document.getElementById('s-today').textContent = done.filter(t => dayOf(t.done) === today).length;
-  document.getElementById('s-week').textContent = done.filter(t => new Date(t.done).getTime() >= weekAgo).length;
-
   const days = new Set(done.map(t => dayOf(t.done)));
   let streak = 0;
   const d = new Date();
   if (!days.has(todayStr(d))) d.setDate(d.getDate() - 1); // today not over yet, so the streak can still continue
   while (days.has(todayStr(d))) { streak++; d.setDate(d.getDate() - 1); }
-  document.getElementById('s-streak').textContent = streak;
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  let stepsToday = 0;
+  L().tasks.forEach(t => (Array.isArray(t.steps) ? t.steps : []).forEach(x => { if (x.done && typeof x.doneAt === 'number' && x.doneAt >= start.getTime()) stepsToday++; }));
+  return {
+    done, today, dayOf, streak, stepsToday,
+    nToday: done.filter(t => dayOf(t.done) === today).length,
+    nWeek: done.filter(t => new Date(t.done).getTime() >= weekAgo).length
+  };
+}
 
+function winTime(w, t) {
+  const dt = new Date(t.done);
+  return w.dayOf(t.done) === w.today ? dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function renderWins() {
+  const w = winStats();
+  document.getElementById('s-today').textContent = w.nToday;
+  document.getElementById('s-week').textContent = w.nWeek;
+  document.getElementById('s-streak').textContent = w.streak;
   const list = document.getElementById('wins-list');
-  if (!done.length) { list.innerHTML = '<div class="empty">Nothing closed yet. Your first one goes here.</div>'; return; }
-  list.innerHTML = done.slice(0, 50).map(t => {
-    const dt = new Date(t.done);
-    const label = dayOf(t.done) === today ? dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    return `<div class="win"><span>${esc(t.title)}</span><time>${label}</time>
-      <button class="btn sm" title="Reopen" onclick="reopen('${t.id}')">Reopen</button></div>`;
-  }).join('') + `<div class="row" style="margin-top:12px"><button class="btn sm" onclick="clearOldWins()">Clear wins older than 30 days</button></div>`;
+  if (!w.done.length) { list.innerHTML = '<div class="empty">Nothing closed yet. Your first one goes here.</div>'; return; }
+  list.innerHTML = w.done.slice(0, 50).map(t => `<div class="win"><span>${esc(t.title)}</span><time>${winTime(w, t)}</time>
+      <button class="btn sm" title="Reopen" onclick="reopen('${t.id}')">Reopen</button></div>`).join('') +
+    `<div class="row" style="margin-top:12px"><button class="btn sm" onclick="clearOldWins()">Clear wins older than 30 days</button></div>`;
+}
+
+// The small version under Focus on a computer
+function renderWinsMini() {
+  if (!WIDE.matches) return;
+  const w = winStats();
+  const recent = w.done.slice(0, 5);
+  document.getElementById('wins-mini').innerHTML = `<div class="row"><h2 style="flex:1;margin:0">Wins</h2>
+      <button class="btn sm" onclick="showScreen('wins')">See all</button></div>
+    <div class="stats" style="margin-top:10px">
+      <div class="stat"><div class="n">${w.nToday}</div><div class="l">today</div></div>
+      <div class="stat"><div class="n">${w.nWeek}</div><div class="l">last 7 days</div></div>
+      <div class="stat"><div class="n">${w.streak}</div><div class="l">day streak</div></div>
+    </div>
+    ${w.stepsToday ? `<p class="steps-today">${w.stepsToday} step${w.stepsToday === 1 ? '' : 's'} checked off today</p>` : ''}
+    <div style="margin-top:8px">${recent.length
+      ? recent.map(t => `<div class="win"><span>${esc(t.title)}</span><time>${winTime(w, t)}</time></div>`).join('')
+      : '<div class="empty">Nothing closed yet. Your first one goes here.</div>'}</div>`;
 }
 
 function reopen(id) {
@@ -2593,7 +2666,7 @@ function saveSettings() {
 // ═══════════════════════════════════════════════════════
 
 function showScreen(name) {
-  if (name === 'focus') { openFocusSheet(); return; }
+  if (name === 'focus') { showFocus(); return; }
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
   if (name === 'pick') { renderFilterButtons(); renderPickPool(); }
@@ -2601,26 +2674,43 @@ function showScreen(name) {
   window.scrollTo(0, 0);
 }
 
-function sheetOpen() { return document.getElementById('focus-sheet').classList.contains('open'); }
+const WIDE = window.matchMedia('(min-width: 980px)');
+let _focusShown = false;
+let _cardInView = true;
 
-function openFocusSheet() {
-  document.getElementById('focus-sheet').classList.add('open');
-  document.body.classList.add('sheet-open');
+// On a computer Focus is always on screen. On a phone the card shows while a
+// loop is picked or a timer is running, or after tapping the Focus tab.
+function focusVisible() { return WIDE.matches || document.body.classList.contains('focus-active'); }
+
+function updateFocusVisibility() {
+  document.body.classList.toggle('focus-active', !!(state.timer || focusId || _focusShown));
+  document.getElementById('focus-close').style.display = state.timer ? 'none' : '';
+  updateTimerBar();
+}
+
+function showFocus() {
+  _focusShown = true;
+  updateFocusVisibility();
   renderFocus();
-  updateTimerBar();
+  if (!WIDE.matches) scrollToFocus();
 }
 
-// Back to exactly where you were. A running timer keeps going in the bar at the bottom.
-function closeFocusSheet() {
-  document.getElementById('focus-sheet').classList.remove('open');
-  document.body.classList.remove('sheet-open');
-  updateTimerBar();
-  renderAll();
+function hideFocus() {
+  if (state.timer) return;
+  focusId = null;
+  _focusShown = false;
+  updateFocusVisibility();
+  renderFocus();
 }
 
+function scrollToFocus() {
+  document.getElementById('focus-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Phone only: when the Focus card is scrolled out of view, a running timer shows in a bar at the bottom
 function updateTimerBar() {
   const tm = state.timer;
-  const show = !!tm && !sheetOpen();
+  const show = !!tm && !WIDE.matches && !_cardInView;
   document.body.classList.toggle('has-bar', show);
   if (!show) return;
   const t = tm.taskId ? findTask(tm.taskId) : null;
@@ -2628,7 +2718,18 @@ function updateTimerBar() {
   document.getElementById('timer-bar').textContent = time + (t ? '  |  ' + t.title : '  |  Focus');
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetOpen() && !document.getElementById('overlay').classList.contains('open')) closeFocusSheet(); });
+if ('IntersectionObserver' in window) {
+  new IntersectionObserver(entries => { _cardInView = entries[0].isIntersecting; updateTimerBar(); })
+    .observe(document.getElementById('focus-card'));
+}
+
+// The Focus column sits just under the sticky header
+function measureHeader() {
+  document.documentElement.style.setProperty('--head-h', document.querySelector('header').offsetHeight + 'px');
+}
+window.addEventListener('resize', measureHeader);
+WIDE.addEventListener('change', () => { measureHeader(); renderAll(); });
+measureHeader();
 
 document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => showScreen(b.dataset.screen)));
 
@@ -2679,14 +2780,16 @@ function switchList(name) {
 
 function renderAll() {
   renderListToggle();
+  measureHeader();
   renderSyncPill();
   renderTaskList();
   renderBackupNote();
   const active = document.querySelector('.screen.active')?.id;
   if (active === 'screen-pick') renderPickPool();
   if (active === 'screen-wins') renderWins();
-  if (sheetOpen()) renderFocus();
-  updateTimerBar();
+  updateFocusVisibility();
+  renderFocus();
+  renderWinsMini();
 }
 
 // Keep two open tabs of the same page in step
@@ -2697,7 +2800,7 @@ window.addEventListener('storage', e => {
 });
 
 renderAll();
-if (state.timer) { focusId = state.timer.taskId; ensureTick(); openFocusSheet(); }
+if (state.timer) { focusId = state.timer.taskId; ensureTick(); showFocus(); }
 document.getElementById('quick-add').focus();
 if (syncOn()) runSync(LIST_NAMES);
 </script>
