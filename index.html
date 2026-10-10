@@ -1200,7 +1200,8 @@ function parseDump() {
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 const AI_KEY = 'openloops_ai';
-const AI_MODELS = { 'claude-opus-5-5': 'Claude Opus 5.5 (best results)', 'claude-haiku-5-5': 'Claude Haiku 5.5 (cheaper, faster)' };
+const AI_MODELS = { 'claude-haiku-5-5': 'Claude Haiku 5.5 (cheapest, fine for most dumps)', 'claude-opus-5-5': 'Claude Opus 5.5 (best results, costs more)' };
+const AI_DEFAULT_MODEL = 'claude-haiku-5-5';
 
 function loadAi() {
   try { return JSON.parse(localStorage.getItem(AI_KEY)) || {}; } catch { return {}; }
@@ -1241,7 +1242,7 @@ const FILL_SCHEMA = listSchema(Object.assign({ index: { type: 'integer' } }, AI_
 const STEP_SCHEMA = { type: 'object', additionalProperties: false, required: ['step'], properties: { step: { type: 'string' } } };
 
 async function callClaude(system, text, schema) {
-  const model = AI_MODELS[ai.model] ? ai.model : 'claude-opus-5-5';
+  const model = AI_MODELS[ai.model] ? ai.model : AI_DEFAULT_MODEL;
   const body = {
     model, max_tokens: 16000, system,
     messages: [{ role: 'user', content: text }],
@@ -2137,7 +2138,7 @@ function openSettings(note) {
     <input type="password" id="set-ai-key" value="${esc(ai.key || '')}" placeholder="sk-ant-..." autocomplete="off">
     <label class="hint" style="display:block;margin:10px 0 4px">Model</label>
     <select id="set-ai-model">${Object.entries(AI_MODELS).map(([k, v]) =>
-      `<option value="${k}" ${(ai.model || 'claude-opus-5-5') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      `<option value="${k}" ${(ai.model || AI_DEFAULT_MODEL) === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <div class="row" style="margin-top:16px;justify-content:flex-end">
       <button class="btn" onclick="closeModal()">Cancel</button>
       <button class="btn primary" onclick="saveSettings()">Save</button>
