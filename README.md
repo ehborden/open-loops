@@ -12,24 +12,21 @@ The same guide is in the app under **Data > How to**.
 
 ### 1. Get it out of your head
 
-- **One at a time:** type in the box at the top and press Enter.
-- **Lots at once:** tap **Talk it out**, tap the mic on your phone keyboard, and talk.
-  - Say **"next"** between loops.
-  - To list steps, say **"steps"** and put **"then"** between them.
+- Type in the box at the top, or tap the mic on your phone keyboard and talk.
+- Say **"next"** between loops. For steps, say **"steps"** with **"then"** between them.
   - Example: *"email Dana, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"*
-- Then tap one of these:
-  - **AI extract** sends it to Claude, which splits it up, fills in time and energy, and writes a tiny first step. (Needs an API key, see section 8.)
-  - **Sort it (no AI)** splits on "next" and picks up a few phrases: "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," and "first step is."
-- Either way, you check everything on a review screen before anything is added.
+- **Add**: one loop goes straight in. Several open the check-over screen.
+- **Add with AI**: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (section 8).
+- On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. **Later** keeps it for when you come back.
+- Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," and "first step is."
 
 ### 2. Your loops
 
-- **Tap a loop's name** to edit it: the name, steps, how long, energy, and Pick for today. **Not today** and **Let it go** are under **More**.
-- **Steps:** the list shows the next step with a small box. Tap the box to check it off. Tap the arrow to see all the steps. Checking off the last step asks if you want to close the loop.
-- **Break it down** (in the editor) asks Claude for 3 to 5 small steps. You check them before they're used.
+- **Time and energy** are the small tags under each loop. Tap one to change it.
+- **Tap a loop's name** to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.
+- **Steps:** the next one shows under the loop. Tap its box to check it off. The arrow shows all of them. The last one asks if you want to close the loop.
 - **The circle** on the left closes the whole loop.
-- **Today** holds up to 3 picks. Fewer picks means you actually finish them.
-- **Quick sort** shows up when loops are missing time or energy. It goes one loop at a time with big buttons. **Let AI fill all** fills them all in for you to check.
+- **Today** holds up to 3 picks.
 - **Undo** (at the top) reverses your last few actions.
 
 ### 3. Pick one
@@ -83,7 +80,7 @@ The token is saved only in that browser. It's never in a backup or in this repo.
 
 ### 8. Turn on AI (your own Claude account)
 
-AI extract, Let AI fill all, and Break it down use Claude. This is pay-as-you-go and separate from a Claude Pro or Max subscription. With the cheaper model, a brain dump costs roughly a tenth of a cent, so $5 lasts a long time.
+Add with AI and Break it down use Claude. This is pay-as-you-go and separate from a Claude Pro or Max subscription. With the cheaper model, a brain dump costs roughly a tenth of a cent, so $5 lasts a long time.
 
 **One time:**
 
