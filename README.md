@@ -17,7 +17,7 @@ The same guide is in the app under **Data > How to**.
   - Example: *"email Dana, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"*
 - **Add**: one loop goes straight in. Several open the check-over screen.
 - **Add with AI**: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (section 8).
-- On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. **Later** keeps it for when you come back.
+- On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. **Keep draft** keeps it for when you come back.
 - Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," and "first step is."
 
 ### 2. Your loops
@@ -26,12 +26,12 @@ The same guide is in the app under **Data > How to**.
 - **Tap a loop's name** to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.
 - **Steps:** the next one shows under the loop. Tap its box to check it off. The arrow shows all of them. The last one asks if you want to close the loop.
 - **The circle** on the left closes the whole loop.
-- **Today** holds up to 3 picks.
-- **Undo** (at the top) reverses your last few actions.
+- **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
+- **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top.
 
 ### 3. Pick one
 
-When choosing is the hard part. Set your energy and time, then swipe through cards, spin the wheel, or let it pick for you.
+When choosing is the hard part. Tap **Pick for me**, or choose **Swipe** or **Spin the wheel** underneath. Tap **Right now I have...** to set your energy and time first.
 
 ### 4. Focus
 
@@ -43,7 +43,7 @@ When choosing is the hard part. Set your energy and time, then swipe through car
 
 ### 5. Wins
 
-Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today. Look here when your brain says you did nothing.
+Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today.
 
 ### 6. Work and Home
 
