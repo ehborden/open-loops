@@ -490,7 +490,7 @@
         <button class="btn sm" id="focus-close" onclick="hideFocus()">Close</button>
       </div>
       <div id="focus-empty">
-        <p class="hint">Press Start on a loop, or start a timer with nothing attached. Promise yourself only 5 minutes. Starting is the hard part, and you're allowed to stop after 5.</p>
+        <p class="hint" id="focus-empty-hint"></p>
         <select id="focus-select"></select>
       </div>
       <div id="focus-on" style="display:none">
@@ -2324,9 +2324,17 @@ let tick = null;
 const CIRC = 276.46;
 
 // Opens Focus on top of the list. With start, the timer begins right away.
+// Opens Focus on that loop. With start, the timer begins right away.
 function goFocus(id, start) {
-  if (state.timer && state.timer.taskId !== id && !confirm('A timer is already running. Switch to this loop?')) return;
-  if (state.timer && state.timer.taskId !== id) stopTimer(true);
+  const tm = state.timer;
+  if (tm && tm.taskId !== id) {
+    const other = tm.taskId ? findTask(tm.taskId) : null;
+    if (tm.finished) stopTimer(true);                 // a finished timer never blocks a new one
+    else if (!other || other.done) {                  // timer with no loop: this loop joins it
+      tm.taskId = id; save();
+    } else if (confirm(`A timer is running for "${other.title}". Stop it and switch to this loop?`)) stopTimer(true);
+    else return;
+  }
   focusId = id;
   const t = findTask(id);
   if (t && t.size && !state.timer) chosenMinutes = Math.min(25, Math.max(5, t.size === 2 ? 5 : t.size));
@@ -2366,7 +2374,19 @@ function renderFocus() {
     const opts = activeTasks();
     sel.innerHTML = '<option value="">Timer only, no loop attached</option>' +
       opts.map(o => `<option value="${o.id}">${esc(o.title)}</option>`).join('');
-    sel.onchange = () => { focusId = sel.value || null; updateFocusVisibility(); renderFocus(); };
+    sel.value = '';
+    document.getElementById('focus-empty-hint').textContent = state.timer && state.timer.finished
+      ? 'Time is up. Press Stop here to clear it, or press Start on a loop to begin a new one.'
+      : state.timer
+      ? 'This timer has no loop attached. Pick one below to attach it, or keep going without one.'
+      : 'Press Start on a loop, or pick one below. You can also start a timer with nothing attached. Promise yourself only 5 minutes. Starting is the hard part, and you\'re allowed to stop after 5.';
+    sel.onchange = () => {
+      focusId = sel.value || null;
+      // Picking a loop while a timer runs attaches it to that timer
+      if (state.timer && focusId) { state.timer.taskId = focusId; save(); }
+      updateFocusVisibility();
+      renderFocus();
+    };
   }
   document.getElementById('presets').innerHTML = state.timer ? '' : PRESETS.map(m =>
     `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? 'Just 5 min' : m + ' min'}</button>`).join('');
@@ -2799,6 +2819,8 @@ window.addEventListener('storage', e => {
   if (e.key === AI_KEY) ai = loadAi();
 });
 
+// A timer that ran out over an hour ago (laptop closed, tab left open) is old news, so clear it quietly
+if (state.timer && state.timer.pausedLeft == null && Date.now() - state.timer.endsAt > 3600000) { state.timer = null; writeLocal(); }
 renderAll();
 if (state.timer) { focusId = state.timer.taskId; ensureTick(); showFocus(); }
 document.getElementById('quick-add').focus();
