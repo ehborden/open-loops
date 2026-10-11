@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Open Loops</title>
-<meta name="theme-color" content="#f1f2eb">
+<meta name="theme-color" content="#eaece4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Open Loops">
@@ -14,18 +14,19 @@
 <style>
   /* Moss and lime, always light. Thin lines, small corners, no heavy shadows. */
   :root {
-    --bg: #f1f2eb;
-    --card: #f9f9f4;
-    --field: #fdfdfa;
+    --bg: #eaece4;
+    --card: #f5f6f0;
+    --field: #fbfbf8;
     --ink: #2a2f22;
     --muted: #737a66;
-    --line: #dcdfd1;
-    --accent: #4f7a28;
+    --line: #d5d9cb;
+    --accent: #33872f;
+    --accent-deep: #2a6f27;
     --accent-ink: #ffffff;
     --lime: #d4eb8f;
     --lime-soft: #f7fbe9;
-    --green: #4f7a28;
-    --green-bg: #f1f6e8;
+    --green: #33872f;
+    --green-bg: #e6f2e3;
     --red: #b3261e;
     --red-bg: #fbeceb;
     --amber: #8a6100;
@@ -201,7 +202,7 @@
   .seg button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .section-label {
     font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;
-    color: var(--accent); margin: 16px 0 2px;
+    color: var(--accent-deep); margin: 16px 0 2px;
   }
   .empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
 
@@ -2305,7 +2306,7 @@ document.addEventListener('keydown', e => {
 
 // ── Wheel ───────────────────────────────────────────
 
-const WHEEL_COLORS = ['#4f7a28', '#d4eb8f', '#7fa650', '#eef5df', '#3d6020', '#b9d97a', '#a3c27a', '#f7fbe9'];
+const WHEEL_COLORS = ['#33872f', '#d4eb8f', '#6aae5a', '#e6f2e3', '#256b24', '#b5dc8a', '#8cc47a', '#f3f9ec'];
 const WHEEL_MAX = 12;
 let wheelAngle = 0, spinning = false, wheelItems = [];
 
@@ -2334,7 +2335,7 @@ function drawWheel() {
     ctx.save();
     ctx.rotate(i * slice + slice / 2);
     ctx.textAlign = 'right';
-    ctx.fillStyle = ['#d4eb8f', '#eef5df', '#b9d97a', '#a3c27a', '#f7fbe9'].includes(col) ? '#2a2f22' : '#ffffff';
+    ctx.fillStyle = ['#d4eb8f', '#e6f2e3', '#b5dc8a', '#8cc47a', '#f3f9ec'].includes(col) ? '#2a2f22' : '#ffffff';
     ctx.font = `600 ${n > 8 ? 22 : 26}px sans-serif`;
     let label = t.title.length > 22 ? t.title.slice(0, 21) + '...' : t.title;
     ctx.fillText(label, R - 20, 9);
@@ -2638,7 +2639,7 @@ function celebrate() {
   const cv = document.getElementById('confetti');
   const ctx = cv.getContext('2d');
   cv.width = innerWidth; cv.height = innerHeight;
-  const colors = ['#4f7a28', '#d4eb8f', '#7fa650', '#b9d97a', '#3d6020'];
+  const colors = ['#33872f', '#d4eb8f', '#6aae5a', '#b5dc8a', '#256b24'];
   const parts = Array.from({ length: 120 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.6,
     vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 4,
