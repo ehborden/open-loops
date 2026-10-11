@@ -40,7 +40,7 @@ The owner has said Claude may merge its own pull requests into `main` once the t
 
 ## Owner preferences for anything that shows up in the app
 
-- Colors are moss and lime on mostly white, always light (no dark mode): thin 1px lines, small corners, no heavy shadows, lighter type. Not bold or puffy.
+- Colors: a green between moss and Kelly (`--accent: #33872f`) with lime for Today, on a soft off-white (`--bg: #eaece4`, boxes `#f5f6f0`), always light (no dark mode). Not bright white, and not heavy on green: green is for buttons, loop edges, and small labels. Thin 1px lines, small corners, no heavy shadows, lighter type. Not bold or puffy.
 - No instruction or over-explaining text on screens (no "Tap X to do Y. Your draft is kept until..."). Short labels only. Explanations belong in How to.
 
 - No em dashes. Use hyphens or rewrite the sentence.
