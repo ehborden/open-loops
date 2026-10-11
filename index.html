@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Open Loops</title>
-<meta name="theme-color" content="#fbfcf8">
+<meta name="theme-color" content="#f1f2eb">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Open Loops">
@@ -14,11 +14,12 @@
 <style>
   /* Moss and lime, always light. Thin lines, small corners, no heavy shadows. */
   :root {
-    --bg: #fbfcf8;
-    --card: #ffffff;
+    --bg: #f1f2eb;
+    --card: #f9f9f4;
+    --field: #fdfdfa;
     --ink: #2a2f22;
     --muted: #737a66;
-    --line: #e4e8da;
+    --line: #dcdfd1;
     --accent: #4f7a28;
     --accent-ink: #ffffff;
     --lime: #d4eb8f;
@@ -104,7 +105,7 @@
 
   input[type=text], textarea, select {
     width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px;
-    background: var(--bg);
+    background: var(--field);
   }
   textarea { min-height: 110px; resize: vertical; }
   input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
@@ -316,7 +317,7 @@
   .ed-foot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
 
   /* Adding */
-  .capture textarea { min-height: 0; resize: none; background: var(--card); }
+  .capture textarea { min-height: 0; resize: none; }
   .toast {
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120px);
     background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px;
