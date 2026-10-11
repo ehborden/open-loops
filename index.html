@@ -19,7 +19,8 @@
     --field: #fbfbf8;
     --ink: #2a2f22;
     --muted: #737a66;
-    --line: #d5d9cb;
+    --line: #cdd2c1;
+    --edge: #b3baa3;
     --accent: #33872f;
     --accent-deep: #2a6f27;
     --accent-ink: #ffffff;
@@ -49,7 +50,7 @@
   header {
     position: sticky; top: 0; z-index: 20;
     background: var(--bg);
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--edge);
   }
   header .wrap { padding-bottom: 0; }
   .head-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; flex-wrap: wrap; }
@@ -66,13 +67,13 @@
   .head-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
   nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 10px; }
   nav.tabs button {
-    border: 1px solid var(--line); background: var(--card); border-radius: 6px;
+    border: 1px solid var(--edge); background: var(--card); border-radius: 6px;
     padding: 6px 14px; cursor: pointer; white-space: nowrap;
   }
   nav.tabs button.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
   .btn {
-    border: 1px solid var(--line); background: var(--card); border-radius: 6px;
+    border: 1px solid var(--edge); background: var(--card); border-radius: 6px;
     padding: 8px 14px; cursor: pointer;
   }
   .btn:hover { border-color: var(--accent); }
@@ -85,7 +86,7 @@
   .menu { position: relative; }
   .menu-list {
     position: absolute; right: 0; top: calc(100% + 6px); min-width: 200px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+    background: var(--card); border: 1px solid var(--edge); border-radius: 8px;
     box-shadow: var(--shadow); padding: 6px; display: none; z-index: 30;
   }
   .menu-list.open { display: block; }
@@ -97,7 +98,7 @@
   .menu-note { font-size: 12px; color: var(--muted); padding: 4px 12px 6px; }
 
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+    background: var(--card); border: 1px solid var(--edge); border-radius: 8px;
     padding: 16px; margin-top: 16px; box-shadow: var(--shadow);
   }
   h2 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
@@ -105,7 +106,7 @@
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   input[type=text], textarea, select {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px;
+    width: 100%; padding: 10px 12px; border: 1px solid var(--edge); border-radius: 6px;
     background: var(--field);
   }
   textarea { min-height: 110px; resize: vertical; }
@@ -117,7 +118,7 @@
 
   /* Task list */
   .task {
-    border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px;
+    border: 1px solid var(--edge); border-left: 3px solid var(--accent); border-radius: 6px;
     padding: 9px 10px; margin-top: 6px; background: var(--card);
   }
   .task.today { border-left-color: var(--lime); background: var(--lime-soft); }
@@ -165,14 +166,14 @@
   /* Time and energy tags */
   .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 5px 0 0 30px; }
   .tag {
-    font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 8px;
+    font-size: 12px; border: 1px solid var(--edge); border-radius: 4px; padding: 1px 8px;
     background: var(--card); color: var(--ink); cursor: pointer; white-space: nowrap;
   }
   .tag:hover { border-color: var(--accent); }
   .tag.unset { color: var(--muted); border-style: dashed; }
   .tag.on { background: var(--lime); border-color: var(--lime); }
   .tag.static { cursor: default; color: var(--muted); }
-  .tag.static:hover { border-color: var(--line); }
+  .tag.static:hover { border-color: var(--edge); }
   .tag.old { color: var(--amber); }
   .tag-menu {
     position: fixed; z-index: 80; background: var(--card); border: 1px solid var(--accent);
@@ -188,7 +189,7 @@
   .chips { display: flex; gap: 4px; flex-wrap: wrap; }
   .chip {
     font-size: 11px; font-weight: 600; border-radius: 6px; padding: 2px 8px;
-    background: var(--bg); color: var(--muted); border: 1px solid var(--line); white-space: nowrap;
+    background: var(--bg); color: var(--muted); border: 1px solid var(--edge); white-space: nowrap;
   }
   .chip.today { background: var(--lime); color: var(--ink); border-color: var(--lime); }
   .chip.old { background: var(--amber-bg); color: var(--amber); border-color: transparent; }
@@ -196,7 +197,7 @@
   .task-edit label { font-size: 12px; color: var(--muted); font-weight: 600; }
   .seg { display: flex; gap: 4px; flex-wrap: wrap; }
   .seg button {
-    border: 1px solid var(--line); background: var(--bg); border-radius: 8px;
+    border: 1px solid var(--edge); background: var(--bg); border-radius: 8px;
     padding: 4px 10px; cursor: pointer; font-size: 13px;
   }
   .seg button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
@@ -209,7 +210,7 @@
   /* Swipe */
   .deck { position: relative; height: 300px; margin: 16px auto 0; max-width: 420px; touch-action: none; }
   .swipe-card {
-    position: absolute; inset: 0; background: var(--card); border: 1px solid var(--line);
+    position: absolute; inset: 0; background: var(--card); border: 1px solid var(--edge);
     border-radius: 6px; box-shadow: var(--shadow); padding: 24px;
     display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
     cursor: grab; user-select: none;
@@ -277,7 +278,7 @@
   .modal.wide { max-width: 640px; max-height: 88vh; overflow-y: auto; }
 
   /* How to */
-  .help details { border: 1px solid var(--line); border-radius: 8px; margin-top: 8px; }
+  .help details { border: 1px solid var(--edge); border-radius: 8px; margin-top: 8px; }
   .help summary { cursor: pointer; padding: 12px 14px; font-weight: 600; list-style-position: inside; }
   .help details[open] summary { border-bottom: 1px solid var(--line); }
   .help .body { padding: 4px 14px 12px; font-size: 15px; }
