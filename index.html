@@ -257,6 +257,16 @@
   .modal h4 { margin: 18px 0 4px; font-size: 15px; }
   .modal.wide { max-width: 640px; max-height: 88vh; overflow-y: auto; }
 
+  /* How to */
+  .help details { border: 1px solid var(--line); border-radius: 12px; margin-top: 8px; }
+  .help summary { cursor: pointer; padding: 12px 14px; font-weight: 600; list-style-position: inside; }
+  .help details[open] summary { border-bottom: 1px solid var(--line); }
+  .help .body { padding: 4px 14px 12px; font-size: 15px; }
+  .help .body p { margin: 10px 0 0; }
+  .help .body ul, .help .body ol { margin: 8px 0 0; padding-left: 20px; }
+  .help .body li { margin-top: 5px; }
+  .help code { background: var(--bg); border-radius: 6px; padding: 1px 5px; font-size: 14px; }
+
   /* Review + quick sort */
   .review-item {
     border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-top: 8px;
@@ -365,6 +375,7 @@
           <button id="gh-restore" style="display:none" onclick="openGitRestore();closeMenu()">Restore from GitHub</button>
           <button onclick="openSync();closeMenu()">Sync settings</button>
           <button onclick="openSettings();closeMenu()">Settings</button>
+          <button onclick="openHelp();closeMenu()">How to</button>
           <div class="menu-note" id="backup-note"></div>
         </div>
       </div>
@@ -2651,6 +2662,116 @@ function clearOldWins() {
 // ═══════════════════════════════════════════════════════
 //  SETTINGS
 // ═══════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+//  HOW TO
+//  Same guide as README.md on GitHub. Keep the two in step.
+// ═══════════════════════════════════════════════════════
+
+const HELP = [
+['Get it out of your head', `
+<ul>
+  <li><strong>One at a time:</strong> type in the box at the top and press Enter.</li>
+  <li><strong>Lots at once:</strong> tap <strong>Talk it out</strong>, tap the mic on your phone keyboard, and talk.
+    <ul>
+      <li>Say <strong>"next"</strong> between loops.</li>
+      <li>To list steps, say <strong>"steps"</strong> and put <strong>"then"</strong> between them.</li>
+      <li>Example: <em>"email Dana, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"</em></li>
+    </ul></li>
+  <li><strong>AI extract</strong> sends it to Claude, which splits it up, fills in time and energy, and writes a tiny first step. It needs an API key (see "Turn on AI").</li>
+  <li><strong>Sort it (no AI)</strong> splits on "next" and picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," and "first step is."</li>
+  <li>Either way, you check everything on a review screen before anything is added.</li>
+</ul>`],
+['Your loops', `
+<ul>
+  <li><strong>Tap a loop's name</strong> to edit it: name, steps, how long, energy, and Pick for today. <strong>Not today</strong> and <strong>Let it go</strong> are under <strong>More</strong>.</li>
+  <li><strong>Steps:</strong> the list shows the next step with a small box. Tap the box to check it off. Tap the arrow to see all the steps. Checking off the last one asks if you want to close the loop.</li>
+  <li><strong>Break it down</strong> (in the editor) asks Claude for 3 to 5 small steps. You check them first.</li>
+  <li><strong>The circle</strong> on the left closes the whole loop.</li>
+  <li><strong>Today</strong> holds up to 3 picks. Fewer picks means you actually finish them.</li>
+  <li><strong>Quick sort</strong> shows up when loops are missing time or energy. One loop at a time, big buttons. <strong>Let AI fill all</strong> fills them in for you to check.</li>
+  <li><strong>Undo</strong> at the top reverses your last few actions.</li>
+</ul>`],
+['Pick one', `
+<p>For when choosing is the hard part. Set your energy and time, then swipe through cards, spin the wheel, or let it pick for you.</p>`],
+['Focus', `
+<ul>
+  <li><strong>Start</strong> on any loop begins a timer right away.</li>
+  <li><strong>On a computer,</strong> Focus is always on the right, with your Wins under it.</li>
+  <li><strong>On a phone,</strong> Focus is a card at the top. Scroll down while a timer runs and a bar at the bottom shows the time. Tap it to jump back.</li>
+  <li><strong>Step done</strong> checks off the current step. <strong>Close loop</strong> finishes the whole thing. <strong>Stop</strong> asks for a note for next time, which becomes the next step.</li>
+  <li>For a timer with no loop, pick "Timer only" from the Focus dropdown. Picking a loop later attaches it to the running timer.</li>
+</ul>`],
+['Wins', `
+<p>Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today. Look here when your brain says you did nothing.</p>`],
+['Work and Home', `
+<p>The <strong>Work / Home</strong> toggle at the top switches between two separate lists.</p>`],
+['Sync your devices (your own GitHub)', `
+<p>Keeps your phone and computers showing the same lists. Your loops are saved in a private GitHub repo that only you can see.</p>
+<p><strong>One time:</strong></p>
+<ol>
+  <li>Make a free account at <strong>github.com</strong> if you don't have one.</li>
+  <li>Make a new repository: click <strong>+</strong> at the top right, then <strong>New repository</strong>. Name it <code>open-loops-data</code>, choose <strong>Private</strong> (the app won't connect to a public one), and click <strong>Create repository</strong>.</li>
+  <li>Make an access token: profile picture, <strong>Settings</strong>, <strong>Developer settings</strong> (at the bottom), <strong>Personal access tokens</strong>, <strong>Fine-grained tokens</strong>, <strong>Generate new token</strong>.
+    <ul>
+      <li>Name it "open loops" and pick an expiration (a year is fine).</li>
+      <li><strong>Repository access:</strong> Only select repositories, then pick <code>open-loops-data</code>.</li>
+      <li><strong>Permissions:</strong> set <strong>Contents</strong> to <strong>Read and write</strong>.</li>
+      <li>Click <strong>Generate token</strong> and copy it right away. It's only shown once.</li>
+    </ul></li>
+</ol>
+<p><strong>On each device:</strong></p>
+<ol>
+  <li>Open the app. On iPhone, add it to your Home Screen first (Share button, <strong>Add to Home Screen</strong>) and open it from the icon.</li>
+  <li>Tap <strong>Sync off</strong> at the top.</li>
+  <li>Enter your GitHub username, <code>open-loops-data</code>, and the token. Tap <strong>Connect</strong>.</li>
+</ol>
+<p>The token is saved only in that browser, never in a backup.</p>`],
+['Turn on AI (your own Claude account)', `
+<p>AI extract, Let AI fill all, and Break it down use Claude. This is pay-as-you-go and separate from a Claude Pro or Max subscription. With the cheaper model, a brain dump costs roughly a tenth of a cent, so $5 lasts a long time.</p>
+<p><strong>One time:</strong></p>
+<ol>
+  <li>Go to <strong>console.anthropic.com</strong> and sign in, or make an account.</li>
+  <li>Go to <strong>Settings</strong>, then <strong>Billing</strong>, and buy a small amount of credit, such as $5.</li>
+  <li><strong>Turn auto-reload off</strong> in the same Billing area, so you can never be charged more than what you bought.</li>
+  <li>Go to <strong>API Keys</strong> and click <strong>Create Key</strong>. If you see a screen about "identity federation," click <strong>Continue with an API key</strong>. Name it "open loops" and leave the rest as is.</li>
+  <li>Copy the key right away. It starts with <code>sk-ant-</code> and is only shown once. If you lose it, just make a new one.</li>
+</ol>
+<p><strong>On each device:</strong></p>
+<ol>
+  <li>Tap <strong>Data</strong>, then <strong>Settings</strong>.</li>
+  <li>Paste the key into <strong>Claude API key</strong>.</li>
+  <li>Leave the model on <strong>Claude Haiku 5.5</strong> (cheapest), or pick Opus 5.5 for better results at a higher cost.</li>
+  <li>Tap <strong>Save</strong>.</li>
+</ol>
+<p><strong>Good to know:</strong></p>
+<ul>
+  <li>The key is saved only in that browser. It's never in the app's code, a backup, or sync, so other people who open the app can't use it.</li>
+  <li>Never paste your key into a chat, an email, or a document. Only into the app.</li>
+  <li>Only the text you send with an AI button goes to Anthropic. Nothing runs on its own.</li>
+  <li>See what you've spent at console.anthropic.com under <strong>Usage</strong>.</li>
+  <li>To remove the key from a device, clear the box in Data, Settings and tap Save.</li>
+</ul>`],
+['Backups', `
+<ul>
+  <li><strong>Automatic:</strong> with sync on, the app saves a backup to GitHub about once a week and keeps the last 12. <strong>Data, Restore from GitHub</strong> lists them by date.</li>
+  <li><strong>By hand:</strong> <strong>Data, Backup</strong> downloads both lists as one file. <strong>Data, Restore</strong> loads one back. It always shows what's in it and asks before replacing anything.</li>
+</ul>`],
+['Fixes for common problems', `
+<ul>
+  <li><strong>Don't see a new update?</strong> On a computer, press Cmd + Shift + R (Mac) or Ctrl + Shift + R (Windows). On a phone, close the app completely and reopen it. It can take up to 10 minutes.</li>
+  <li><strong>"Sync problem"?</strong> Tap it. The token may have expired. Make a new one (see "Sync your devices") and paste it in.</li>
+  <li><strong>AI says the key wasn't accepted?</strong> Check the key in Data, Settings, and check that your Anthropic account still has credit.</li>
+  <li><strong>Timer stuck at 0:00?</strong> Tap <strong>Stop here</strong>, then <strong>Skip</strong>.</li>
+  <li><strong>On iPhone, don't delete and re-add the Home Screen icon</strong> unless Sync says "Synced." Deleting it also deletes what's saved on that phone.</li>
+</ul>`]
+];
+
+function openHelp() {
+  openModal(`<div class="row"><h3 style="flex:1;margin:0">How to</h3><button class="btn sm" onclick="closeModal()">Close</button></div>
+    <p class="hint" style="margin-top:6px">Tap a section to open it.</p>
+    <div class="help">${HELP.map(([title, body]) => `<details><summary>${title}</summary><div class="body">${body}</div></details>`).join('')}</div>`, true);
+}
 
 function openSettings(note) {
   openModal(`<h3>Settings</h3>
