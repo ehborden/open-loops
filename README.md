@@ -1,4 +1,4 @@
-# Open Loops
+# Loose Ends
 
 A task tracker for getting open loops out of your head, picking one, and doing it.
 

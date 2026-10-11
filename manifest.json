@@ -1,11 +1,11 @@
 {
-  "name": "Open Loops",
-  "short_name": "Open Loops",
+  "name": "Loose Ends",
+  "short_name": "Loose Ends",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f7f9fc",
-  "theme_color": "#1a4c9f",
+  "background_color": "#eaece4",
+  "theme_color": "#eaece4",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
