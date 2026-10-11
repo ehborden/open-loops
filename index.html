@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Open Loops</title>
-<meta name="theme-color" content="#1a4c9f">
+<meta name="theme-color" content="#fbfcf8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Open Loops">
@@ -12,40 +12,26 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 <style>
+  /* Moss and lime, always light. Thin lines, small corners, no heavy shadows. */
   :root {
-    --bg: #f7f9fc;
+    --bg: #fbfcf8;
     --card: #ffffff;
-    --ink: #1c212e;
-    --muted: #5b6b82;
-    --line: #dde4ed;
-    --accent: #1a4c9f;
+    --ink: #2a2f22;
+    --muted: #737a66;
+    --line: #e4e8da;
+    --accent: #4f7a28;
     --accent-ink: #ffffff;
-    --gold: #f7cb57;
-    --green: #1a6b3c;
-    --green-bg: #e6f4ec;
-    --red: #c1121f;
-    --red-bg: #fdecea;
-    --amber: #9a6200;
-    --amber-bg: #fdf3dc;
-    --shadow: 0 2px 10px rgba(28,33,46,0.08);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #12151c;
-      --card: #1c212e;
-      --ink: #e8edf5;
-      --muted: #97a6bc;
-      --line: #2c3446;
-      --accent: #6f9be0;
-      --accent-ink: #0d1424;
-      --green: #6fcf97;
-      --green-bg: #183325;
-      --red: #ff7a7a;
-      --red-bg: #3a1c1f;
-      --amber: #f0c060;
-      --amber-bg: #3a2f16;
-      --shadow: 0 2px 10px rgba(0,0,0,0.4);
-    }
+    --lime: #d4eb8f;
+    --lime-soft: #f7fbe9;
+    --green: #4f7a28;
+    --green-bg: #f1f6e8;
+    --red: #b3261e;
+    --red-bg: #fbeceb;
+    --amber: #8a6100;
+    --amber-bg: #fbf4df;
+    --shadow: 0 1px 2px rgba(42,47,34,0.04);
+    --pop-shadow: 0 6px 20px rgba(42,47,34,0.10);
+    color-scheme: light;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -65,9 +51,9 @@
   }
   header .wrap { padding-bottom: 0; }
   .head-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; flex-wrap: wrap; }
-  .brand { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .brand { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
   .list-toggle button { font-weight: 600; padding: 4px 12px; }
-  .seg.list-toggle button.on { background: var(--gold); color: #1c212e; border-color: var(--gold); }
+  .seg.list-toggle button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .list-toggle .count { font-weight: 400; opacity: 0.75; font-size: 12px; }
   .sync-pill.ok { color: var(--green); }
   .sync-pill.offline { color: var(--amber); }
@@ -78,18 +64,18 @@
   .head-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
   nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 10px; }
   nav.tabs button {
-    border: 1px solid var(--line); background: var(--card); border-radius: 999px;
+    border: 1px solid var(--line); background: var(--card); border-radius: 6px;
     padding: 6px 14px; cursor: pointer; white-space: nowrap;
   }
   nav.tabs button.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
   .btn {
-    border: 1px solid var(--line); background: var(--card); border-radius: 10px;
+    border: 1px solid var(--line); background: var(--card); border-radius: 6px;
     padding: 8px 14px; cursor: pointer;
   }
   .btn:hover { border-color: var(--accent); }
   .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-  .btn.big { padding: 14px 22px; font-size: 18px; border-radius: 14px; }
+  .btn.big { padding: 14px 22px; font-size: 18px; border-radius: 8px; }
   .btn.sm { padding: 4px 10px; font-size: 13px; border-radius: 8px; }
   .btn.danger { color: var(--red); }
   .btn[disabled] { opacity: 0.35; pointer-events: none; }
@@ -97,7 +83,7 @@
   .menu { position: relative; }
   .menu-list {
     position: absolute; right: 0; top: calc(100% + 6px); min-width: 200px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
     box-shadow: var(--shadow); padding: 6px; display: none; z-index: 30;
   }
   .menu-list.open { display: block; }
@@ -109,32 +95,33 @@
   .menu-note { font-size: 12px; color: var(--muted); padding: 4px 12px 6px; }
 
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
     padding: 16px; margin-top: 16px; box-shadow: var(--shadow);
   }
-  h2 { font-size: 18px; margin: 0 0 4px; }
+  h2 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
   .hint { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   input[type=text], textarea, select {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px;
     background: var(--bg);
   }
   textarea { min-height: 110px; resize: vertical; }
-  input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
 
-  .alert { border-radius: 10px; padding: 10px 14px; margin-top: 12px; font-size: 14px; }
+  .alert { border-radius: 6px; padding: 10px 14px; margin-top: 12px; font-size: 14px; }
   .alert.warn { background: var(--amber-bg); color: var(--amber); }
   .alert.ok { background: var(--green-bg); color: var(--green); }
 
   /* Task list */
   .task {
-    border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 8px;
-    background: var(--card);
+    border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px;
+    padding: 9px 10px; margin-top: 6px; background: var(--card);
   }
+  .task.today { border-left-color: var(--lime); background: var(--lime-soft); }
   .task-top { display: flex; align-items: center; gap: 10px; }
   .check {
-    width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--muted);
+    width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--muted);
     background: none; cursor: pointer; flex: none; padding: 0;
   }
   .check:hover { border-color: var(--green); background: var(--green-bg); }
@@ -142,18 +129,19 @@
   .task-title { cursor: pointer; word-break: break-word; }
   .task-main .chips { margin-top: 4px; }
   .start-btn { flex: none; }
-  .task-steps { margin: 6px 0 0 34px; display: grid; gap: 6px; }
-  .step-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  .task-steps { margin: 5px 0 0 30px; display: grid; gap: 5px; }
+  .step-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
   .step-item span { word-break: break-word; }
   .step-item.done span { text-decoration: line-through; opacity: 0.6; }
   .step-check {
-    width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--muted);
+    width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid var(--muted);
     background: none; padding: 0; cursor: pointer; flex: none; position: relative;
   }
+  .step-check.ghost { border-style: dashed; color: var(--muted); font-size: 12px; line-height: 13px; text-align: center; cursor: default; }
   .step-check:hover { border-color: var(--green); }
   .step-check.on { background: var(--green); border-color: var(--green); }
   .step-check.on::after {
-    content: ''; position: absolute; left: 5px; top: 1px; width: 5px; height: 10px;
+    content: ''; position: absolute; left: 4px; top: 0; width: 4px; height: 9px;
     border: solid var(--card); border-width: 0 2px 2px 0; transform: rotate(45deg);
   }
   .step-count { font-size: 12px; white-space: nowrap; opacity: 0.85; }
@@ -163,15 +151,44 @@
   }
   .step-arrow svg { transition: transform 0.15s; }
   .step-arrow.open svg { transform: rotate(180deg); }
-  .step-edit { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
-  .step-edit input { flex: 1; }
-  .step-edit.done input { text-decoration: line-through; opacity: 0.6; }
+  .step-edit { display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); }
+  .step-edit input { flex: 1; border: none; background: none; padding: 9px 0; border-radius: 0; }
+  .step-edit.done input { text-decoration: line-through; opacity: 0.55; }
+  .x {
+    background: none; border: none; color: var(--muted); font-size: 18px; line-height: 1;
+    padding: 4px 6px; cursor: pointer; flex: none;
+  }
+  .x:hover { color: var(--red); }
+
+  /* Time and energy tags */
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 5px 0 0 30px; }
+  .tag {
+    font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 8px;
+    background: var(--card); color: var(--ink); cursor: pointer; white-space: nowrap;
+  }
+  .tag:hover { border-color: var(--accent); }
+  .tag.unset { color: var(--muted); border-style: dashed; }
+  .tag.on { background: var(--lime); border-color: var(--lime); }
+  .tag.static { cursor: default; color: var(--muted); }
+  .tag.static:hover { border-color: var(--line); }
+  .tag.old { color: var(--amber); }
+  .tag-menu {
+    position: fixed; z-index: 80; background: var(--card); border: 1px solid var(--accent);
+    border-radius: 6px; padding: 4px; min-width: 130px; box-shadow: var(--pop-shadow);
+  }
+  .tag-menu button {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    padding: 6px 10px; border-radius: 4px; font-size: 14px; cursor: pointer;
+  }
+  .tag-menu button:hover { background: var(--green-bg); }
+  .tag-menu button.on { color: var(--accent); font-weight: 600; background: var(--green-bg); }
+  .tag-menu button.clear { color: var(--muted); border-top: 1px solid var(--line); border-radius: 0; margin-top: 2px; }
   .chips { display: flex; gap: 4px; flex-wrap: wrap; }
   .chip {
-    font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px;
+    font-size: 11px; font-weight: 600; border-radius: 6px; padding: 2px 8px;
     background: var(--bg); color: var(--muted); border: 1px solid var(--line); white-space: nowrap;
   }
-  .chip.today { background: var(--gold); color: #1c212e; border-color: var(--gold); }
+  .chip.today { background: var(--lime); color: var(--ink); border-color: var(--lime); }
   .chip.old { background: var(--amber-bg); color: var(--amber); border-color: transparent; }
   .task-edit { margin-top: 10px; display: grid; gap: 8px; }
   .task-edit label { font-size: 12px; color: var(--muted); font-weight: 600; }
@@ -182,8 +199,8 @@
   }
   .seg button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .section-label {
-    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px;
-    color: var(--muted); margin: 18px 0 2px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--accent); margin: 16px 0 2px;
   }
   .empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
 
@@ -191,7 +208,7 @@
   .deck { position: relative; height: 300px; margin: 16px auto 0; max-width: 420px; touch-action: none; }
   .swipe-card {
     position: absolute; inset: 0; background: var(--card); border: 1px solid var(--line);
-    border-radius: 20px; box-shadow: var(--shadow); padding: 24px;
+    border-radius: 6px; box-shadow: var(--shadow); padding: 24px;
     display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
     cursor: grab; user-select: none;
   }
@@ -222,7 +239,7 @@
   .focus-task { text-align: center; font-size: 22px; font-weight: 600; margin-top: 8px; }
   .focus-step {
     text-align: center; margin: 10px auto 0; max-width: 480px; font-size: 15px;
-    background: var(--bg); border-radius: 10px; padding: 10px 14px;
+    background: var(--bg); border-radius: 6px; padding: 10px 14px;
   }
   .ring-wrap { position: relative; width: 240px; height: 240px; margin: 20px auto 0; }
   .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -237,7 +254,7 @@
 
   /* Wins */
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .stat { background: var(--bg); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 12px; text-align: center; }
   .stat .n { font-size: 28px; font-weight: 700; }
   .stat .l { font-size: 12px; color: var(--muted); }
   .win { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 15px; display: flex; gap: 8px; }
@@ -250,15 +267,15 @@
   }
   .overlay.open { display: flex; }
   .modal {
-    background: var(--card); border-radius: 16px; padding: 20px; max-width: 440px; width: 100%;
-    box-shadow: var(--shadow);
+    background: var(--card); border: 1px solid var(--accent); border-radius: 8px; padding: 18px;
+    max-width: 480px; width: 100%; max-height: 88vh; overflow-y: auto; box-shadow: var(--pop-shadow);
   }
   .modal h3 { margin: 0 0 8px; }
   .modal h4 { margin: 18px 0 4px; font-size: 15px; }
   .modal.wide { max-width: 640px; max-height: 88vh; overflow-y: auto; }
 
   /* How to */
-  .help details { border: 1px solid var(--line); border-radius: 12px; margin-top: 8px; }
+  .help details { border: 1px solid var(--line); border-radius: 8px; margin-top: 8px; }
   .help summary { cursor: pointer; padding: 12px 14px; font-weight: 600; list-style-position: inside; }
   .help details[open] summary { border-bottom: 1px solid var(--line); }
   .help .body { padding: 4px 14px 12px; font-size: 15px; }
@@ -267,26 +284,42 @@
   .help .body li { margin-top: 5px; }
   .help code { background: var(--bg); border-radius: 6px; padding: 1px 5px; font-size: 14px; }
 
-  /* Review + quick sort */
-  .review-item {
-    border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-top: 8px;
-    display: grid; gap: 6px;
-  }
-  .review-top { display: flex; gap: 6px; align-items: center; }
-  .review-top input, .review-top .review-title { flex: 1; }
-  .review-title { font-weight: 600; word-break: break-word; }
+  /* Check-over screen */
+  .rv { border-bottom: 1px solid var(--line); padding: 10px 0; }
+  .rv-top { display: flex; gap: 6px; align-items: center; }
+  .rv-title { flex: 1; font-weight: 600; border: none !important; background: none !important; padding: 4px 0 !important; border-radius: 0 !important; }
+  .rv-title:focus { border-bottom: 1px solid var(--accent) !important; }
+  .rv .tags { margin-left: 0; }
+  .rv-steps { margin-top: 4px; }
+  .rv-step { display: flex; align-items: center; gap: 8px; }
+  .rv-step input { flex: 1; border: none; background: none; padding: 5px 0; font-size: 14px; border-radius: 0; }
+  .rv-step input:focus { border-bottom: 1px solid var(--accent); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; margin: 0 4px; }
+  .dot.add { width: auto; height: auto; background: none; color: var(--muted); margin: 0 1px; font-size: 14px; }
   .review-foot {
-    position: sticky; bottom: -20px; background: var(--card); padding: 12px 0 0; margin-top: 12px;
-    display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center;
+    position: sticky; bottom: -18px; background: var(--card); padding: 12px 0 2px; margin-top: 8px;
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
   }
-  .step-row { display: flex; gap: 6px; align-items: center; }
-  .step-row input { flex: 1; }
-  .btn.icon { padding: 4px 9px; line-height: 1.2; }
-  .qs-title { font-size: 20px; font-weight: 600; margin: 6px 0 10px; word-break: break-word; }
-  .qs-label { font-size: 12px; color: var(--muted); font-weight: 600; margin: 10px 0 4px; }
+  .saved { font-size: 12px; color: var(--muted); transition: color 0.2s; }
+  .saved.flash { color: var(--accent); }
+  .btn.link { border: none; background: none; color: var(--muted); padding: 6px 2px; }
+  .btn.link:hover { color: var(--ink); }
+  .btn.link.danger { color: var(--red); }
+  .btn.on { background: var(--lime); border-color: var(--lime); }
+
+  /* The card */
+  .ed-name {
+    font-size: 18px; font-weight: 600; border: none !important; border-bottom: 1px solid var(--line) !important;
+    border-radius: 0 !important; background: none !important; padding: 8px 0 !important; margin-top: 6px;
+  }
+  .ed-name:focus { border-bottom-color: var(--accent) !important; }
+  .ed-foot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+
+  /* Adding */
+  .capture textarea { min-height: 0; resize: none; background: var(--card); }
   .toast {
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120px);
-    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px;
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px;
     transition: transform 0.25s, visibility 0.25s; visibility: hidden; z-index: 60; max-width: calc(100% - 32px); font-size: 14px;
   }
   .toast.show { transform: translateX(-50%) translateY(0); visibility: visible; }
@@ -302,7 +335,7 @@
   .wins-mini .stat .n { font-size: 22px; }
   .wins-mini .win { font-size: 14px; }
   .steps-today { font-size: 14px; color: var(--muted); margin: 10px 0 0; text-align: center; }
-  .focus-card .btn.big { padding: 9px 16px; font-size: 16px; border-radius: 12px; }
+  .focus-card .btn.big { padding: 9px 16px; font-size: 16px; border-radius: 8px; }
   .focus-card .focus-step { margin-top: 8px; padding: 8px 12px; }
   .focus-card .focus-now { margin-top: 0; }
   .focus-card .focus-now .text { margin: 2px 0 8px; }
@@ -336,7 +369,7 @@
   .focus-now .text { font-size: 18px; font-weight: 600; margin: 4px 0 10px; word-break: break-word; }
   .timer-bar {
     position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 35;
-    background: var(--accent); color: var(--accent-ink); border: none; border-radius: 999px;
+    background: var(--accent); color: var(--accent-ink); border: none; border-radius: 6px;
     padding: 10px 18px; font-weight: 600; box-shadow: var(--shadow); cursor: pointer;
     max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     display: none; font-variant-numeric: tabular-nums;
@@ -396,22 +429,13 @@
   <!-- LOOPS -->
   <section class="screen active" id="screen-capture">
     <div id="backup-alert"></div>
-    <div class="card">
-      <h2>Get it out of your head</h2>
-      <p class="hint">Type it and press Enter. Don't sort it yet. You can add details later, or never.</p>
-      <input type="text" id="quick-add" placeholder="Something on your mind..." autocomplete="off">
-      <div class="row" style="margin-top:10px">
-        <button class="btn sm" onclick="toggleDump()">Talk it out (many at once)</button>
-        <button class="btn sm" id="qs-btn" style="display:none" onclick="openQuickSort()"></button>
-      </div>
-      <div id="dump-box" style="display:none;margin-top:10px">
-        <p class="hint">Tap the mic on your keyboard and talk. Say "next" between loops, or put each one on its own line. To list steps, say "steps" and put "then" between them. You'll check everything before it's added.</p>
-        <textarea id="dump-text" placeholder="email Dana about the field trip, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"></textarea>
-        <div class="row" style="margin-top:8px">
-          <button class="btn primary" id="ai-btn" onclick="aiExtract()">AI extract</button>
-          <button class="btn" onclick="parseDump()">Sort it (no AI)</button>
-          <button class="btn" onclick="toggleDump()">Cancel</button>
-        </div>
+    <div class="card capture">
+      <textarea id="quick-add" rows="2" placeholder="What's on your mind?" autocomplete="off"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" onclick="addFromBox()">Add</button>
+        <button class="btn" id="ai-btn" onclick="aiExtract()">Add with AI</button>
+        <div class="spacer"></div>
+        <span id="draft-note"></span>
       </div>
     </div>
 
@@ -428,7 +452,6 @@
   <section class="screen" id="screen-pick">
     <div class="card">
       <h2>Right now I have...</h2>
-      <p class="hint">Picking is the hard part. Tell it how you feel and let it narrow things down.</p>
       <label class="hint" style="display:block;margin:0 0 4px">Energy</label>
       <div class="seg" id="f-energy"></div>
       <label class="hint" style="display:block;margin:10px 0 4px">Time</label>
@@ -447,7 +470,6 @@
       </div>
 
       <div id="mode-swipe">
-        <p class="hint" style="margin-top:12px">Swipe right (or press the right arrow) for "doing it". Swipe left to skip. No pressure, it comes back around.</p>
         <div class="deck" id="deck"></div>
         <div class="swipe-buttons">
           <button class="btn" onclick="swipeDecide(false)">Skip</button>
@@ -1032,7 +1054,7 @@ function guessOwner() {
 function openSync() {
   const s = sync || {};
   openModal(`<h3>Sync with GitHub</h3>
-    <p class="hint">Saves both lists to a private GitHub repo so your phone, work computer, and home computer all see the same thing. Set this up once on each device.</p>
+    <p class="hint">Keeps your devices on the same lists. Setup steps are in Data, How to.</p>
     <label class="hint" style="display:block;margin:8px 0 4px">GitHub username</label>
     <input type="text" id="sy-owner" value="${esc(s.owner || guessOwner())}" autocomplete="off" autocapitalize="off">
     <label class="hint" style="display:block;margin:10px 0 4px">Private repo name</label>
@@ -1160,7 +1182,7 @@ async function openGitRestore() {
   }
   const label = d => new Date(d + 'T12:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   openModal(`<h3>Restore from GitHub</h3>
-    <p class="hint">The app saves a backup here about once a week and keeps the last ${AUTO_BACKUP_KEEP}. Pick one to see what's in it. Nothing changes until you say yes.</p>
+    <p class="hint">Weekly backups, newest first.</p>
     ${list.length
       ? list.map(f => `<button class="btn" style="display:block;width:100%;text-align:left;margin-top:6px" onclick="restoreGitBackup('${f.date}')">${esc(label(f.date))}</button>`).join('')
       : '<div class="empty">No backups yet. The first one is saved the next time the app opens with sync on.</div>'}
@@ -1371,7 +1393,7 @@ function askCloseLoop(id) {
   openModal(`<h3>That was the last step</h3>
     <p class="hint">${esc(t.title)}. Close the loop?</p>
     <div class="row" style="margin-top:12px;justify-content:flex-end">
-      <button class="btn" onclick="closeModal()">Not yet</button>
+      <button class="btn" onclick="closeModal();if(_editing)renderEditor()">Not yet</button>
       <button class="btn primary" onclick="closeModal();closeLoopFromSteps('${t.id}')">Close it</button>
     </div>`);
 }
@@ -1433,7 +1455,6 @@ function insertNextStep(id, text) {
 }
 
 const _openSteps = new Set();
-let _editorMore = false;
 
 function toggleStepsOpen(id) {
   if (_openSteps.has(id)) _openSteps.delete(id); else _openSteps.add(id);
@@ -1443,26 +1464,49 @@ function toggleStepsOpen(id) {
 function startLoop(id) { goFocus(id, true); }
 
 // ── Capture ─────────────────────────────────────────
+// One box. One loop goes straight in; several open the check-over screen.
 
-document.getElementById('quick-add').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const t = addTask(e.target.value);
-    if (t) {
-      e.target.value = '';
-      save();
-      renderAll();
-      toast('Captured.');
-    }
-  }
-});
+const quickAdd = document.getElementById('quick-add');
+function growBox() { quickAdd.style.height = 'auto'; quickAdd.style.height = Math.min(quickAdd.scrollHeight + 2, 240) + 'px'; }
+quickAdd.addEventListener('input', growBox);
+quickAdd.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addFromBox(); } });
 
-function toggleDump() {
-  const box = document.getElementById('dump-box');
-  box.style.display = box.style.display === 'none' ? 'block' : 'none';
-  if (box.style.display === 'block') document.getElementById('dump-text').focus();
+function clearBox() { quickAdd.value = ''; growBox(); }
+
+function addFromBox() {
+  const items = splitLoops(quickAdd.value).map(parseLoop);
+  if (!items.length) return;
+  if (items.length > 1) { openReview(items); return; }
+  pushUndoSnapshot('add "' + items[0].title + '"');
+  addItems(items);
+  save();
+  clearBox();
+  renderAll();
+  toast('Added.');
 }
 
-// \u2500\u2500 Talk it out: the no-AI sorter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Adds checked-over items to the open list. Returns how many Today picks didn't fit.
+function addItems(items) {
+  let room = TODAY_LIMIT - L().tasks.filter(x => x.today && !x.done).length;
+  let overCap = 0;
+  const wantsToday = items.map(it => {
+    if (!it.today) return false;
+    if (room > 0) { room--; return true; }
+    overCap++; return false;
+  });
+  // Added last-to-first so the first one you said ends up on top
+  items.map((it, i) => [it, wantsToday[i]]).reverse().forEach(([it, today]) => {
+    const t = addTask(it.title);
+    if (!t) return;
+    setSteps(t, newSteps(it.steps || []));
+    t.size = it.size || null;
+    t.energy = it.energy || null;
+    t.today = today;
+  });
+  return overCap;
+}
+
+// ── Talk it out: the no-AI sorter ───────────────────
 // Splits on new lines and on the word "next", then picks up
 // time, energy, "today" and "first step is..." from what you said.
 // It's rule-based, so it only catches the phrases below. The
@@ -1559,12 +1603,7 @@ function parseLoop(raw) {
   return item;
 }
 
-function parseDump() {
-  const text = document.getElementById('dump-text').value;
-  const items = splitLoops(text).map(parseLoop);
-  if (!items.length) { toast('Nothing to sort yet. Talk or type something first.'); return; }
-  openReview(items, 'add');
-}
+
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 //  AI (Claude)
@@ -1598,12 +1637,6 @@ For each loop:
 ${SIZE_ENERGY}
 - today: true only if they said it's for today, tonight, urgent, or ASAP.`;
 
-const FILL_SYSTEM = `You fill in missing details for loops (tasks) in a personal task app. You get a numbered list of loop titles, some with a next step already written. Return one entry per loop with the same index.
-
-For each loop:
-- step: ${FIRST_STEP}. If a next step is already written, return it exactly as it is.
-${SIZE_ENERGY}`;
-
 const BREAK_SYSTEM = `You help someone break a task they're putting off into small steps. Return 3 to 5 steps in order, or just 1 or 2 if the task is already small. The first step is ${FIRST_STEP}. Each step is a short, concrete action in plain words, about 10 words at most. Leave out steps they've already done.`;
 
 const SIZE_ENERGY_SCHEMA = {
@@ -1616,7 +1649,6 @@ const listSchema = (props, required) => ({
   properties: { loops: { type: 'array', items: { type: 'object', additionalProperties: false, required, properties: props } } }
 });
 const EXTRACT_SCHEMA = listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA, { today: { type: 'boolean' } }), ['title', 'steps', 'size', 'energy', 'today']);
-const FILL_SCHEMA = listSchema(Object.assign({ index: { type: 'integer' }, step: { type: 'string' } }, SIZE_ENERGY_SCHEMA), ['index', 'step', 'size', 'energy']);
 const BREAK_SCHEMA = { type: 'object', additionalProperties: false, required: ['steps'], properties: { steps: STEP_LIST } };
 
 async function callClaude(system, text, schema) {
@@ -1667,7 +1699,7 @@ function fromAi(x) {
 
 function needAiKey() {
   if (aiOn()) return false;
-  openSettings('Add your Claude API key to use AI. Until then, Sort it (no AI) works without one.');
+  openSettings('Add your Claude API key to use AI. Until then, Add works without it.');
   return true;
 }
 
@@ -1681,37 +1713,21 @@ async function withBusy(btnId, label, fn) {
 }
 
 function aiExtract() {
-  const text = document.getElementById('dump-text').value.trim();
-  if (!text) { toast('Nothing to send yet. Talk or type something first.'); return; }
+  const text = quickAdd.value.trim();
+  if (!text) { quickAdd.focus(); return; }
   if (needAiKey()) return;
   withBusy('ai-btn', 'Thinking...', async () => {
     const r = await callClaude(EXTRACT_SYSTEM, text, EXTRACT_SCHEMA);
     const items = (r.loops || []).filter(x => x && typeof x.title === 'string' && x.title.trim())
       .map(x => Object.assign({ title: x.title.trim(), today: !!x.today }, fromAi(x)));
     if (!items.length) { toast('Claude did not find any loops in that.'); return; }
-    openReview(items, 'add');
+    openReview(items);
   });
 }
 
 // Fill in details for loops that are already on the list
-function aiFillMissing() {
-  if (needAiKey()) return;
-  const tasks = needsDetails();
-  if (!tasks.length) { toast('Every loop already has its details.'); return; }
-  const text = tasks.map((t, i) => { const c = currentStep(t); return `${i + 1}. ${t.title}${c ? ` (next step already: ${c.text})` : ''}`; }).join('\n');
-  withBusy('qs-ai', 'Thinking...', async () => {
-    const r = await callClaude(FILL_SYSTEM, text, FILL_SCHEMA);
-    const byIndex = new Map((r.loops || []).map(x => [Number(x.index), fromAi(x)]));
-    const items = tasks.map((t, i) => {
-      const g = byIndex.get(i + 1) || {};
-      const has = getSteps(t).length > 0;
-      return { id: t.id, title: t.title, hasSteps: has, steps: has ? [] : (g.steps || []).slice(0, 1), size: t.size || g.size || null, energy: t.energy || g.energy || null };
-    });
-    openReview(items, 'fill');
-  });
-}
 
-// One loop: suggest a first step and drop it into an input box
+
 // Asks Claude to split one loop into small steps, then lets you check them first
 function aiBreakDown(id, btnId) {
   const t = findTask(id);
@@ -1737,15 +1753,23 @@ function renderBreakDown() {
   const t = findTask(_bd.id);
   if (!t) return;
   openModal(`<h3>Break it down</h3>
-    <p class="hint">${esc(t.title)}. Fix or remove anything. ${_bd.replacing ? 'These replace the steps you haven\'t checked off yet.' : ''}</p>
+    <p class="hint">${esc(t.title)}</p>
     ${_bd.steps.map((v, j) => `<div class="step-edit">
       <input type="text" value="${esc(v)}" aria-label="Step" oninput="_bd.steps[${j}]=this.value">
-      <button class="btn sm icon" title="Remove step" aria-label="Remove step" onclick="_bd.steps.splice(${j},1);renderBreakDown()">&times;</button>
+      <button class="x" title="Remove step" aria-label="Remove step" onclick="_bd.steps.splice(${j},1);renderBreakDown()">&times;</button>
     </div>`).join('')}
     <div class="review-foot">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn primary" onclick="commitBreakDown()">Use these steps</button>
-    </div>`, true);
+      <button class="btn link" onclick="cancelBreakDown()">Cancel</button>
+      <div class="spacer"></div>
+      <button class="btn primary" onclick="commitBreakDown()">${_bd.replacing ? 'Replace steps' : 'Use these'}</button>
+    </div>`, false, 'sticky');
+}
+
+function cancelBreakDown() {
+  const id = _bd && _bd.id;
+  _bd = null;
+  closeModal();
+  if (id && findTask(id)) openEditor(id);
 }
 
 function commitBreakDown() {
@@ -1757,199 +1781,295 @@ function commitBreakDown() {
   _bd = null;
   closeModal();
   renderAll();
+  openEditor(t.id);
 }
 
-// \u2500\u2500 Review \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ── Review ──────────────────────────────────────────
 // Everything from Sort it, AI extract, and AI fill lands here
 // first, so nothing is added or changed until you say so.
 
 let _review = null;
+const DRAFT_KEY = 'openloops_draft';
 
-function openReview(items, mode) {
-  _review = { mode, items };
+function saveDraft() {
+  try {
+    if (_review && _review.items.length) localStorage.setItem(DRAFT_KEY, JSON.stringify({ list: state.current, items: _review.items }));
+    else localStorage.removeItem(DRAFT_KEY);
+  } catch {}
+  renderDraftNote();
+}
+
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY));
+    if (!d || !Array.isArray(d.items)) return null;
+    const items = d.items.filter(x => x && typeof x.title === 'string').map(x => ({
+      title: x.title,
+      steps: (Array.isArray(x.steps) ? x.steps : []).filter(v => typeof v === 'string'),
+      size: SIZES.includes(x.size) ? x.size : null,
+      energy: ENERGY[x.energy] ? x.energy : null,
+      today: !!x.today
+    }));
+    return items.length ? { list: LIST_NAMES.includes(d.list) ? d.list : state.current, items } : null;
+  } catch { return null; }
+}
+
+function renderDraftNote() {
+  const d = loadDraft();
+  document.getElementById('draft-note').innerHTML = d
+    ? `<button class="btn link" onclick="resumeDraft()">${d.items.length} waiting to check</button>` : '';
+}
+
+function resumeDraft() {
+  const d = loadDraft();
+  if (!d) return;
+  if (d.list !== state.current) switchList(d.list);
+  _review = { items: d.items };
   renderReview();
+}
+
+function openReview(items) {
+  _review = { items: items.map(it => Object.assign({ steps: [], size: null, energy: null, today: false }, it)) };
+  saveDraft();
+  clearBox();
+  renderReview();
+}
+
+function tagHTML(kind, value, onclick) {
+  const label = kind === 'size' ? (value ? sizeLabel(value) : '+ time') : (value ? ENERGY[value] : '+ energy');
+  return `<button class="tag ${value ? '' : 'unset'}" onclick="${onclick}">${label}</button>`;
 }
 
 function renderReview() {
   const r = _review;
-  const adding = r.mode === 'add';
-  const rows = r.items.map((it, i) => `<div class="review-item">
-      <div class="review-top">
-        ${adding
-          ? `<input type="text" value="${esc(it.title)}" oninput="_review.items[${i}].title=this.value" aria-label="Name">`
-          : `<div class="review-title">${esc(it.title)}</div>`}
-        <button class="btn sm" onclick="reviewRemove(${i})">${adding ? 'Remove' : 'Skip'}</button>
-      </div>
-      ${reviewStepsHTML(it, i)}
-      <div class="seg">${SIZES.map(m =>
-        `<button class="${it.size === m ? 'on' : ''}" onclick="reviewSet(${i},'size',${m})">${sizeLabel(m)}</button>`).join('')}</div>
-      <div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
-        `<button class="${it.energy === k ? 'on' : ''}" onclick="reviewSet(${i},'energy','${k}')">${v}</button>`).join('')}
-        ${adding ? `<button class="${it.today ? 'on' : ''}" onclick="reviewSet(${i},'today',true)">Today</button>` : ''}</div>
-    </div>`).join('');
   const n = r.items.length;
-  const go = adding ? `Add ${n} to ${state.current}` : `Save ${n}`;
-  openModal(`<h3>${adding ? 'Check these over' : 'Check the details'}</h3>
-    <p class="hint">Fix anything that's off. Tap a button again to clear it. ${adding ? 'Nothing is added until you press Add.' : 'Nothing changes until you press Save.'}</p>
+  const rows = r.items.map((it, i) => `<div class="rv">
+      <div class="rv-top">
+        <input type="text" class="rv-title" value="${esc(it.title)}" aria-label="Name" oninput="rvSet(${i},'title',this.value)">
+        <button class="x" title="Remove" aria-label="Remove" onclick="rvRemove(${i})">&times;</button>
+      </div>
+      <div class="tags">
+        ${tagHTML('size', it.size, `openTagMenu(event,'size','rv:${i}')`)}
+        ${tagHTML('energy', it.energy, `openTagMenu(event,'energy','rv:${i}')`)}
+        <button class="tag ${it.today ? 'on' : 'unset'}" onclick="rvSet(${i},'today',${!it.today},true)">Today</button>
+      </div>
+      <div class="rv-steps">
+        ${it.steps.map((v, j) => `<div class="rv-step">
+          <span class="dot"></span>
+          <input type="text" id="rv-${i}-${j}" value="${esc(v)}" aria-label="Step" oninput="rvStep(${i},${j},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();rvInsertStep(${i},${j + 1})}">
+          <button class="x" title="Remove step" aria-label="Remove step" onclick="rvStepRemove(${i},${j})">&times;</button>
+        </div>`).join('')}
+        <div class="rv-step">
+          <span class="dot add">+</span>
+          <input type="text" id="rv-add-${i}" placeholder="Add a step" aria-label="Add a step" onkeydown="if(event.key==='Enter'){event.preventDefault();rvAddStep(${i},this)}" onchange="rvAddStep(${i},this)">
+        </div>
+      </div>
+    </div>`).join('');
+  openModal(`<div class="row"><h3 style="margin:0">Check these over</h3><div class="spacer"></div><span class="saved">Draft saved</span></div>
     ${rows || '<div class="empty">Nothing left.</div>'}
     <div class="review-foot">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn primary" ${n ? '' : 'disabled'} onclick="commitReview()">${go}</button>
-    </div>`, true);
+      <button class="btn link" onclick="discardReview()">Discard all</button>
+      <button class="btn link" onclick="closeModal()">Later</button>
+      <div class="spacer"></div>
+      <button class="btn primary" ${n ? '' : 'disabled'} onclick="commitReview()">Add ${n} to ${state.current}</button>
+    </div>`, true, 'sticky');
 }
 
-function reviewStepsHTML(it, i) {
-  if (it.hasSteps) return '<div class="hint" style="margin:0">Already has steps.</div>';
-  const list = it.steps.length ? it.steps : [''];
-  const canAdd = _review.mode === 'add';
-  return list.map((v, j) => `<div class="step-edit" style="margin-top:0">
-      <input type="text" value="${esc(v)}" placeholder="${j ? 'Step' : 'Smallest first step (optional)'}" aria-label="Step" oninput="_review.items[${i}].steps[${j}]=this.value">
-      ${list.length > 1 ? `<button class="btn sm icon" title="Remove step" aria-label="Remove step" onclick="_review.items[${i}].steps.splice(${j},1);renderReview()">&times;</button>` : ''}
-    </div>`).join('') +
-    (canAdd ? `<div><button class="btn sm" onclick="_review.items[${i}].steps.length||_review.items[${i}].steps.push('');_review.items[${i}].steps.push('');renderReview()">Add a step</button></div>` : '');
+function rvSet(i, field, value, rerender) {
+  _review.items[i][field] = value;
+  saveDraft();
+  if (rerender) renderReview();
 }
 
-function reviewSet(i, field, value) {
-  const it = _review.items[i];
-  it[field] = it[field] === value ? (field === 'today' ? false : null) : value;
+function rvRemove(i) { _review.items.splice(i, 1); saveDraft(); renderReview(); }
+function rvStep(i, j, v) { _review.items[i].steps[j] = v; saveDraft(); }
+function rvStepRemove(i, j) { _review.items[i].steps.splice(j, 1); saveDraft(); renderReview(); }
+
+function rvInsertStep(i, j) {
+  _review.items[i].steps.splice(j, 0, '');
+  saveDraft();
   renderReview();
+  document.getElementById(`rv-${i}-${j}`)?.focus();
 }
 
-function reviewRemove(i) {
-  _review.items.splice(i, 1);
+function rvAddStep(i, input) {
+  const v = input.value.trim();
+  if (!v) return;
+  input.value = ''; // so the box doesn't send the same step again as it's replaced
+  _review.items[i].steps.push(v);
+  saveDraft();
   renderReview();
+  document.getElementById('rv-add-' + i)?.focus();
+}
+
+function discardReview() {
+  if (!confirm('Discard these loops?')) return;
+  _review = null;
+  saveDraft();
+  closeModal();
 }
 
 function commitReview() {
   const r = _review;
   if (!r) return;
-  const items = r.items.filter(it => (it.title || '').trim());
-  if (!items.length) { closeModal(); return; }
-  if (r.mode === 'add') {
-    pushUndoSnapshot(`add ${items.length} loop${items.length === 1 ? '' : 's'}`);
-    let room = TODAY_LIMIT - L().tasks.filter(x => x.today && !x.done).length;
-    let overCap = 0;
-    // Today picks go in list order until the cap is hit
-    const wantsToday = items.map(it => {
-      if (!it.today) return false;
-      if (room > 0) { room--; return true; }
-      overCap++; return false;
-    });
-    // Added last-to-first so the first one you said ends up on top
-    items.map((it, i) => [it, wantsToday[i]]).reverse().forEach(([it, today]) => {
-      const t = addTask(it.title);
-      if (!t) return;
-      setSteps(t, newSteps(it.steps || []));
-      t.size = it.size || null;
-      t.energy = it.energy || null;
-      t.today = today;
-    });
-    save();
-    document.getElementById('dump-text').value = '';
-    document.getElementById('dump-box').style.display = 'none';
-    closeModal();
-    renderAll();
-    toast(overCap
-      ? `${items.length} added. Today was full, so ${overCap} went to the main list.`
-      : `${items.length} loop${items.length === 1 ? '' : 's'} captured. Your head has more room now.`);
-  } else {
-    pushUndoSnapshot(`fill details for ${items.length}`);
-    items.forEach(it => {
-      const t = findTask(it.id);
-      if (!t) return;
-      if (!it.hasSteps && !getSteps(t).length) setSteps(t, newSteps(it.steps || []));
-      t.size = it.size || null;
-      t.energy = it.energy || null;
-    });
-    save();
-    closeModal();
-    if (_qs) closeQuickSort(true);
-    renderAll();
-    toast(`Details saved for ${items.length} loop${items.length === 1 ? '' : 's'}.`);
-  }
+  const items = r.items.filter(it => (it.title || '').trim()).map(it => Object.assign({}, it, { title: it.title.trim() }));
+  if (!items.length) { discardReview(); return; }
+  pushUndoSnapshot(`add ${items.length} loop${items.length === 1 ? '' : 's'}`);
+  const overCap = addItems(items);
+  save();
   _review = null;
-}
-
-// \u2500\u2500 Quick sort \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-// One loop at a time, big buttons, for loops missing time or energy.
-
-let _qs = null;
-
-function needsDetails() { return activeTasks().filter(t => !t.size || !t.energy); }
-
-function openQuickSort() {
-  const ids = needsDetails().map(t => t.id);
-  if (!ids.length) { toast('Every loop already has its details.'); return; }
-  _qs = { ids, i: 0, done: 0 };
-  renderQuickSort();
-}
-
-function renderQuickSort() {
-  if (!_qs) return;
-  while (_qs.i < _qs.ids.length && !findTask(_qs.ids[_qs.i])) _qs.i++;
-  if (_qs.i >= _qs.ids.length) { closeQuickSort(); return; }
-  const t = findTask(_qs.ids[_qs.i]);
-  openModal(`<div class="row"><h3 style="flex:1;margin:0">Quick sort</h3>
-      <span class="hint" style="margin:0">${_qs.i + 1} of ${_qs.ids.length}</span></div>
-    <div class="qs-title">${esc(t.title)}</div>
-    <div class="qs-label">How long?</div>
-    <div class="seg">${SIZES.map(m =>
-      `<button class="${t.size === m ? 'on' : ''}" onclick="qsSet('size',${m})">${sizeLabel(m)}</button>`).join('')}</div>
-    <div class="qs-label">Energy it needs</div>
-    <div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
-      `<button class="${t.energy === k ? 'on' : ''}" onclick="qsSet('energy','${k}')">${v}</button>`).join('')}</div>
-    ${currentStep(t)
-      ? `<div class="qs-label">Next step</div><div>${esc(currentStep(t).text)}</div>`
-      : `<div class="qs-label">Smallest first step (optional)</div>
-    <div class="step-row">
-      <input type="text" id="qs-step" placeholder="e.g. open the email" onchange="qsSaveStep('${t.id}',this)">
-    </div>`}
-    <div class="review-foot">
-      <button class="btn" id="qs-ai" onclick="aiFillMissing()">${aiOn() ? 'Let AI fill all' : 'AI fill all'}</button>
-      <div class="spacer"></div>
-      <button class="btn" onclick="closeQuickSort()">Done</button>
-      <button class="btn primary" onclick="qsNext()">Next</button>
-    </div>`, true);
-}
-
-function qsSet(field, value) {
-  const t = findTask(_qs.ids[_qs.i]);
-  if (!t) return;
-  t[field] = t[field] === value ? null : value;
-  save();
-  clearTimeout(_qs.advance);
-  renderQuickSort();
-  // Both picked: move on by itself
-  if (t.size && t.energy) _qs.advance = setTimeout(qsNext, 250);
-}
-
-function qsNext() {
-  if (!_qs) return;
-  clearTimeout(_qs.advance);
-  const input = document.getElementById('qs-step');
-  if (input) qsSaveStep(_qs.ids[_qs.i], input);
-  _qs.i++;
-  renderQuickSort();
-}
-
-function qsSaveStep(id, input) {
-  const t = findTask(id);
-  if (!t || !input.value.trim() || getSteps(t).length) return;
-  setSteps(t, newSteps([input.value]));
-  save();
-}
-
-function closeQuickSort(quiet) {
-  const sorted = _qs ? _qs.ids.filter(id => { const t = findTask(id); return t && t.size && t.energy; }).length : 0;
-  _qs = null;
-  if (!quiet) closeModal();
+  saveDraft();
+  closeModal();
   renderAll();
-  if (!quiet && sorted) toast(`${sorted} sorted. Pick one now has more to work with.`);
+  toast(overCap
+    ? `${items.length} added. Today was full, so ${overCap} went to the main list.`
+    : `${items.length} loop${items.length === 1 ? '' : 's'} added.`);
+}
+
+// ── Time and energy menu ────────────────────────────
+// A small menu under a tag, used on the list and the check-over screen.
+
+let _tagMenu = null;
+
+function openTagMenu(e, kind, target) {
+  e.stopPropagation();
+  closeTagMenu();
+  const cur = target.startsWith('rv:') ? _review.items[+target.slice(3)][kind] : (findTask(target.slice(5)) || {})[kind];
+  const opts = kind === 'size' ? SIZES.map(m => [m, sizeLabel(m)]) : Object.entries(ENERGY);
+  const menu = document.createElement('div');
+  menu.className = 'tag-menu';
+  menu.innerHTML = opts.map(([v, label]) =>
+    `<button class="${cur == v ? 'on' : ''}" data-v="${v}">${label}</button>`).join('') +
+    (cur ? '<button class="clear" data-v="">Clear</button>' : '');
+  menu.addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    ev.stopPropagation();
+    const v = b.dataset.v === '' ? null : (kind === 'size' ? Number(b.dataset.v) : b.dataset.v);
+    closeTagMenu();
+    setTag(kind, target, v);
+  });
+  document.body.appendChild(menu);
+  const r = e.currentTarget.getBoundingClientRect();
+  const left = Math.min(r.left, window.innerWidth - menu.offsetWidth - 8);
+  const below = r.bottom + 4 + menu.offsetHeight < window.innerHeight;
+  menu.style.left = Math.max(8, left) + 'px';
+  menu.style.top = (below ? r.bottom + 4 : r.top - menu.offsetHeight - 4) + 'px';
+  _tagMenu = menu;
+}
+
+function closeTagMenu() { if (_tagMenu) { _tagMenu.remove(); _tagMenu = null; } }
+document.addEventListener('click', closeTagMenu);
+window.addEventListener('scroll', closeTagMenu, true);
+window.addEventListener('resize', closeTagMenu);
+
+function setTag(kind, target, v) {
+  if (target.startsWith('rv:')) { rvSet(+target.slice(3), kind, v, true); return; }
+  const t = findTask(target.slice(5));
+  if (!t) return;
+  t[kind] = v;
+  save();
+  renderAll();
+}
+
+// ── The card: edit a loop's name and steps ──────────
+// Everything saves as you type, so closing it never loses anything.
+
+let _editing = null;
+
+function openEditor(id) {
+  const t = findTask(id);
+  if (!t) return;
+  // Older loops keep their first step in `step`; give it a real step list so edits stick
+  if (!Array.isArray(t.steps) && t.step) { setSteps(t, getSteps(t)); save(); }
+  _editing = id;
+  renderEditor();
+  if (!t.title) document.querySelector('#modal .ed-name')?.focus();
+}
+
+function renderEditor() {
+  const t = findTask(_editing);
+  if (!t) { closeModal(); return; }
+  const steps = getSteps(t);
+  openModal(`<div class="row"><span class="saved" id="ed-saved">Saved</span><div class="spacer"></div>
+      <button class="btn primary sm" onclick="closeModal()">Done</button></div>
+    <input type="text" class="ed-name" value="${esc(t.title)}" aria-label="Name" oninput="edName(this.value)">
+    <div class="section-label">Steps</div>
+    ${steps.map(st => `<div class="step-edit ${st.done ? 'done' : ''}">
+        <button class="step-check ${st.done ? 'on' : ''}" title="${st.done ? 'Mark not done' : 'Step done'}" onclick="edToggle('${st.id}')"></button>
+        <input type="text" value="${esc(st.text)}" aria-label="Step" oninput="edStep('${st.id}',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('ed-add').focus()}">
+        <button class="x" title="Remove step" aria-label="Remove step" onclick="edRemove('${st.id}')">&times;</button>
+      </div>`).join('')}
+    <div class="step-edit">
+      <span class="step-check ghost">+</span>
+      <input type="text" id="ed-add" placeholder="Add a step" aria-label="Add a step" onkeydown="if(event.key==='Enter'){event.preventDefault();edAdd()}" onchange="edAdd()">
+    </div>
+    <div class="ed-foot">
+      ${aiOn() ? `<button class="btn sm" id="ed-bd" onclick="aiBreakDown('${t.id}','ed-bd')">Break it down</button>` : ''}
+      <button class="btn sm ${t.today ? 'on' : ''}" onclick="toggleToday('${t.id}');renderEditor()">${t.today ? 'Picked for today' : 'Pick for today'}</button>
+      <div class="spacer"></div>
+      <button class="btn link" onclick="closeModal();snooze('${t.id}')">Not today</button>
+      <button class="btn link danger" onclick="closeModal();letGo('${t.id}')">Let it go</button>
+    </div>`, false, 'editor');
+}
+
+function edSaved() {
+  const el = document.getElementById('ed-saved');
+  if (!el) return;
+  el.classList.add('flash');
+  clearTimeout(edSaved.t);
+  edSaved.t = setTimeout(() => el.classList.remove('flash'), 600);
+}
+
+function edName(v) {
+  const t = findTask(_editing);
+  if (!t || !v.trim()) return;
+  t.title = v.trim();
+  save();
+  renderTaskList();
+  edSaved();
+}
+
+function edStep(sid, v) {
+  const t = findTask(_editing);
+  if (!t || !v.trim()) return;
+  const steps = getSteps(t);
+  const st = steps.find(x => x.id === sid);
+  if (!st) return;
+  st.text = v;
+  setSteps(t, steps);
+  save();
+  renderTaskList();
+  edSaved();
+}
+
+function edAdd() {
+  const input = document.getElementById('ed-add');
+  const t = findTask(_editing);
+  if (!input || !t || !input.value.trim()) return;
+  const steps = getSteps(t);
+  steps.push({ id: uid(), text: input.value.trim(), done: false });
+  input.value = ''; // so the box doesn't send the same step again as it's replaced
+  setSteps(t, steps);
+  save();
+  renderTaskList();
+  renderEditor();
+  document.getElementById('ed-add')?.focus();
+}
+
+function edToggle(sid) {
+  const id = _editing;
+  toggleStep(id, sid);
+  if (_editing === id && _modalKind === 'editor') renderEditor();
+}
+
+function edRemove(sid) {
+  removeStep(_editing, sid);
+  renderEditor();
 }
 
 // ── List rendering ──────────────────────────────────
 
-let _openEditor = null;
 
 function esc(str) {
   if (str == null) return '';
@@ -1965,27 +2085,24 @@ function stepItemHTML(t, st, extra) {
 }
 
 function taskHTML(t) {
-  const chips = [];
-  if (t.today) chips.push('<span class="chip today">Today</span>');
-  if (t.size) chips.push(`<span class="chip">${sizeLabel(t.size)}</span>`);
-  if (t.energy) chips.push(`<span class="chip">${ENERGY[t.energy]}</span>`);
-  if (isSnoozed(t)) chips.push('<span class="chip">Snoozed</span>');
-  const age = daysSince(t.created);
-  if (age >= OLD_DAYS) chips.push(`<span class="chip old">${age} days open</span>`);
-
-  const editing = _openEditor === t.id;
   const steps = getSteps(t);
-  let html = `<div class="task" data-id="${t.id}">
-    <div class="task-top">
-      <button class="check" title="Done" onclick="completeTask('${t.id}')"></button>
-      <div class="task-main">
-        <div class="task-title" onclick="toggleEditor('${t.id}')">${esc(t.title)}</div>
-        ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
-      </div>
-      <button class="btn sm start-btn" onclick="startLoop('${t.id}')">Start</button>
-    </div>`;
+  const tags = [
+    tagHTML('size', t.size, `openTagMenu(event,'size','task:${t.id}')`),
+    tagHTML('energy', t.energy, `openTagMenu(event,'energy','task:${t.id}')`)
+  ];
+  if (isSnoozed(t)) tags.push('<span class="tag static">Back tomorrow</span>');
+  const age = daysSince(t.created);
+  if (age >= OLD_DAYS) tags.push(`<span class="tag static old">${age} days</span>`);
 
-  if (steps.length && !editing) {
+  let html = `<div class="task ${t.today ? 'today' : ''}" data-id="${t.id}">
+    <div class="task-top">
+      <button class="check" title="Close this loop" onclick="completeTask('${t.id}')"></button>
+      <div class="task-main"><div class="task-title" onclick="openEditor('${t.id}')">${esc(t.title)}</div></div>
+      <button class="btn sm start-btn" onclick="startLoop('${t.id}')">Start</button>
+    </div>
+    <div class="tags">${tags.join('')}</div>`;
+
+  if (steps.length) {
     const open = _openSteps.has(t.id) && steps.length > 1;
     const arrow = steps.length > 1
       ? `<button class="step-arrow ${open ? 'open' : ''}" title="${open ? 'Hide steps' : 'Show all steps'}" onclick="toggleStepsOpen('${t.id}')">${ARROW}</button>` : '';
@@ -1996,51 +2113,15 @@ function taskHTML(t) {
       const i = steps.findIndex(x => !x.done);
       const count = steps.length > 1 ? `<span class="step-count">${i < 0 ? steps.length : i + 1} of ${steps.length}</span>` : '';
       html += i < 0
-        ? `<div class="step-item"><span>All steps done.</span>${arrow}</div>`
+        ? `<div class="step-item"><span>All steps done</span>${arrow}</div>`
         : stepItemHTML(t, steps[i], count + arrow);
     }
     html += '</div>';
   }
-
-  if (editing) {
-    const stepRows = steps.map(st => `<div class="step-edit ${st.done ? 'done' : ''}">
-        <button class="step-check ${st.done ? 'on' : ''}" title="${st.done ? 'Mark not done' : 'Step done'}" onclick="toggleStep('${t.id}','${st.id}')"></button>
-        <input type="text" value="${esc(st.text)}" aria-label="Step" onchange="editStep('${t.id}','${st.id}',this)">
-        <button class="btn sm icon" title="Remove step" aria-label="Remove step" onclick="removeStep('${t.id}','${st.id}')">&times;</button>
-      </div>`).join('');
-    html += `<div class="task-edit">
-      <div><label>Name</label><input type="text" value="${esc(t.title)}" onchange="renameTask('${t.id}',this)"></div>
-      <div><label>Steps</label>
-        ${stepRows}
-        <div class="step-edit">
-          <input type="text" id="add-step-${t.id}" placeholder="${steps.length ? 'Add a step' : 'Smallest first step (so small it feels silly)'}"
-            onkeydown="if(event.key==='Enter')addStep('${t.id}',this)" onchange="addStep('${t.id}',this)">
-          ${aiOn() ? `<button class="btn sm" id="bd-${t.id}" onclick="aiBreakDown('${t.id}','bd-${t.id}')">Break it down</button>` : ''}
-        </div></div>
-      <div><label>How long?</label><div class="seg">${SIZES.map(m =>
-        `<button class="${t.size === m ? 'on' : ''}" onclick="setFieldAndRender('${t.id}','size',${m})">${sizeLabel(m)}</button>`).join('')}</div></div>
-      <div><label>Energy it needs</label><div class="seg">${Object.entries(ENERGY).map(([k, v]) =>
-        `<button class="${t.energy === k ? 'on' : ''}" onclick="setFieldAndRender('${t.id}','energy','${k}')">${v}</button>`).join('')}</div></div>
-      <div class="row">
-        <button class="btn sm ${t.today ? 'primary' : ''}" onclick="toggleToday('${t.id}')">${t.today ? 'Picked for today' : 'Pick for today'}</button>
-        <button class="btn sm" onclick="_editorMore=!_editorMore;renderTaskList()">${_editorMore ? 'Less' : 'More'}</button>
-        <div class="spacer"></div>
-        <button class="btn sm primary" onclick="toggleEditor(null)">Done</button>
-      </div>
-      ${_editorMore ? `<div class="row">
-        <button class="btn sm" onclick="snooze('${t.id}')">Not today</button>
-        <button class="btn sm danger" onclick="letGo('${t.id}')">Let it go</button>
-      </div>` : ''}
-    </div>`;
-  }
   return html + '</div>';
 }
 
-function toggleEditor(id) {
-  _openEditor = _openEditor === id ? null : id;
-  _editorMore = false;
-  renderTaskList();
-}
+
 
 function renderTaskList() {
   const open = L().tasks.filter(t => !t.done);
@@ -2051,21 +2132,17 @@ function renderTaskList() {
 
   let html = '';
   if (!open.length) {
-    html = '<div class="empty">Nothing open. Either you are done, or it is all still in your head. Type it above.</div>';
+    html = '<div class="empty">Nothing open.</div>';
   } else {
     html += `<div class="section-label">Today (${today.length}/${TODAY_LIMIT})</div>`;
-    html += today.length ? today.map(taskHTML).join('') : '<div class="empty">Pick up to 3. Tap a loop\'s name and choose "Pick for today."</div>';
+    html += today.length ? today.map(taskHTML).join('') : '<div class="empty">Nothing picked yet.</div>';
     if (quick.length) {
-      html += '<div class="section-label">2-minute loops: just do these now</div>' + quick.map(taskHTML).join('');
+      html += '<div class="section-label">Quick ones</div>' + quick.map(taskHTML).join('');
     }
     if (rest.length) html += '<div class="section-label">Everything else</div>' + rest.map(taskHTML).join('');
     if (snoozed.length) html += '<div class="section-label">Back tomorrow</div>' + snoozed.map(taskHTML).join('');
   }
   document.getElementById('task-list').innerHTML = html;
-  const missing = needsDetails().length;
-  const qs = document.getElementById('qs-btn');
-  qs.style.display = missing ? '' : 'none';
-  qs.textContent = `Quick sort (${missing} missing details)`;
   document.getElementById('loop-count').textContent = open.length ? `${open.length} open` : '';
 }
 
@@ -2227,7 +2304,7 @@ document.addEventListener('keydown', e => {
 
 // ── Wheel ───────────────────────────────────────────
 
-const WHEEL_COLORS = ['#1a4c9f', '#f7cb57', '#6699cc', '#e0b640', '#2558b5', '#fad978', '#4d6480', '#f2a65a'];
+const WHEEL_COLORS = ['#4f7a28', '#d4eb8f', '#7fa650', '#eef5df', '#3d6020', '#b9d97a', '#a3c27a', '#f7fbe9'];
 const WHEEL_MAX = 12;
 let wheelAngle = 0, spinning = false, wheelItems = [];
 
@@ -2256,7 +2333,7 @@ function drawWheel() {
     ctx.save();
     ctx.rotate(i * slice + slice / 2);
     ctx.textAlign = 'right';
-    ctx.fillStyle = ['#f7cb57', '#e0b640', '#fad978', '#6699cc', '#f2a65a'].includes(col) ? '#1c212e' : '#ffffff';
+    ctx.fillStyle = ['#d4eb8f', '#eef5df', '#b9d97a', '#a3c27a', '#f7fbe9'].includes(col) ? '#2a2f22' : '#ffffff';
     ctx.font = `600 ${n > 8 ? 22 : 26}px sans-serif`;
     let label = t.title.length > 22 ? t.title.slice(0, 21) + '...' : t.title;
     ctx.fillText(label, R - 20, 9);
@@ -2386,11 +2463,8 @@ function renderFocus() {
     sel.innerHTML = '<option value="">Timer only, no loop attached</option>' +
       opts.map(o => `<option value="${o.id}">${esc(o.title)}</option>`).join('');
     sel.value = '';
-    document.getElementById('focus-empty-hint').textContent = state.timer && state.timer.finished
-      ? 'Time is up. Press Stop here to clear it, or press Start on a loop to begin a new one.'
-      : state.timer
-      ? 'This timer has no loop attached. Pick one below to attach it, or keep going without one.'
-      : 'Press Start on a loop, or pick one below. You can also start a timer with nothing attached. Promise yourself only 5 minutes. Starting is the hard part, and you\'re allowed to stop after 5.';
+    document.getElementById('focus-empty-hint').textContent = state.timer && state.timer.finished ? 'Time is up.'
+      : state.timer ? 'No loop attached.' : 'Just 5 minutes counts.';
     sel.onchange = () => {
       focusId = sel.value || null;
       // Picking a loop while a timer runs attaches it to that timer
@@ -2487,7 +2561,7 @@ function finishFocus(completed) {
   const t = findTask(id);
   const cur = currentStep(t);
   openModal(`<h3>Leave a note for future you</h3>
-    <p class="hint">Where did you stop? What is the next tiny step? This makes it much easier to start again.</p>
+    <p class="hint">Where did you stop?</p>
     <input type="text" id="park-note" value="${esc(cur ? cur.text : '')}" placeholder="e.g. finish paragraph 2">
     <div class="row" style="margin-top:12px;justify-content:flex-end">
       <button class="btn" onclick="closeModal()">Skip</button>
@@ -2563,7 +2637,7 @@ function celebrate() {
   const cv = document.getElementById('confetti');
   const ctx = cv.getContext('2d');
   cv.width = innerWidth; cv.height = innerHeight;
-  const colors = ['#1a4c9f', '#f7cb57', '#6699cc', '#1a6b3c', '#f2a65a'];
+  const colors = ['#4f7a28', '#d4eb8f', '#7fa650', '#b9d97a', '#3d6020'];
   const parts = Array.from({ length: 120 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.6,
     vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 4,
@@ -2671,25 +2745,21 @@ function clearOldWins() {
 const HELP = [
 ['Get it out of your head', `
 <ul>
-  <li><strong>One at a time:</strong> type in the box at the top and press Enter.</li>
-  <li><strong>Lots at once:</strong> tap <strong>Talk it out</strong>, tap the mic on your phone keyboard, and talk.
-    <ul>
-      <li>Say <strong>"next"</strong> between loops.</li>
-      <li>To list steps, say <strong>"steps"</strong> and put <strong>"then"</strong> between them.</li>
-      <li>Example: <em>"email Dana, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"</em></li>
-    </ul></li>
-  <li><strong>AI extract</strong> sends it to Claude, which splits it up, fills in time and energy, and writes a tiny first step. It needs an API key (see "Turn on AI").</li>
-  <li><strong>Sort it (no AI)</strong> splits on "next" and picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," and "first step is."</li>
-  <li>Either way, you check everything on a review screen before anything is added.</li>
+  <li>Type in the box at the top, or tap the mic on your phone keyboard and talk.</li>
+  <li>Say <strong>"next"</strong> between loops. For steps, say <strong>"steps"</strong> with <strong>"then"</strong> between them.</li>
+  <li>Example: <em>"email Dana, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"</em></li>
+  <li><strong>Add</strong>: one loop goes straight in. Several open the check-over screen.</li>
+  <li><strong>Add with AI</strong>: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (see "Turn on AI").</li>
+  <li>On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. <strong>Later</strong> keeps it for when you come back.</li>
+  <li>Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," and "first step is."</li>
 </ul>`],
 ['Your loops', `
 <ul>
-  <li><strong>Tap a loop's name</strong> to edit it: name, steps, how long, energy, and Pick for today. <strong>Not today</strong> and <strong>Let it go</strong> are under <strong>More</strong>.</li>
-  <li><strong>Steps:</strong> the list shows the next step with a small box. Tap the box to check it off. Tap the arrow to see all the steps. Checking off the last one asks if you want to close the loop.</li>
-  <li><strong>Break it down</strong> (in the editor) asks Claude for 3 to 5 small steps. You check them first.</li>
+  <li><strong>Time and energy</strong> are the small tags under each loop. Tap one to change it.</li>
+  <li><strong>Tap a loop's name</strong> to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.</li>
+  <li><strong>Steps:</strong> the next one shows under the loop. Tap its box to check it off. The arrow shows all of them. The last one asks if you want to close the loop.</li>
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
-  <li><strong>Today</strong> holds up to 3 picks. Fewer picks means you actually finish them.</li>
-  <li><strong>Quick sort</strong> shows up when loops are missing time or energy. One loop at a time, big buttons. <strong>Let AI fill all</strong> fills them in for you to check.</li>
+  <li><strong>Today</strong> holds up to 3 picks.</li>
   <li><strong>Undo</strong> at the top reverses your last few actions.</li>
 </ul>`],
 ['Pick one', `
@@ -2728,7 +2798,7 @@ const HELP = [
 </ol>
 <p>The token is saved only in that browser, never in a backup.</p>`],
 ['Turn on AI (your own Claude account)', `
-<p>AI extract, Let AI fill all, and Break it down use Claude. This is pay-as-you-go and separate from a Claude Pro or Max subscription. With the cheaper model, a brain dump costs roughly a tenth of a cent, so $5 lasts a long time.</p>
+<p>Add with AI and Break it down use Claude. This is pay-as-you-go and separate from a Claude Pro or Max subscription. With the cheaper model, a brain dump costs roughly a tenth of a cent, so $5 lasts a long time.</p>
 <p><strong>One time:</strong></p>
 <ol>
   <li>Go to <strong>console.anthropic.com</strong> and sign in, or make an account.</li>
@@ -2769,19 +2839,17 @@ const HELP = [
 
 function openHelp() {
   openModal(`<div class="row"><h3 style="flex:1;margin:0">How to</h3><button class="btn sm" onclick="closeModal()">Close</button></div>
-    <p class="hint" style="margin-top:6px">Tap a section to open it.</p>
     <div class="help">${HELP.map(([title, body]) => `<details><summary>${title}</summary><div class="body">${body}</div></details>`).join('')}</div>`, true);
 }
 
 function openSettings(note) {
   openModal(`<h3>Settings</h3>
     ${note ? `<div class="alert warn" style="margin:0 0 12px">${esc(note)}</div>` : ''}
-    <p class="hint">Switch between Work and Home with the toggle at the top. Each device remembers the last one you used.</p>
     <label style="display:flex;gap:6px;align-items:center;margin-top:14px">
       <input type="checkbox" id="set-sound" ${state.settings.sound ? 'checked' : ''}> Sounds (timer chime, completion ding)
     </label>
     <h4>AI (optional)</h4>
-    <p class="hint">Powers AI extract, AI fill, and Suggest. Get a key at console.anthropic.com. The key is saved only in this browser, never in a backup or synced, so add it on each device. Text you send with AI goes to Anthropic.</p>
+    <p class="hint">Saved only in this browser. Setup steps are in Data, How to.</p>
     <label class="hint" style="display:block;margin:8px 0 4px">Claude API key</label>
     <input type="password" id="set-ai-key" value="${esc(ai.key || '')}" placeholder="sk-ant-..." autocomplete="off">
     <label class="hint" style="display:block;margin:10px 0 4px">Model</label>
@@ -2882,14 +2950,24 @@ function toggleMenu(e) {
 function closeMenu() { document.getElementById('data-menu').classList.remove('open'); }
 document.addEventListener('click', e => { if (!e.target.closest('.menu')) closeMenu(); });
 
-function openModal(html, wide) {
+let _modalKind = null;
+
+// kind 'sticky' (check-over, break it down) ignores clicks outside, so nothing is lost by accident
+function openModal(html, wide, kind) {
+  closeTagMenu();
   const m = document.getElementById('modal');
   m.classList.toggle('wide', !!wide);
   m.innerHTML = html;
+  _modalKind = kind || null;
   document.getElementById('overlay').classList.add('open');
 }
-function closeModal() { document.getElementById('overlay').classList.remove('open'); }
-document.getElementById('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') closeModal(); });
+function closeModal() {
+  if (_modalKind === 'editor') { edAdd(); _editing = null; }
+  _modalKind = null;
+  closeTagMenu();
+  document.getElementById('overlay').classList.remove('open');
+}
+document.getElementById('overlay').addEventListener('click', e => { if (e.target.id === 'overlay' && _modalKind !== 'sticky') closeModal(); });
 
 let _toastTimer = null;
 function toast(msg) {
@@ -2911,7 +2989,6 @@ function switchList(name) {
   if (name === state.current) return;
   state.current = name;
   writeLocal();
-  _openEditor = null;
   deck = []; _deckShuffled = false; pickedId = null;
   ['wheel-result', 'random-result'].forEach(id => document.getElementById(id).textContent = '');
   ['wheel-go', 'random-go'].forEach(id => document.getElementById(id).style.display = 'none');
@@ -2943,6 +3020,7 @@ window.addEventListener('storage', e => {
 // A timer that ran out over an hour ago (laptop closed, tab left open) is old news, so clear it quietly
 if (state.timer && state.timer.pausedLeft == null && Date.now() - state.timer.endsAt > 3600000) { state.timer = null; writeLocal(); }
 renderAll();
+renderDraftNote();
 if (state.timer) { focusId = state.timer.taskId; ensureTick(); showFocus(); }
 document.getElementById('quick-add').focus();
 if (syncOn()) runSync(LIST_NAMES);
