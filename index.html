@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Loose Ends</title>
+<title>Open Loops</title>
 <meta name="theme-color" content="#eaece4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Loose Ends">
+<meta name="apple-mobile-web-app-title" content="Open Loops">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -54,7 +54,8 @@
   }
   header .wrap { padding-bottom: 0; }
   .head-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; flex-wrap: wrap; }
-  .brand { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+  .brand { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; line-height: 1.15; }
+  .brand .sub { display: block; font-size: 11px; font-weight: 400; letter-spacing: 0; color: var(--muted); margin-top: 1px; }
   .list-toggle button { font-weight: 600; padding: 4px 12px; }
   .seg.list-toggle button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .list-toggle .count { font-weight: 400; opacity: 0.75; font-size: 12px; }
@@ -396,7 +397,7 @@
 <header>
   <div class="wrap">
     <div class="head-row">
-      <div class="brand">Loose Ends</div>
+      <div class="brand">To Do List<span class="sub">Brain Dump and Tracker</span></div>
       <div class="seg list-toggle" id="list-toggle"></div>
       <div class="head-actions">
       <button class="btn sm sync-pill off" id="sync-pill" onclick="openSync()">Sync off</button>
@@ -832,7 +833,7 @@ function importAllData(event) {
 function restorePayload(payload) {
     try {
       if (!payload || payload.app !== APP_ID || !(payload.lists || Array.isArray(payload.tasks))) {
-        alert('This does not appear to be a Loose Ends backup file.');
+        alert('This does not appear to be an Open Loops backup file.');
         return;
       }
       const when = payload.exportedAt ? payload.exportedAt.slice(0, 10) : 'unknown date';
@@ -2548,7 +2549,7 @@ function addMinutes(m, restart) {
 function stopTimer(silent) {
   state.timer = null;
   save();
-  document.title = 'Loose Ends';
+  document.title = 'Open Loops';
   updateTimerBar();
   if (!silent) renderFocus();
 }
@@ -2585,7 +2586,7 @@ function updateClock() {
   document.getElementById('clock').textContent = fmt(left);
   document.getElementById('clock-sub').textContent = !tm ? 'ready' : tm.finished ? 'time is up' : tm.pausedLeft != null ? 'paused' : 'remaining';
   document.getElementById('ring').style.strokeDashoffset = CIRC * (1 - left / total);
-  if (tm && !tm.finished) document.title = `${fmt(left)} ${tm.pausedLeft != null ? '(paused)' : ''} Loose Ends`;
+  if (tm && !tm.finished) document.title = `${fmt(left)} ${tm.pausedLeft != null ? '(paused)' : ''} Open Loops`;
   if (tm && !tm.finished && tm.pausedLeft == null && left <= 0) timerDone();
   updateTimerBar();
 }
@@ -2601,7 +2602,7 @@ function ensureTick() {
 function timerDone() {
   state.timer.finished = true;
   save();
-  document.title = 'Time is up! Loose Ends';
+  document.title = 'Time is up! Open Loops';
   chime(523, 0.25); setTimeout(() => chime(659, 0.25), 260); setTimeout(() => chime(784, 0.4), 520);
   const t = state.timer.taskId ? findTask(state.timer.taskId) : null;
   try {
