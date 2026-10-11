@@ -47,7 +47,7 @@ Everything you've closed, with counts for today, the last 7 days, your streak, a
 
 ### 6. Work and Home
 
-The **Work / Home** toggle at the top switches between two separate lists.
+The two list buttons at the top right switch between two separate lists. They start as **Work** and **Home**. To use other names (Personal, for example), tap **Data**, then **Rename lists**. With sync on, the names follow you to your other devices.
 
 ---
 

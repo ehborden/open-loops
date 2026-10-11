@@ -53,8 +53,9 @@
     border-bottom: 1px solid var(--edge);
   }
   header .wrap { padding-bottom: 0; }
-  .head-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; flex-wrap: wrap; }
-  .brand { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; line-height: 1.15; }
+  .head-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 12px 0; }
+  .head-r { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+  .brand { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; line-height: 1.15; text-align: center; }
   .brand .sub { display: block; font-size: 11px; font-weight: 400; letter-spacing: 0; color: var(--muted); margin-top: 1px; }
   .list-toggle button { font-weight: 600; padding: 4px 12px; }
   .seg.list-toggle button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
@@ -65,7 +66,12 @@
   .sync-pill.off { color: var(--muted); }
   .spacer { flex: 1; }
   /* Kept together on the right, so the Data menu always opens on screen when the header wraps */
-  .head-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+  .head-actions { display: flex; gap: 10px; align-items: center; }
+  @media (max-width: 760px) {
+    .head-row { grid-template-columns: 1fr; gap: 8px; }
+    .head-l { display: none; }
+    .head-r { justify-content: space-between; }
+  }
   nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 10px; }
   nav.tabs button {
     border: 1px solid var(--edge); background: var(--card); border-radius: 6px;
@@ -397,7 +403,9 @@
 <header>
   <div class="wrap">
     <div class="head-row">
-      <div class="brand">To Do List<span class="sub">Brain Dump and Tracker</span></div>
+      <div class="head-l"></div>
+      <div class="brand">Open Loops: To-Do List<span class="sub">Brain Dump and Tracker</span></div>
+      <div class="head-r">
       <div class="seg list-toggle" id="list-toggle"></div>
       <div class="head-actions">
       <button class="btn sm sync-pill off" id="sync-pill" onclick="openSync()">Sync off</button>
@@ -410,11 +418,13 @@
             <input type="file" accept=".json,application/json" style="display:none" onchange="importAllData(event);closeMenu()">
           </label>
           <button id="gh-restore" style="display:none" onclick="openGitRestore();closeMenu()">Restore from GitHub</button>
+          <button onclick="openRename();closeMenu()">Rename lists</button>
           <button onclick="openSync();closeMenu()">Sync settings</button>
           <button onclick="openSettings();closeMenu()">Settings</button>
           <button onclick="openHelp();closeMenu()">How to</button>
           <div class="menu-note" id="backup-note"></div>
         </div>
+      </div>
       </div>
       </div>
     </div>
@@ -629,11 +639,18 @@ function cleanTask(t) {
 
 function cleanList(l) {
   l = l && typeof l === 'object' ? l : {};
-  return {
+  const out = {
     tasks: (Array.isArray(l.tasks) ? l.tasks : []).map(cleanTask).filter(Boolean),
     deleted: l.deleted && typeof l.deleted === 'object' ? l.deleted : {}
   };
+  // Optional display name for the list (the key stays Work or Home); older copies of the app never set it
+  const label = typeof l.label === 'string' ? l.label.replace(/[\u0000-\u001f]/g, '').trim().slice(0, LABEL_MAX) : '';
+  if (label) { out.label = label; out.labelAt = Number(l.labelAt) > 0 ? Number(l.labelAt) : 0; }
+  return out;
 }
+
+const LABEL_MAX = 20;
+function listLabel(n) { return (state.lists[n] && state.lists[n].label) || n; }
 
 function loadState() {
   const base = defaultState();
@@ -990,13 +1007,18 @@ function mergeLists(local, remote) {
   Object.keys(deleted).forEach(id => { if (deleted[id] < cutoff) delete deleted[id]; });
   const tasks = [...byId.values()].filter(t => !(deleted[t.id] && deleted[t.id] >= (t.updated || 0)));
   tasks.sort(byNewest);
-  return { tasks, deleted };
+  const merged = { tasks, deleted };
+  // The newer list name wins
+  const src = (remote.labelAt || 0) > (local.labelAt || 0) ? remote : local;
+  if (src.label) { merged.label = src.label; merged.labelAt = src.labelAt || 0; }
+  return merged;
 }
 
 function canon(list) {
   return JSON.stringify([
     list.tasks.map(t => JSON.stringify(t)).sort(),
-    Object.keys(list.deleted).sort().map(k => k + ':' + list.deleted[k])
+    Object.keys(list.deleted).sort().map(k => k + ':' + list.deleted[k]),
+    list.label || '', list.labelAt || 0
   ]);
 }
 
@@ -1010,9 +1032,10 @@ async function syncList(name, attempt = 0) {
   setBaseline(name);
   writeLocal();
   if (name === state.current && canon(merged) !== before) refreshAfterSync();
+  else if (canon(merged) !== before) renderListToggle();
 
   if (remote.data && canon(remoteList) === canon(merged)) return;
-  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted }, null, 1);
+  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt }, null, 1);
   const put = { message: `Update ${name} list`, content: toB64(body) };
   if (remote.sha) put.sha = remote.sha;
   const res = await gh(`/contents/${filePath(name)}`, { method: 'PUT', body: JSON.stringify(put) });
@@ -1875,7 +1898,7 @@ function renderReview() {
       <button class="btn link" onclick="discardReview()">Discard all</button>
       <button class="btn link" onclick="closeModal()">Later</button>
       <div class="spacer"></div>
-      <button class="btn primary" ${n ? '' : 'disabled'} onclick="commitReview()">Add ${n} to ${state.current}</button>
+      <button class="btn primary" ${n ? '' : 'disabled'} onclick="commitReview()">Add ${n} to ${esc(listLabel(state.current))}</button>
     </div>`, true, 'sticky');
 }
 
@@ -2779,7 +2802,7 @@ const HELP = [
 ['Wins', `
 <p>Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today. Look here when your brain says you did nothing.</p>`],
 ['Work and Home', `
-<p>The <strong>Work / Home</strong> toggle at the top switches between two separate lists.</p>`],
+<p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. To use other names (Personal, for example), tap <strong>Data</strong>, then <strong>Rename lists</strong>. With sync on, the names follow you to your other devices.</p>`],
 ['Sync your devices (your own GitHub)', `
 <p>Keeps your phone and computers showing the same lists. Your loops are saved in a private GitHub repo that only you can see.</p>
 <p><strong>One time:</strong></p>
@@ -2863,6 +2886,29 @@ function openSettings(note) {
       <button class="btn" onclick="closeModal()">Cancel</button>
       <button class="btn primary" onclick="saveSettings()">Save</button>
     </div>`);
+}
+
+function openRename() {
+  openModal(`<h3>Rename lists</h3>
+    ${LIST_NAMES.map((n, i) => `<input type="text" id="rn-${i}" value="${esc(listLabel(n))}" maxlength="${LABEL_MAX}" autocomplete="off" style="margin-top:${i ? 8 : 14}px">`).join('')}
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveRename()">Save</button>
+    </div>`);
+}
+
+function saveRename() {
+  const vals = LIST_NAMES.map((n, i) => document.getElementById('rn-' + i).value.replace(/\s+/g, ' ').trim().slice(0, LABEL_MAX) || n);
+  if (vals[0].toLowerCase() === vals[1].toLowerCase()) { toast('The two lists need different names.'); return; }
+  LIST_NAMES.forEach((n, i) => {
+    if (vals[i] === listLabel(n)) return;
+    state.lists[n].label = vals[i];
+    state.lists[n].labelAt = Date.now();
+    markDirty(n);
+  });
+  writeLocal();
+  closeModal();
+  renderAll();
 }
 
 function saveSettings() {
@@ -2985,7 +3031,7 @@ function toast(msg) {
 function renderListToggle() {
   document.getElementById('list-toggle').innerHTML = LIST_NAMES.map(n => {
     const open = state.lists[n].tasks.filter(t => !t.done).length;
-    return `<button class="${n === state.current ? 'on' : ''}" onclick="switchList('${n}')">${n}${open ? ` <span class="count">${open}</span>` : ''}</button>`;
+    return `<button class="${n === state.current ? 'on' : ''}" onclick="switchList('${n}')">${esc(listLabel(n))}${open ? ` <span class="count">${open}</span>` : ''}</button>`;
   }).join('');
 }
 
