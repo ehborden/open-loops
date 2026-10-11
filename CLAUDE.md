@@ -32,6 +32,10 @@ A personal task tracker built for ADHD-friendly capture, picking, and focus. The
 
 Use Playwright with the preinstalled Chromium. Serve the folder over `http://localhost`. Mock `https://api.github.com/**` with `context.route` (a fake store for GET/PUT of contents, with sha checks that return 409 on a mismatch), and use two browser contexts as two devices. At minimum, check: add, complete, delete, and undo on both devices end up the same; offline and then back online; a 401 shows "Sync problem"; backup and restore; no page errors; no sideways scrolling at 375px wide.
 
+## Merging
+
+The owner has said Claude may merge its own pull requests into `main` once the tests above pass, without waiting for them. Keep using a branch and a pull request for every change (so there is a record and an easy revert), and tell the owner what went live.
+
 ## Owner preferences for anything that shows up in the app
 
 - No em dashes. Use hyphens or rewrite the sentence.
