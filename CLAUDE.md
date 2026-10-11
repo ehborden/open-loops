@@ -1,4 +1,4 @@
-# Loose Ends
+# Open Loops
 
 A personal task tracker built for ADHD-friendly capture, picking, and focus. The owner uses it daily on a phone, a work computer, and a home computer, with real tasks synced between them. Treat changes as changes to a live app with live data.
 
