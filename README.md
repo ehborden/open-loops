@@ -26,6 +26,11 @@ The same guide is in the app under **Data > How to**.
 - **Tap a loop's name** to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.
 - **Steps:** the next one shows on the note. Tap its box to check it off. **Steps** at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.
 - **The circle** on the left closes the whole loop.
+- **Types** are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. **Add with AI** picks the type for you.
+- **Types** at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.
+- **Data, then Types** opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.
+- The color is the thick band on the left of a note. The note you open is shown a little stronger.
+- **The bar** under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).
 - **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
 - **Sort** with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
 - **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top.
@@ -36,10 +41,10 @@ When choosing is the hard part. Tap **Pick for me**, or choose **Swipe** or **Sp
 
 ### 4. Timer
 
-- The timer runs across the top of every screen. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
+- The timer is on the right, above Wins. On a phone it's at the top. The ring drains as the time runs down. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
 - Pick the minutes first: Just 5 min up to 45. It starts at 25.
 - **Start** inside an open note, or on a loop from Pick one, begins the timer on that loop right away.
-- Scroll down while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.
+- Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.
 - **Step done** checks off the current step. **Close loop** finishes the whole thing. **Stop** asks you to leave a note for next time, which becomes the next step.
 - For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.
 

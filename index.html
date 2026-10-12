@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Open Loops</title>
-<meta name="theme-color" content="#eaece4">
+<meta name="theme-color" content="#ecece9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Open Loops">
@@ -12,15 +12,15 @@
 <link rel="icon" type="image/png" href="icon-192.png?v=2">
 <link rel="manifest" href="manifest.json">
 <style>
-  /* Moss and lime, always light. Thin lines, small corners, no heavy shadows. */
+  /* Neutral and light, green for buttons, a color on every note. Thin lines, small corners, no heavy shadows. */
   :root {
-    --bg: #eaece4;
-    --card: #f5f6f0;
-    --field: #fbfbf8;
-    --ink: #2a2f22;
-    --muted: #5f6853;
-    --line: #cdd2c1;
-    --edge: #b3baa3;
+    --bg: #ecece9;
+    --card: #f7f7f5;
+    --field: #fbfbfa;
+    --ink: #2a2b27;
+    --muted: #61635b;
+    --line: #d3d3ce;
+    --edge: #b7b7af;
     --accent: #33872f;
     --accent-deep: #2a6f27;
     --accent-ink: #ffffff;
@@ -32,7 +32,7 @@
     --red-bg: #fbeceb;
     --amber: #8a6100;
     --amber-bg: #fbf4df;
-    --shadow: 0 1px 2px rgba(42,47,34,0.04);
+    --shadow: 0 1px 2px rgba(42,43,39,0.04);
     --pop-shadow: 0 6px 20px rgba(42,47,34,0.10);
     color-scheme: light;
   }
@@ -127,7 +127,18 @@
     border: 1px solid var(--edge); border-left: 3px solid var(--accent); border-radius: 6px;
     padding: 9px 10px; margin-top: 6px; background: var(--card);
   }
-  .task.today { border-left-color: var(--lime); background: var(--lime-soft); }
+  .task { background: var(--n-bg, var(--card)); border-color: var(--n-edge, var(--edge)); border-left: 12px solid var(--n-strong, #d3d3cd); transition: background 0.15s; }
+  .task.open { background: var(--n-sel, var(--n-bg, var(--card))); border-color: var(--n-strong, var(--edge)); box-shadow: 0 0 0 1px var(--n-strong, var(--edge)); }
+  .tag.type { border-color: var(--n-strong, var(--edge)); font-weight: 500; }
+  .tag.type.unset { font-weight: 400; }
+  .ty-row { display: flex; align-items: center; gap: 8px; }
+  .ty-row i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .tag-menu .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px 4px; max-width: 190px; border-top: 1px solid var(--line); margin-top: 2px; }
+  .tag-menu .swatch-row button { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 0; flex: none; }
+  .te-row { display: grid; grid-template-columns: 104px 1fr auto; gap: 6px; margin-top: 10px; align-items: center; }
+  .te-row .te-words { grid-column: 1 / -1; }
+  .bar { height: 6px; border-radius: 3px; background: var(--n-track, var(--line)); margin: 8px 0 0 30px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--n-strong); border-radius: 3px; transition: width 0.25s; }
   .notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; align-items: start; margin-top: 6px; }
   .notes .task { margin-top: 0; }
   .note-foot { display: flex; align-items: center; gap: 8px; margin: 6px 0 0 30px; }
@@ -136,6 +147,17 @@
   .more.open svg { transform: rotate(180deg); }
   .add-step { padding: 6px 8px; font-size: 13px; }
   .sort-row { margin: 8px 0 0; }
+  .types-box { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .types-box:not(.open) #type-chips { display: none; }
+  #type-chips { margin-top: 10px; }
+  .types-toggle { display: inline-flex; align-items: center; gap: 6px; }
+  .types-toggle svg { width: 11px; height: 7px; transition: transform 0.15s; }
+  .types-box.open .types-toggle svg { transform: rotate(180deg); }
+  .types-toggle.filtering { border-color: var(--accent); color: var(--accent); }
+  .seg .tchip i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-right: 6px; }
+  .seg .tchip span { color: var(--muted); margin-left: 2px; }
+  .seg .tchip.on { background: var(--card); color: var(--ink); border-color: var(--c); box-shadow: 0 0 0 1px var(--c); }
+  .seg .tchip.on span { color: var(--ink); }
   .task-top { display: flex; align-items: center; gap: 10px; }
   .check {
     width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--muted);
@@ -358,7 +380,7 @@
   .toast-undo { margin-left: 10px; background: none; border: none; color: var(--lime); font: inherit; font-weight: 600; cursor: pointer; padding: 4px 2px; }
   #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
 
-  /* Layout: one column on a phone, loops + Wins side by side on a computer. The timer runs across the top. */
+  /* Layout: one column on a phone, loops on the left and Timer + Wins on the right on a computer */
   .layout { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; }
   .layout > main.wrap { max-width: none; margin: 0; width: 100%; }
   .side { order: -1; padding: 0 16px; }
@@ -366,34 +388,36 @@
   .wins-mini .stat .n { font-size: 22px; }
   .wins-mini .win { font-size: 14px; }
   .steps-today { font-size: 14px; color: var(--muted); margin: 10px 0 0; text-align: center; }
-  .timer-wrap { padding-bottom: 0; }
-  .focus-card { margin-top: 12px; padding: 10px 12px; scroll-margin-top: var(--head-h, 110px); }
-  .focus-card .timer-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .focus-card .ring-wrap { width: 60px; height: 60px; margin: 0; flex: none; }
-  .focus-card .ring-time .big { font-size: 15px; font-weight: 600; }
-  .focus-card .ring-time .small { display: none; }
-  .focus-mid { flex: 1 1 180px; min-width: 0; }
-  .focus-card .focus-task { text-align: left; font-size: 16px; font-weight: 500; margin: 0; word-break: break-word; }
-  .focus-card .focus-step { text-align: left; margin: 4px 0 0; max-width: none; padding: 0; background: none; font-size: 14px; }
+  .focus-card { scroll-margin-top: var(--head-h, 110px); }
+  .focus-card .focus-task { text-align: left; font-size: 17px; font-weight: 500; margin: 0 0 4px; word-break: break-word; }
+  .focus-card .focus-step { text-align: left; margin: 0 0 8px; max-width: none; padding: 0; background: none; font-size: 14px; }
+  .focus-card .focus-step:empty { display: none; }
   .focus-card .focus-now { text-align: left; margin: 0; max-width: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .focus-card .focus-now .label { font-size: 11px; }
   .focus-card .focus-now .text { font-size: 14px; font-weight: 400; margin: 0; flex: 1 1 120px; }
-  .focus-card .timer-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .focus-card .presets, .focus-card .controls { margin-top: 0; justify-content: flex-start; gap: 6px; }
-  .focus-card .btn.big { padding: 8px 16px; font-size: 15px; border-radius: 6px; }
-  @media (max-width: 540px) {
-    .focus-card .timer-side { flex: 1 1 100%; justify-content: space-between; }
-    .focus-card .presets .j, .focus-card .presets .u { display: none; }
-    .focus-card .presets .btn { padding: 6px 12px; }
-  }
+  .focus-card .timer-row { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+  .focus-card .ring-wrap { width: 120px; height: 120px; margin: 0; flex: none; }
+  .focus-card .ring-time .big { font-size: 26px; font-weight: 600; }
+  .focus-card .ring-time .small { font-size: 11px; }
+  .focus-card .timer-side { flex: 1; min-width: 0; }
+  .focus-card .presets, .focus-card .controls { justify-content: flex-start; margin-top: 0; gap: 6px; }
+  .focus-card .presets + .controls { margin-top: 8px; }
+  .focus-card .btn.big { padding: 8px 14px; font-size: 15px; border-radius: 6px; }
   @media (min-width: 980px) {
-    header .wrap, .tabbar .wrap, .timer-wrap, .layout { max-width: 1200px; }
+    header .wrap, .tabbar .wrap, .layout { max-width: 1200px; }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
     .side {
       order: 0; position: sticky; top: var(--head-h, 110px); padding: 0 16px 24px 0;
       max-height: calc(100vh - var(--head-h, 110px)); overflow-y: auto;
     }
     .wins-mini { display: block; }
+    .focus-card .focus-task, .focus-card .focus-step, .focus-card .focus-now { text-align: center; justify-content: center; }
+    .focus-card .timer-row { flex-direction: column; gap: 0; margin-top: 8px; }
+    .focus-card .ring-wrap { width: 190px; height: 190px; margin-top: 4px; }
+    .focus-card .ring-time .big { font-size: 40px; }
+    .focus-card .ring-time .small { font-size: 13px; }
+    .focus-card .timer-side { width: 100%; }
+    .focus-card .presets, .focus-card .controls { justify-content: center; margin-top: 12px; }
   }
   .focus-now .label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
   .focus-now .text { word-break: break-word; }
@@ -439,6 +463,7 @@
           </label>
           <button id="gh-restore" style="display:none" onclick="openGitRestore();closeMenu()">Restore from GitHub</button>
           <button onclick="openRename();closeMenu()">Rename lists</button>
+          <button onclick="openTypesEditor();closeMenu()">Types</button>
           <button onclick="openSync();closeMenu()">Sync settings</button>
           <button onclick="openSettings();closeMenu()">Settings</button>
           <button onclick="openHelp();closeMenu()">How to</button>
@@ -457,35 +482,6 @@
       <button data-screen="pick">Pick one</button>
       <button data-screen="wins">Wins</button>
     </nav>
-  </div>
-</div>
-
-<div class="wrap timer-wrap">
-  <div class="card focus-card" id="focus-card">
-    <div class="timer-row">
-      <div class="ring-wrap">
-        <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="8"/>
-          <circle id="ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="8"
-                  stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/>
-        </svg>
-        <div class="ring-time">
-          <div class="big" id="clock">25:00</div>
-          <div class="small" id="clock-sub">ready</div>
-        </div>
-      </div>
-      <div class="focus-mid">
-        <div id="focus-empty"><select id="focus-select"></select></div>
-        <div id="focus-on" style="display:none">
-          <div class="focus-task" id="focus-title"></div>
-          <div class="focus-step" id="focus-step"></div>
-        </div>
-      </div>
-      <div class="timer-side">
-        <div class="presets" id="presets"></div>
-        <div class="controls" id="timer-controls"></div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -512,6 +508,10 @@
       </div>
       <div class="seg sort-row" id="sort-chips"></div>
       <div id="task-list"></div>
+      <div class="types-box" id="types-box">
+        <button class="btn sm types-toggle" id="types-toggle" onclick="toggleTypes()"></button>
+        <div class="seg" id="type-chips"></div>
+      </div>
     </div>
   </section>
 
@@ -584,6 +584,30 @@
 
 <!-- WINS: a column on the right on a computer -->
 <aside class="side" id="side">
+  <div class="card focus-card" id="focus-card">
+    <div id="focus-empty"><select id="focus-select"></select></div>
+    <div id="focus-on" style="display:none">
+      <div class="focus-task" id="focus-title"></div>
+      <div class="focus-step" id="focus-step"></div>
+    </div>
+    <div class="timer-row">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="8"/>
+          <circle id="ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="8"
+                  stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/>
+        </svg>
+        <div class="ring-time">
+          <div class="big" id="clock">25:00</div>
+          <div class="small" id="clock-sub">ready</div>
+        </div>
+      </div>
+      <div class="timer-side">
+        <div class="presets" id="presets"></div>
+        <div class="controls" id="timer-controls"></div>
+      </div>
+    </div>
+  </div>
   <div class="card wins-mini" id="wins-mini"></div>
 </aside>
 </div>
@@ -610,6 +634,9 @@ const STORE_KEY = 'openloops_v2';
 const OLD_STORE_KEY = 'openloops_v1';
 const APP_ID = 'open-loops';
 const LIST_NAMES = ['Work', 'Home'];
+const COLORS = ['green', 'blue', 'purple', 'teal', 'pink', 'red', 'orange', 'yellow', 'gray'];
+const TYPE_MAX = 12;
+const TYPE_NAME_MAX = 24;
 const TODAY_LIMIT = 3;
 const OLD_DAYS = 14;
 const BACKUP_NUDGE_DAYS = 7;
@@ -645,6 +672,8 @@ function cleanTask(t) {
   if (!t || typeof t !== 'object' || typeof t.title !== 'string') return null;
   if (typeof t.id !== 'string' || !/^[a-z0-9]{1,40}$/.test(t.id)) t.id = uid();
   if (!t.created || isNaN(new Date(t.created))) t.created = new Date().toISOString();
+  if (t.color !== undefined && !COLORS.includes(t.color)) delete t.color;
+  if (t.type !== undefined && !(typeof t.type === 'string' && /^[a-z0-9]{1,20}$/.test(t.type))) delete t.type;
   if (t.steps !== undefined) {
     const okStep = x => x && typeof x.text === 'string' && typeof x.id === 'string' && /^[a-z0-9]{1,40}$/.test(x.id);
     if (!Array.isArray(t.steps)) delete t.steps;
@@ -665,7 +694,26 @@ function cleanList(l) {
   // Optional display name for the list (the key stays Work or Home); older copies of the app never set it
   const label = typeof l.label === 'string' ? l.label.replace(/[\u0000-\u001f]/g, '').trim().slice(0, LABEL_MAX) : '';
   if (label) { out.label = label; out.labelAt = Number(l.labelAt) > 0 ? Number(l.labelAt) : 0; }
+  // Optional list of types (kinds of work); older copies of the app never set it
+  const types = cleanTypes(l.types);
+  if (types && Number(l.typesAt) > 0) { out.types = types; out.typesAt = Number(l.typesAt); }
   return out;
+}
+
+function cleanTypes(arr) {
+  if (!Array.isArray(arr)) return null;
+  const seen = new Set();
+  const clean = s => String(s).replace(/[\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim();
+  return arr.slice(0, TYPE_MAX).map(x => {
+    if (!x || typeof x !== 'object') return null;
+    const id = typeof x.id === 'string' && /^[a-z0-9]{1,20}$/.test(x.id) && x.id !== 'none' ? x.id : null;
+    const name = typeof x.name === 'string' ? clean(x.name).slice(0, TYPE_NAME_MAX) : '';
+    if (!id || !name || seen.has(id)) return null;
+    seen.add(id);
+    const words = (Array.isArray(x.words) ? x.words : []).filter(w => typeof w === 'string')
+      .map(w => clean(w).toLowerCase().slice(0, 30)).filter(Boolean).slice(0, 40);
+    return { id, name, color: COLORS.includes(x.color) ? x.color : 'gray', words };
+  }).filter(Boolean);
 }
 
 const LABEL_MAX = 20;
@@ -1030,6 +1078,9 @@ function mergeLists(local, remote) {
   // The newer list name wins
   const src = (remote.labelAt || 0) > (local.labelAt || 0) ? remote : local;
   if (src.label) { merged.label = src.label; merged.labelAt = src.labelAt || 0; }
+  // Same for the types: the newer edit wins
+  const tsrc = (remote.typesAt || 0) > (local.typesAt || 0) ? remote : local;
+  if (tsrc.types) { merged.types = tsrc.types; merged.typesAt = tsrc.typesAt || 0; }
   return merged;
 }
 
@@ -1037,7 +1088,8 @@ function canon(list) {
   return JSON.stringify([
     list.tasks.map(t => JSON.stringify(t)).sort(),
     Object.keys(list.deleted).sort().map(k => k + ':' + list.deleted[k]),
-    list.label || '', list.labelAt || 0
+    list.label || '', list.labelAt || 0,
+    JSON.stringify(list.types || null), list.typesAt || 0
   ]);
 }
 
@@ -1054,7 +1106,7 @@ async function syncList(name, attempt = 0) {
   else if (canon(merged) !== before) renderListToggle();
 
   if (remote.data && canon(remoteList) === canon(merged)) return;
-  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt }, null, 1);
+  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt, types: merged.types, typesAt: merged.typesAt }, null, 1);
   const put = { message: `Update ${name} list`, content: toB64(body) };
   if (remote.sha) put.sha = remote.sha;
   const res = await gh(`/contents/${filePath(name)}`, { method: 'PUT', body: JSON.stringify(put) });
@@ -1555,6 +1607,7 @@ function addItems(items) {
     t.size = it.size || null;
     t.energy = it.energy || null;
     t.today = today;
+    if (it.type) t.type = it.type;
   });
   return overCap;
 }
@@ -1702,6 +1755,16 @@ const listSchema = (props, required) => ({
   properties: { loops: { type: 'array', items: { type: 'object', additionalProperties: false, required, properties: props } } }
 });
 const EXTRACT_SCHEMA = listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA, { today: { type: 'boolean' } }), ['title', 'steps', 'size', 'energy', 'today']);
+// With types on the list, Claude also picks one for each loop (or none)
+function extractSchema(types) {
+  if (!types.length) return EXTRACT_SCHEMA;
+  return listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA,
+    { today: { type: 'boolean' }, type: { type: 'string', enum: types.map(y => y.name).concat('') } }), ['title', 'steps', 'size', 'energy', 'today', 'type']);
+}
+function typesPrompt(types) {
+  if (!types.length) return '';
+  return `\n- type: the kind of work it is. Use exactly one of these names, or "" if none fit: ${types.map(y => `"${y.name}"${y.words.length ? ' (' + y.words.slice(0, 8).join(', ') + ')' : ''}`).join('; ')}.`;
+}
 const BREAK_SCHEMA = { type: 'object', additionalProperties: false, required: ['steps'], properties: { steps: STEP_LIST } };
 
 async function callClaude(system, text, schema) {
@@ -1770,9 +1833,13 @@ function aiExtract() {
   if (!text) { quickAdd.focus(); return; }
   if (needAiKey()) return;
   withBusy('ai-btn', 'Thinking...', async () => {
-    const r = await callClaude(EXTRACT_SYSTEM, text, EXTRACT_SCHEMA);
+    const types = typesOf(state.current);
+    const r = await callClaude(EXTRACT_SYSTEM + typesPrompt(types), text, extractSchema(types));
     const items = (r.loops || []).filter(x => x && typeof x.title === 'string' && x.title.trim())
-      .map(x => Object.assign({ title: x.title.trim(), today: !!x.today }, fromAi(x)));
+      .map(x => {
+        const ty = types.find(y => y.name === x.type);
+        return Object.assign({ title: x.title.trim(), today: !!x.today }, fromAi(x), ty ? { type: ty.id } : {});
+      });
     if (!items.length) { toast('Claude did not find any loops in that.'); return; }
     openReview(items);
   });
@@ -1862,7 +1929,8 @@ function loadDraft() {
       steps: (Array.isArray(x.steps) ? x.steps : []).filter(v => typeof v === 'string'),
       size: SIZES.includes(x.size) ? x.size : null,
       energy: ENERGY[x.energy] ? x.energy : null,
-      today: !!x.today
+      today: !!x.today,
+      type: typeof x.type === 'string' && /^[a-z0-9]{1,20}$/.test(x.type) ? x.type : undefined
     }));
     return items.length ? { list: LIST_NAMES.includes(d.list) ? d.list : state.current, items } : null;
   } catch { return null; }
@@ -2150,11 +2218,160 @@ function stepItemHTML(t, st, extra) {
       <span>${esc(st.text)}</span>${extra || ''}</div>`;
 }
 
+// Bright colors go on a thick band down the left of a note; the rest of the card is almost neutral
+const BRIGHT = { green: '#1faa45', blue: '#2f7de1', purple: '#8a4fd6', teal: '#10a89f', pink: '#ee5fa0', red: '#e5413c', orange: '#f58a1f', yellow: '#f2c200', gray: '#7b8494' };
+const mixHex = (h, a) => {
+  const n = parseInt(h.slice(1), 16), base = [247, 247, 245];
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map((v, i) => Math.round(v * a + base[i] * (1 - a)).toString(16).padStart(2, '0')).join('');
+};
+const PAL = Object.fromEntries(Object.entries(BRIGHT).map(([k, c]) =>
+  [k, { strong: c, bg: mixHex(c, 0.035), edge: mixHex(c, 0.3), sel: mixHex(c, 0.11), track: mixHex(c, 0.22) }]));
+const COLOR_NAMES = { green: 'Green', blue: 'Blue', purple: 'Purple', teal: 'Teal', pink: 'Pink', red: 'Red', orange: 'Orange', yellow: 'Yellow', gray: 'Grey' };
+const palVars = k => PAL[k] ? `--n-bg:${PAL[k].bg};--n-edge:${PAL[k].edge};--n-strong:${PAL[k].strong};--n-sel:${PAL[k].sel};--n-track:${PAL[k].track}` : '';
+
+// Types: kinds of work. A list has its own set (saved and synced with the list). Until you edit them, these are used.
+const URGENT = { id: 'urgent', name: 'Urgent', color: 'orange', words: ['urgent', 'asap', 'overdue', 'deadline', 'due'] };
+const IDEAS = { id: 'ideas', name: 'Ideas', color: 'yellow', words: ['idea', 'ideas', 'brainstorm', 'what if'] };
+const SOMEDAY = { id: 'someday', name: 'Someday', color: 'gray', words: ['someday', 'eventually', 'one day', 'when i have time'] };
+// Order matters: a loop takes the first type whose words match
+const DEFAULT_TYPES = {
+  Work: [
+    URGENT,
+    IDEAS,
+    { id: 'class', name: 'Class', color: 'green', words: ['lesson', 'unit', 'student', 'students', 'class', 'grade', 'grades', 'grading', 'graded', 'quiz', 'test', 'worksheet', 'rubric', 'feedback', 'curriculum', 'classroom', 'assignment', 'homework', 'parent', 'report card'] },
+    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign', 'iep', '504', 'aide', 'coach', 'colleague', 'team', 'training', 'observation', 'counselor', 'referral', 'sub plans', 'support'] },
+    { id: 'projects', name: 'Projects', color: 'purple', words: ['project', 'plan', 'draft', 'outline', 'write', 'design', 'research', 'proposal', 'build', 'ongoing', 'slides'] },
+    SOMEDAY
+  ],
+  Home: [
+    URGENT,
+    IDEAS,
+    { id: 'chores', name: 'Chores', color: 'teal', words: ['laundry', 'dishes', 'clean', 'vacuum', 'trash', 'closet', 'tidy', 'organize', 'fold', 'mop', 'garden'] },
+    { id: 'errands', name: 'Errands', color: 'pink', words: ['buy', 'pick up', 'store', 'grocery', 'groceries', 'return', 'drop off', 'post office', 'order', 'mail'] },
+    { id: 'health', name: 'Health', color: 'red', words: ['dentist', 'doctor', 'appointment', 'pharmacy', 'prescription', 'exercise', 'workout', 'check-up', 'checkup', 'therapy'] },
+    SOMEDAY
+  ]
+};
+function typesOf(listName) {
+  const l = state.lists[listName];
+  return l && Array.isArray(l.types) ? l.types : (DEFAULT_TYPES[listName] || []);
+}
+const _wordRe = new Map();
+function wordHit(title, w) {
+  let r = _wordRe.get(w);
+  if (!r) { r = new RegExp('(^|[^a-z0-9])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); _wordRe.set(w, r); }
+  return r.test(title);
+}
+// The type a loop has: the one it was given, else the first type whose words show up in its name
+function typeOfTask(t) {
+  if (t.type === 'none') return null;
+  const types = typesOf(state.current);
+  if (t.type) { const x = types.find(y => y.id === t.type); if (x) return x; }
+  const title = String(t.title).toLowerCase();
+  return types.find(y => y.words.some(w => wordHit(title, w))) || null;
+}
+// A color picked on the note wins, then its type's color; a loop with neither stays plain
+function colorOf(t) {
+  if (COLORS.includes(t.color)) return t.color;
+  const ty = typeOfTask(t);
+  return ty && PAL[ty.color] ? ty.color : null;
+}
+// Bar length shows the time (short task, short bar); the fill shows steps done
+const BAR_LEN = { 2: 30, 15: 50, 30: 75, 60: 100 };
+
+function typeTagHTML(t) {
+  const ty = typeOfTask(t);
+  return `<button class="tag type ${ty ? '' : 'unset'}" onclick="openTypeMenu(event,'${t.id}')">${ty ? esc(ty.name) : '+ type'}</button>`;
+}
+
+function openTypeMenu(e, id) {
+  e.stopPropagation();
+  closeTagMenu();
+  const t = findTask(id);
+  if (!t) return;
+  const cur = typeOfTask(t);
+  const menu = document.createElement('div');
+  menu.className = 'tag-menu';
+  menu.innerHTML = typesOf(state.current).map(y =>
+    `<button class="${cur && cur.id === y.id && !COLORS.includes(t.color) ? 'on' : ''}" data-t="${y.id}"><span class="ty-row"><i style="background:${PAL[y.color].strong}"></i>${esc(y.name)}</span></button>`).join('') +
+    '<button class="clear" data-t="none">No type</button>' +
+    `<div class="swatch-row">${COLORS.map(c => `<button data-c="${c}" title="${COLOR_NAMES[c]}" aria-label="${COLOR_NAMES[c]}" style="background:${PAL[c].strong}"></button>`).join('')}</div>` +
+    '<button class="clear" data-edit="1">Edit types</button>';
+  menu.addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    ev.stopPropagation();
+    closeTagMenu();
+    if (b.dataset.edit) openTypesEditor();
+    else if (b.dataset.c) setNoteType(id, 'color', b.dataset.c);
+    else setNoteType(id, 'type', b.dataset.t);
+  });
+  document.body.appendChild(menu);
+  const r = e.currentTarget.getBoundingClientRect();
+  const left = Math.min(r.left, window.innerWidth - menu.offsetWidth - 8);
+  const below = r.bottom + 4 + menu.offsetHeight < window.innerHeight;
+  menu.style.left = Math.max(8, left) + 'px';
+  menu.style.top = (below ? r.bottom + 4 : r.top - menu.offsetHeight - 4) + 'px';
+  _tagMenu = menu;
+}
+
+// kind 'type': a type (or 'none'); kind 'color': just a color, no type
+function setNoteType(id, kind, v) {
+  const t = findTask(id);
+  if (!t) return;
+  pushUndoSnapshot('change type of "' + t.title + '"');
+  if (kind === 'color' && COLORS.includes(v)) { t.type = 'none'; t.color = v; }
+  else if (kind === 'type' && /^[a-z0-9]{1,20}$/.test(v)) { t.type = v; delete t.color; }
+  else return;
+  save();
+  renderAll();
+}
+
+// ── Types editor ────────────────────────────────────
+let _types = null;
+
+function openTypesEditor() {
+  _types = typesOf(state.current).map(y => ({ id: y.id, name: y.name, color: y.color, words: y.words.join(', ') }));
+  renderTypesEditor();
+}
+
+function renderTypesEditor() {
+  openModal(`<h3>Types: ${esc(listLabel(state.current))}</h3>
+    ${_types.map((y, i) => `<div class="te-row">
+        <select aria-label="Color" onchange="_types[${i}].color=this.value;renderTypesEditor()" style="border-left:8px solid ${PAL[y.color].strong}">
+          ${COLORS.map(c => `<option value="${c}" ${c === y.color ? 'selected' : ''}>${COLOR_NAMES[c]}</option>`).join('')}</select>
+        <input type="text" value="${esc(y.name)}" maxlength="${TYPE_NAME_MAX}" placeholder="Name" aria-label="Name" oninput="_types[${i}].name=this.value">
+        <button class="x" title="Remove" aria-label="Remove" onclick="_types.splice(${i},1);renderTypesEditor()">&times;</button>
+        <input type="text" class="te-words" value="${esc(y.words)}" placeholder="Words, with commas" aria-label="Words" oninput="_types[${i}].words=this.value">
+      </div>`).join('')}
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm" ${_types.length >= TYPE_MAX ? 'disabled' : ''} onclick="_types.push({id:'',name:'',color:COLORS[_types.length%COLORS.length],words:''});renderTypesEditor()">+ Type</button>
+    </div>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveTypes()">Save</button>
+    </div>`, false, 'sticky');
+}
+
+function saveTypes() {
+  const out = _types.map(y => ({ id: y.id || ('t' + Math.random().toString(36).slice(2, 9)), name: y.name, color: y.color, words: String(y.words).split(',') }))
+    .filter(y => y.name.trim());
+  const name = state.current;
+  state.lists[name].types = cleanTypes(out) || [];
+  state.lists[name].typesAt = Date.now();
+  markDirty(name);
+  writeLocal();
+  _types = null;
+  closeModal();
+  renderAll();
+}
+
 function taskHTML(t) {
   const steps = getSteps(t);
   const open = _openSteps.has(t.id);
   const tags = [
     `<button class="tag ${t.today ? 'on' : 'unset'}" onclick="toggleToday('${t.id}')">Today</button>`,
+    typeTagHTML(t),
     tagHTML('size', t.size, `openTagMenu(event,'size','task:${t.id}')`),
     tagHTML('energy', t.energy, `openTagMenu(event,'energy','task:${t.id}')`)
   ];
@@ -2162,12 +2379,16 @@ function taskHTML(t) {
   const age = daysSince(t.created);
   if (age >= OLD_DAYS) tags.push(`<span class="tag static old">${age} days</span>`);
 
-  let html = `<div class="task ${t.today ? 'today' : ''}" data-id="${t.id}">
+  const doneN = steps.filter(x => x.done).length;
+  const pct = steps.length ? Math.round(doneN / steps.length * 100) : 0;
+  const ck = colorOf(t);
+  let html = `<div class="task ${t.today ? 'today' : ''} ${open ? 'open' : ''}" data-id="${t.id}" data-color="${ck || ''}" style="${palVars(ck)}">
     <div class="task-top">
       <button class="check" title="Close this loop" onclick="completeTask('${t.id}')"></button>
       <div class="task-main"><div class="task-title" onclick="openEditor('${t.id}')">${esc(t.title)}</div></div>
     </div>
-    <div class="tags">${tags.join('')}</div>`;
+    <div class="tags">${tags.join('')}</div>
+    <div class="bar" style="width:calc((100% - 30px) * ${(BAR_LEN[t.size] || 60) / 100})" title="${steps.length ? doneN + ' of ' + steps.length + ' steps' : 'No steps yet'}"><i style="width:${pct}%"></i></div>`;
 
   if (open) {
     html += '<div class="task-steps">' + steps.map(st => stepItemHTML(t, st)).join('') +
@@ -2176,7 +2397,6 @@ function taskHTML(t) {
     const next = steps.find(x => !x.done);
     html += '<div class="task-steps">' + (next ? stepItemHTML(t, next) : '<div class="step-item"><span>All steps done</span></div>') + '</div>';
   }
-  const doneN = steps.filter(x => x.done).length;
   html += `<div class="note-foot">
       ${open ? `<button class="btn sm start-btn" onclick="startLoop('${t.id}')">Start</button>` : ''}
       <button class="more ${open ? 'open' : ''}" title="${open ? 'Hide steps' : 'Show steps'}" onclick="toggleStepsOpen('${t.id}')">${steps.length ? doneN + '/' + steps.length + ' steps' : 'Steps'}${ARROW}</button>
@@ -2187,11 +2407,21 @@ function taskHTML(t) {
 
 
 const SORTS = [['today', 'Today first'], ['short', 'Quickest'], ['easy', 'Easiest'], ['new', 'Newest'], ['old', 'Oldest']];
-let sortBy = (() => { try { const k = JSON.parse(localStorage.getItem('openloops_view') || '{}').sort; return SORTS.some(x => x[0] === k) ? k : 'today'; } catch { return 'today'; } })();
+// View settings that stay on this device only (not task data, not synced)
+function viewPrefs() { try { return JSON.parse(localStorage.getItem('openloops_view') || '{}') || {}; } catch { return {}; } }
+function saveView(patch) { try { localStorage.setItem('openloops_view', JSON.stringify(Object.assign(viewPrefs(), patch))); } catch {} }
+let sortBy = SORTS.some(x => x[0] === viewPrefs().sort) ? viewPrefs().sort : 'today';
+let _typesOpen = !!viewPrefs().types;
 
 function setSort(k) {
   sortBy = k;
-  try { localStorage.setItem('openloops_view', JSON.stringify({ sort: k })); } catch {}
+  saveView({ sort: k });
+  renderTaskList();
+}
+
+function toggleTypes() {
+  _typesOpen = !_typesOpen;
+  saveView({ types: _typesOpen });
   renderTaskList();
 }
 
@@ -2207,8 +2437,21 @@ function sortTasks(list) {
 
 const notesHTML = list => '<div class="notes">' + list.map(taskHTML).join('') + '</div>';
 
+// Show only one type of loop. Not saved, so a refresh always shows everything.
+let _typeFilter = null;
+
+function setTypeFilter(id) {
+  const same = _typeFilter && _typeFilter.list === state.current && _typeFilter.id === id;
+  _typeFilter = id && !same ? { list: state.current, id } : null;
+  renderTaskList();
+}
+
 function renderTaskList() {
-  const open = L().tasks.filter(t => !t.done);
+  const all = L().tasks.filter(t => !t.done);
+  const tid = t => (typeOfTask(t) || { id: 'none' }).id;
+  let f = _typeFilter && _typeFilter.list === state.current ? _typeFilter.id : null;
+  if (f && !all.some(t => tid(t) === f)) { f = null; _typeFilter = null; }
+  const open = f ? all.filter(t => tid(t) === f) : all;
   const snoozed = open.filter(t => isSnoozed(t) && !t.today);
   const live = open.filter(t => !isSnoozed(t) || t.today);
 
@@ -2231,6 +2474,22 @@ function renderTaskList() {
   document.getElementById('loop-count').textContent = open.length ? `${open.length} open` : '';
   document.getElementById('sort-chips').innerHTML = SORTS.map(([k, label]) =>
     `<button class="${k === sortBy ? 'on' : ''}" onclick="setSort('${k}')">${label}</button>`).join('');
+
+  // One chip per type that has open loops, colored like its band, with a count. They live in a box under the notes.
+  const counts = new Map();
+  all.forEach(t => counts.set(tid(t), (counts.get(tid(t)) || 0) + 1));
+  const chips = typesOf(state.current).filter(y => counts.has(y.id)).map(y => [y.id, y.name, PAL[y.color].strong]);
+  if (counts.has('none')) chips.push(['none', 'No type', '#b3b3ac']);
+  const box = document.getElementById('types-box');
+  box.style.display = chips.length ? '' : 'none';
+  box.classList.toggle('open', _typesOpen);
+  const fname = f ? (chips.find(c => c[0] === f) || [])[1] : '';
+  const tog = document.getElementById('types-toggle');
+  tog.innerHTML = (fname ? 'Types: ' + esc(fname) : 'Types') + ARROW;
+  tog.classList.toggle('filtering', !!fname);
+  document.getElementById('type-chips').innerHTML = chips.length ?
+    `<button class="${f ? '' : 'on'}" onclick="setTypeFilter(null)">All</button>` +
+    chips.map(([id, name, c]) => `<button class="tchip ${f === id ? 'on' : ''}" style="--c:${c}" onclick="setTypeFilter('${id}')"><i></i>${esc(name)} <span>${counts.get(id)}</span></button>`).join('') : '';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2522,6 +2781,7 @@ function renderFocus() {
   const t = found && !found.done ? found : null;
   document.getElementById('focus-empty').style.display = t ? 'none' : 'block';
   document.getElementById('focus-on').style.display = t ? 'block' : 'none';
+  document.getElementById('ring').style.stroke = t && colorOf(t) ? PAL[colorOf(t)].strong : '';
   if (t) {
     document.getElementById('focus-title').textContent = t.title;
     const steps = getSteps(t);
@@ -2833,6 +3093,11 @@ const HELP = [
   <li><strong>Tap a loop's name</strong> to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.</li>
   <li><strong>Steps:</strong> the next one shows on the note. Tap its box to check it off. <strong>Steps</strong> at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.</li>
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
+  <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
+  <li><strong>Types</strong> at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.</li>
+  <li><strong>Data, then Types</strong> opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
+  <li>The color is the thick band on the left of a note. The note you open is shown a little stronger.</li>
+  <li><strong>The bar</strong> under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).</li>
   <li><strong>Today</strong> holds up to 3 picks. Tap the <strong>Today</strong> tag on a loop to pick or unpick it.</li>
   <li><strong>Sort</strong> with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.</li>
   <li><strong>Undo</strong> reverses your last few actions. It appears in the message that pops up after an action, and at the top.</li>
@@ -2841,10 +3106,10 @@ const HELP = [
 <p>For when choosing is the hard part. Tap <strong>Pick for me</strong>, or choose <strong>Swipe</strong> or <strong>Spin the wheel</strong> underneath. Tap <strong>Right now I have...</strong> to set your energy and time first.</p>`],
 ['Timer', `
 <ul>
-  <li>The timer runs across the top of every screen. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
+  <li>The timer is on the right, above Wins. On a phone it's at the top. The ring drains as the time runs down. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
   <li>Pick the minutes first: Just 5 min up to 45. It starts at 25.</li>
   <li><strong>Start</strong> inside an open note, or on a loop from Pick one, begins the timer on that loop right away.</li>
-  <li>Scroll down while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.</li>
+  <li>Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.</li>
   <li><strong>Step done</strong> checks off the current step. <strong>Close loop</strong> finishes the whole thing. <strong>Stop</strong> asks for a note for next time, which becomes the next step.</li>
   <li>For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.</li>
 </ul>`],
@@ -3004,7 +3269,7 @@ function scrollToFocus() {
   document.getElementById('focus-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// When the timer strip is scrolled out of view, a running timer shows in a bar at the bottom
+// When the timer card is scrolled out of view, a running timer shows in a bar at the bottom
 function updateTimerBar() {
   const tm = state.timer;
   const show = !!tm && !_cardInView;
