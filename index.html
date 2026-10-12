@@ -77,7 +77,6 @@
     padding: 6px 14px; cursor: pointer; white-space: nowrap;
   }
   nav.tabs button.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  nav.tabs button.here { border-color: var(--accent); color: var(--accent); }
 
   .btn {
     border: 1px solid var(--edge); background: var(--card); border-radius: 6px;
@@ -129,6 +128,14 @@
     padding: 9px 10px; margin-top: 6px; background: var(--card);
   }
   .task.today { border-left-color: var(--lime); background: var(--lime-soft); }
+  .notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; align-items: start; margin-top: 6px; }
+  .notes .task { margin-top: 0; }
+  .note-foot { display: flex; align-items: center; gap: 8px; margin: 6px 0 0 30px; }
+  .more { margin-left: auto; background: none; border: none; color: var(--accent); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 4px 0; }
+  .more svg { width: 11px; height: 7px; transition: transform 0.15s; }
+  .more.open svg { transform: rotate(180deg); }
+  .add-step { padding: 6px 8px; font-size: 13px; }
+  .sort-row { margin: 8px 0 0; }
   .task-top { display: flex; align-items: center; gap: 10px; }
   .check {
     width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--muted);
@@ -144,8 +151,9 @@
     .tag { min-height: 30px; padding: 4px 10px; }
     .tags { gap: 8px; }
     .seg button { min-height: 38px; }
+    .more { min-height: 32px; }
   }
-  .btn.start-btn { flex: none; padding: 8px 18px; font-size: 15px; font-weight: 600; min-height: 42px; border-color: var(--accent); color: var(--accent); }
+  .btn.start-btn { flex: none; padding: 6px 16px; font-size: 14px; font-weight: 600; min-height: 36px; border-color: var(--accent); color: var(--accent); }
   .task-steps { margin: 5px 0 0 30px; display: grid; gap: 5px; }
   .step-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
   .step-item span { word-break: break-word; }
@@ -350,48 +358,45 @@
   .toast-undo { margin-left: 10px; background: none; border: none; color: var(--lime); font: inherit; font-weight: 600; cursor: pointer; padding: 4px 2px; }
   #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
 
-  /* Layout: one column on a phone, list + Focus/Wins side by side on a computer */
+  /* Layout: one column on a phone, loops + Wins side by side on a computer. The timer runs across the top. */
   .layout { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; }
   .layout > main.wrap { max-width: none; margin: 0; width: 100%; }
   .side { order: -1; padding: 0 16px; }
-  .focus-card { display: none; scroll-margin-top: var(--head-h, 110px); }
-  body.focus-active .focus-card { display: block; }
   .wins-mini { display: none; }
   .wins-mini .stat .n { font-size: 22px; }
   .wins-mini .win { font-size: 14px; }
   .steps-today { font-size: 14px; color: var(--muted); margin: 10px 0 0; text-align: center; }
-  .focus-card .btn.big { padding: 9px 16px; font-size: 16px; border-radius: 8px; }
-  .focus-card .focus-step { margin-top: 8px; padding: 8px 12px; }
-  .focus-card .focus-now { margin-top: 0; }
-  .focus-card .focus-now .text { margin: 2px 0 8px; }
-  @media (max-width: 979px) {
-    .focus-card .working-on { display: none; }
-    .focus-card .focus-task { font-size: 19px; margin-top: 0; }
-    .focus-card .timer-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
-    .focus-card .ring-wrap { width: 112px; height: 112px; margin: 0; flex: none; }
-    .focus-card .ring-time .big { font-size: 26px; }
-    .focus-card .ring-time .small { font-size: 11px; }
-    .focus-card .timer-side { flex: 1; min-width: 0; }
-    .focus-card .presets, .focus-card .controls { justify-content: flex-start; margin-top: 0; gap: 6px; }
-    .focus-card .presets + .controls { margin-top: 8px; }
-    .focus-card .btn.big { padding: 8px 12px; font-size: 15px; }
+  .timer-wrap { padding-bottom: 0; }
+  .focus-card { margin-top: 12px; padding: 10px 12px; scroll-margin-top: var(--head-h, 110px); }
+  .focus-card .timer-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .focus-card .ring-wrap { width: 60px; height: 60px; margin: 0; flex: none; }
+  .focus-card .ring-time .big { font-size: 15px; font-weight: 600; }
+  .focus-card .ring-time .small { display: none; }
+  .focus-mid { flex: 1 1 180px; min-width: 0; }
+  .focus-card .focus-task { text-align: left; font-size: 16px; font-weight: 500; margin: 0; word-break: break-word; }
+  .focus-card .focus-step { text-align: left; margin: 4px 0 0; max-width: none; padding: 0; background: none; font-size: 14px; }
+  .focus-card .focus-now { text-align: left; margin: 0; max-width: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .focus-card .focus-now .label { font-size: 11px; }
+  .focus-card .focus-now .text { font-size: 14px; font-weight: 400; margin: 0; flex: 1 1 120px; }
+  .focus-card .timer-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .focus-card .presets, .focus-card .controls { margin-top: 0; justify-content: flex-start; gap: 6px; }
+  .focus-card .btn.big { padding: 8px 16px; font-size: 15px; border-radius: 6px; }
+  @media (max-width: 540px) {
+    .focus-card .timer-side { flex: 1 1 100%; justify-content: space-between; }
+    .focus-card .presets .j, .focus-card .presets .u { display: none; }
+    .focus-card .presets .btn { padding: 6px 12px; }
   }
   @media (min-width: 980px) {
-    header .wrap, .tabbar .wrap, .layout { max-width: 1200px; }
+    header .wrap, .tabbar .wrap, .timer-wrap, .layout { max-width: 1200px; }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
     .side {
       order: 0; position: sticky; top: var(--head-h, 110px); padding: 0 16px 24px 0;
       max-height: calc(100vh - var(--head-h, 110px)); overflow-y: auto;
     }
-    .focus-card, .wins-mini { display: block; }
-    #focus-close, nav.tabs button[data-screen="focus"] { display: none; }
-    .focus-card .ring-wrap { width: 160px; height: 160px; margin-top: 14px; }
-    .focus-card .ring-time .big { font-size: 34px; }
-    .focus-card .presets, .focus-card .controls { margin-top: 12px; }
+    .wins-mini { display: block; }
   }
-  .focus-now { text-align: center; margin: 10px auto 0; max-width: 480px; }
   .focus-now .label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
-  .focus-now .text { font-size: 18px; font-weight: 600; margin: 4px 0 10px; word-break: break-word; }
+  .focus-now .text { word-break: break-word; }
   .timer-bar {
     position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 35;
     background: var(--accent); color: var(--accent-ink); border: none; border-radius: 6px;
@@ -450,9 +455,37 @@
     <nav class="tabs" id="tabs">
       <button data-screen="capture" class="active">Loops</button>
       <button data-screen="pick">Pick one</button>
-      <button data-screen="focus">Focus</button>
       <button data-screen="wins">Wins</button>
     </nav>
+  </div>
+</div>
+
+<div class="wrap timer-wrap">
+  <div class="card focus-card" id="focus-card">
+    <div class="timer-row">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="8"/>
+          <circle id="ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="8"
+                  stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/>
+        </svg>
+        <div class="ring-time">
+          <div class="big" id="clock">25:00</div>
+          <div class="small" id="clock-sub">ready</div>
+        </div>
+      </div>
+      <div class="focus-mid">
+        <div id="focus-empty"><select id="focus-select"></select></div>
+        <div id="focus-on" style="display:none">
+          <div class="focus-task" id="focus-title"></div>
+          <div class="focus-step" id="focus-step"></div>
+        </div>
+      </div>
+      <div class="timer-side">
+        <div class="presets" id="presets"></div>
+        <div class="controls" id="timer-controls"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -477,6 +510,7 @@
         <h2 style="flex:1">Your loops</h2>
         <span class="hint" style="margin:0" id="loop-count"></span>
       </div>
+      <div class="seg sort-row" id="sort-chips"></div>
       <div id="task-list"></div>
     </div>
   </section>
@@ -548,42 +582,8 @@
   </section>
 </main>
 
-<!-- FOCUS + WINS: a column on the right on a computer; on a phone, Focus is a card at the top -->
+<!-- WINS: a column on the right on a computer -->
 <aside class="side" id="side">
-  <div class="card focus-card" id="focus-card">
-      <div class="row" style="margin-bottom:6px">
-        <h2 style="flex:1;margin:0">Focus</h2>
-        <button class="btn sm" id="focus-close" onclick="hideFocus()">Close</button>
-      </div>
-      <div id="focus-empty">
-        <p class="hint" id="focus-empty-hint"></p>
-        <select id="focus-select"></select>
-      </div>
-      <div id="focus-on" style="display:none">
-        <div class="hint working-on" style="text-align:center;margin:0">Working on</div>
-        <div class="focus-task" id="focus-title"></div>
-        <div class="focus-step" id="focus-step"></div>
-      </div>
-
-      <div class="timer-row">
-      <div class="ring-wrap">
-        <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="8"/>
-          <circle id="ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="8"
-                  stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/>
-        </svg>
-        <div class="ring-time">
-          <div class="big" id="clock">5:00</div>
-          <div class="small" id="clock-sub">ready</div>
-        </div>
-      </div>
-
-      <div class="timer-side">
-        <div class="presets" id="presets"></div>
-        <div class="controls" id="timer-controls"></div>
-      </div>
-      </div>
-  </div>
   <div class="card wins-mini" id="wins-mini"></div>
 </aside>
 </div>
@@ -1446,7 +1446,7 @@ function askCloseLoop(id) {
 
 function closeLoopFromSteps(id) {
   if (state.timer && state.timer.taskId === id) finishFocus(true);
-  else { if (focusId === id) { focusId = null; _focusShown = false; } completeTask(id); }
+  else { if (focusId === id) focusId = null; completeTask(id); }
 }
 
 function addStep(id, input) {
@@ -1503,8 +1503,15 @@ function insertNextStep(id, text) {
 const _openSteps = new Set();
 
 function toggleStepsOpen(id) {
-  if (_openSteps.has(id)) _openSteps.delete(id); else _openSteps.add(id);
+  if (_openSteps.has(id)) {
+    _openSteps.delete(id);
+    if (focusId === id && !state.timer) focusId = null;
+  } else {
+    _openSteps.add(id);
+    if (!state.timer) focusId = id; // the timer button starts on the note you opened last
+  }
   renderTaskList();
+  renderFocus();
 }
 
 function startLoop(id) { goFocus(id, true); }
@@ -2145,6 +2152,7 @@ function stepItemHTML(t, st, extra) {
 
 function taskHTML(t) {
   const steps = getSteps(t);
+  const open = _openSteps.has(t.id);
   const tags = [
     `<button class="tag ${t.today ? 'on' : 'unset'}" onclick="toggleToday('${t.id}')">Today</button>`,
     tagHTML('size', t.size, `openTagMenu(event,'size','task:${t.id}')`),
@@ -2158,52 +2166,71 @@ function taskHTML(t) {
     <div class="task-top">
       <button class="check" title="Close this loop" onclick="completeTask('${t.id}')"></button>
       <div class="task-main"><div class="task-title" onclick="openEditor('${t.id}')">${esc(t.title)}</div></div>
-      <button class="btn sm start-btn" onclick="startLoop('${t.id}')">Start</button>
     </div>
     <div class="tags">${tags.join('')}</div>`;
 
-  if (steps.length) {
-    const open = _openSteps.has(t.id) && steps.length > 1;
-    const arrow = steps.length > 1
-      ? `<button class="step-arrow ${open ? 'open' : ''}" title="${open ? 'Hide steps' : 'Show all steps'}" onclick="toggleStepsOpen('${t.id}')">${ARROW}</button>` : '';
-    html += '<div class="task-steps">';
-    if (open) {
-      html += steps.map((st, i) => stepItemHTML(t, st, i === 0 ? arrow : '')).join('');
-    } else {
-      const i = steps.findIndex(x => !x.done);
-      const count = steps.length > 1 ? `<span class="step-count">${i < 0 ? steps.length : i + 1} of ${steps.length}</span>` : '';
-      html += i < 0
-        ? `<div class="step-item"><span>All steps done</span>${arrow}</div>`
-        : stepItemHTML(t, steps[i], count + arrow);
-    }
-    html += '</div>';
+  if (open) {
+    html += '<div class="task-steps">' + steps.map(st => stepItemHTML(t, st)).join('') +
+      `<input type="text" class="add-step" id="add-step-${t.id}" placeholder="Add a step" aria-label="Add a step" onkeydown="if(event.key==='Enter'){event.preventDefault();addStep('${t.id}',this)}"></div>`;
+  } else if (steps.length) {
+    const next = steps.find(x => !x.done);
+    html += '<div class="task-steps">' + (next ? stepItemHTML(t, next) : '<div class="step-item"><span>All steps done</span></div>') + '</div>';
   }
+  const doneN = steps.filter(x => x.done).length;
+  html += `<div class="note-foot">
+      ${open ? `<button class="btn sm start-btn" onclick="startLoop('${t.id}')">Start</button>` : ''}
+      <button class="more ${open ? 'open' : ''}" title="${open ? 'Hide steps' : 'Show steps'}" onclick="toggleStepsOpen('${t.id}')">${steps.length ? doneN + '/' + steps.length + ' steps' : 'Steps'}${ARROW}</button>
+    </div>`;
   return html + '</div>';
 }
 
 
 
+const SORTS = [['today', 'Today first'], ['short', 'Quickest'], ['easy', 'Easiest'], ['new', 'Newest'], ['old', 'Oldest']];
+let sortBy = (() => { try { const k = JSON.parse(localStorage.getItem('openloops_view') || '{}').sort; return SORTS.some(x => x[0] === k) ? k : 'today'; } catch { return 'today'; } })();
+
+function setSort(k) {
+  sortBy = k;
+  try { localStorage.setItem('openloops_view', JSON.stringify({ sort: k })); } catch {}
+  renderTaskList();
+}
+
+function sortTasks(list) {
+  const key = {
+    short: t => t.size || 999,
+    easy: t => ({ low: 0, med: 1, high: 2 })[t.energy] ?? 3,
+    new: t => -(Date.parse(t.created) || 0),
+    old: t => Date.parse(t.created) || 0
+  }[sortBy];
+  return list.map((t, i) => [t, i]).sort((a, b) => key(a[0]) - key(b[0]) || a[1] - b[1]).map(x => x[0]);
+}
+
+const notesHTML = list => '<div class="notes">' + list.map(taskHTML).join('') + '</div>';
+
 function renderTaskList() {
   const open = L().tasks.filter(t => !t.done);
-  const today = open.filter(t => t.today);
-  const quick = open.filter(t => !t.today && t.size === 2 && !isSnoozed(t));
-  const rest = open.filter(t => !t.today && t.size !== 2 && !isSnoozed(t));
   const snoozed = open.filter(t => isSnoozed(t) && !t.today);
+  const live = open.filter(t => !isSnoozed(t) || t.today);
 
   let html = '';
   if (!open.length) {
     html = '<div class="empty">Nothing open.</div>';
-  } else {
+  } else if (sortBy === 'today') {
+    const today = live.filter(t => t.today);
+    const quick = live.filter(t => !t.today && t.size === 2);
+    const rest = live.filter(t => !t.today && t.size !== 2);
     html += `<div class="section-label">Today (${today.length}/${TODAY_LIMIT})</div>`;
-    html += today.length ? today.map(taskHTML).join('') : '<div class="empty">Nothing picked yet.</div>';
-    if (quick.length) {
-      html += '<div class="section-label">Quick ones</div>' + quick.map(taskHTML).join('');
-    }
-    if (rest.length) html += '<div class="section-label">Everything else</div>' + rest.map(taskHTML).join('');
-    if (snoozed.length) html += '<div class="section-label">Back tomorrow</div>' + snoozed.map(taskHTML).join('');
+    html += today.length ? notesHTML(today) : '<div class="empty">Nothing picked yet.</div>';
+    if (quick.length) html += '<div class="section-label">Quick ones</div>' + notesHTML(quick);
+    if (rest.length) html += '<div class="section-label">Everything else</div>' + notesHTML(rest);
+  } else if (live.length) {
+    html += notesHTML(sortTasks(live));
   }
+  if (open.length && snoozed.length) html += '<div class="section-label">Back tomorrow</div>' + notesHTML(snoozed);
   document.getElementById('task-list').innerHTML = html;
   document.getElementById('loop-count').textContent = open.length ? `${open.length} open` : '';
+  document.getElementById('sort-chips').innerHTML = SORTS.map(([k, label]) =>
+    `<button class="${k === sortBy ? 'on' : ''}" onclick="setSort('${k}')">${label}</button>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2340,7 +2367,7 @@ function swipeDecide(yes, animated) {
   }
   if (yes) {
     pickedId = id;
-    renderDeck(); // put the card back, since Pick one stays on screen next to Focus
+    renderDeck(); // put the card back after the timer starts
     startFromPick();
   } else {
     const t = findTask(id);
@@ -2467,12 +2494,11 @@ function startFromPick() {
 
 const PRESETS = [5, 10, 15, 25, 45];
 let focusId = null;
-let chosenMinutes = 5;
+let chosenMinutes = 25;
 let tick = null;
 const CIRC = 276.46;
 
-// Opens Focus on top of the list. With start, the timer begins right away.
-// Opens Focus on that loop. With start, the timer begins right away.
+// Points the timer at that loop. With start, the timer begins right away.
 function goFocus(id, start) {
   const tm = state.timer;
   if (tm && tm.taskId !== id) {
@@ -2492,7 +2518,8 @@ function goFocus(id, start) {
 
 function renderFocus() {
   const id = state.timer ? state.timer.taskId : focusId;
-  const t = id ? findTask(id) : null;
+  const found = id ? findTask(id) : null;
+  const t = found && !found.done ? found : null;
   document.getElementById('focus-empty').style.display = t ? 'none' : 'block';
   document.getElementById('focus-on').style.display = t ? 'block' : 'none';
   if (t) {
@@ -2504,27 +2531,20 @@ function renderFocus() {
       el.innerHTML = `<div class="focus-now">
           <div class="label">${steps.length > 1 ? `Step ${i + 1} of ${steps.length}` : 'Start with'}</div>
           <div class="text">${esc(steps[i].text)}</div>
-          <button class="btn primary" onclick="toggleStep('${t.id}','${steps[i].id}')">Step done</button>
+          <button class="btn sm primary" onclick="toggleStep('${t.id}','${steps[i].id}')">Step done</button>
         </div>`;
     } else if (steps.length) {
       el.innerHTML = `<div class="focus-now"><div class="text">All steps done.</div>
-          <button class="btn primary" onclick="closeLoopFromSteps('${t.id}')">Close the loop</button></div>`;
+          <button class="btn sm primary" onclick="closeLoopFromSteps('${t.id}')">Close the loop</button></div>`;
     } else {
-      el.innerHTML = `What is the very first physical action? Open the file, find the email, stand up. Just do that.
-        <div class="step-row" style="margin-top:8px">
-          <input type="text" id="focus-step-input" placeholder="e.g. open the file" onkeydown="if(event.key==='Enter')saveFocusStep('${t.id}')">
-          <button class="btn sm" onclick="saveFocusStep('${t.id}')">Save</button>
-          ${aiOn() ? `<button class="btn sm" id="focus-bd" onclick="aiBreakDown('${t.id}','focus-bd')">Break it down</button>` : ''}
-        </div>`;
+      el.innerHTML = '';
     }
   } else {
     const sel = document.getElementById('focus-select');
     const opts = activeTasks();
-    sel.innerHTML = '<option value="">Timer only, no loop attached</option>' +
+    sel.innerHTML = '<option value="">Timer only, no loop</option>' +
       opts.map(o => `<option value="${o.id}">${esc(o.title)}</option>`).join('');
     sel.value = '';
-    document.getElementById('focus-empty-hint').textContent = state.timer && state.timer.finished ? 'Time is up.'
-      : state.timer ? 'No loop attached.' : 'Just 5 minutes counts.';
     sel.onchange = () => {
       focusId = sel.value || null;
       // Picking a loop while a timer runs attaches it to that timer
@@ -2534,18 +2554,12 @@ function renderFocus() {
     };
   }
   document.getElementById('presets').innerHTML = state.timer ? '' : PRESETS.map(m =>
-    `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? 'Just 5 min' : m + ' min'}</button>`).join('');
+    `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? '<span class="j">Just </span>5' : m}<span class="u"> min</span></button>`).join('');
   renderControls();
   updateClock();
   updateFocusVisibility();
 }
 
-function saveFocusStep(id) {
-  const v = document.getElementById('focus-step-input').value.trim();
-  if (!v) return;
-  insertNextStep(id, v);
-  renderAll();
-}
 
 function renderControls() {
   const c = document.getElementById('timer-controls');
@@ -2614,7 +2628,6 @@ function finishFocus(completed) {
   const id = state.timer ? state.timer.taskId : focusId;
   stopTimer(true);
   focusId = null;
-  _focusShown = false;
   if (completed && id) { completeTask(id); return; }
   renderAll();
   if (!(id && findTask(id))) return;
@@ -2666,7 +2679,8 @@ function timerDone() {
       new Notification('Time is up', { body: t ? t.title : 'Focus session done' });
     }
   } catch {}
-  showFocus();
+  renderFocus();
+  if (!_cardInView) scrollToFocus();
 }
 
 // ── Sound ───────────────────────────────────────────
@@ -2755,7 +2769,7 @@ function renderWins() {
     `<div class="row" style="margin-top:12px"><button class="btn sm" onclick="clearOldWins()">Clear wins older than 30 days</button></div>`;
 }
 
-// The small version under Focus on a computer
+// The small version on the right on a computer
 function renderWinsMini() {
   if (!WIDE.matches) return;
   const w = winStats();
@@ -2815,22 +2829,24 @@ const HELP = [
 </ul>`],
 ['Your loops', `
 <ul>
-  <li><strong>Time and energy</strong> are the small tags under each loop. Tap one to change it.</li>
+  <li>Each loop is a note. <strong>Time and energy</strong> are the small tags on it. Tap one to change it.</li>
   <li><strong>Tap a loop's name</strong> to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.</li>
-  <li><strong>Steps:</strong> the next one shows under the loop. Tap its box to check it off. The arrow shows all of them. The last one asks if you want to close the loop.</li>
+  <li><strong>Steps:</strong> the next one shows on the note. Tap its box to check it off. <strong>Steps</strong> at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.</li>
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
   <li><strong>Today</strong> holds up to 3 picks. Tap the <strong>Today</strong> tag on a loop to pick or unpick it.</li>
+  <li><strong>Sort</strong> with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.</li>
   <li><strong>Undo</strong> reverses your last few actions. It appears in the message that pops up after an action, and at the top.</li>
 </ul>`],
 ['Pick one', `
 <p>For when choosing is the hard part. Tap <strong>Pick for me</strong>, or choose <strong>Swipe</strong> or <strong>Spin the wheel</strong> underneath. Tap <strong>Right now I have...</strong> to set your energy and time first.</p>`],
-['Focus', `
+['Timer', `
 <ul>
-  <li><strong>Start</strong> on any loop begins a timer right away.</li>
-  <li><strong>On a computer,</strong> Focus is always on the right, with your Wins under it.</li>
-  <li><strong>On a phone,</strong> Focus is a card at the top. Scroll down while a timer runs and a bar at the bottom shows the time. Tap it to jump back.</li>
+  <li>The timer runs across the top of every screen. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
+  <li>Pick the minutes first: Just 5 min up to 45. It starts at 25.</li>
+  <li><strong>Start</strong> inside an open note, or on a loop from Pick one, begins the timer on that loop right away.</li>
+  <li>Scroll down while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.</li>
   <li><strong>Step done</strong> checks off the current step. <strong>Close loop</strong> finishes the whole thing. <strong>Stop</strong> asks for a note for next time, which becomes the next step.</li>
-  <li>For a timer with no loop, pick "Timer only" from the Focus dropdown. Picking a loop later attaches it to the running timer.</li>
+  <li>For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.</li>
 </ul>`],
 ['Wins', `
 <p>Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today.</p>`],
@@ -2958,52 +2974,28 @@ function saveSettings() {
 // ═══════════════════════════════════════════════════════
 
 function showScreen(name) {
-  if (name === 'focus') { showFocus(); return; }
   _screen = name;
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
-  if (_focusShown) { _focusShown = false; updateFocusVisibility(); } else syncTabs();
+  syncTabs();
   if (name === 'pick') { renderFilterButtons(); renderPickPool(); }
   if (name === 'wins') renderWins();
   window.scrollTo(0, 0);
 }
 
 const WIDE = window.matchMedia('(min-width: 980px)');
-let _focusShown = false;
 let _cardInView = true;
 
-// On a computer Focus is always on screen. On a phone the card shows while a
-// loop is picked or a timer is running, or after tapping the Focus tab.
-function focusVisible() { return WIDE.matches || document.body.classList.contains('focus-active'); }
-
 function updateFocusVisibility() {
-  document.body.classList.toggle('focus-active', !!(state.timer || focusId || _focusShown));
-  document.getElementById('focus-close').style.display = state.timer ? 'none' : '';
   updateTimerBar();
   syncTabs();
 }
 
-// One green tab at a time: Focus while its card is showing (the screen's own tab turns to an outline)
 let _screen = 'capture';
 function syncTabs() {
-  const focusOn = !WIDE.matches && document.body.classList.contains('focus-active');
-  document.querySelectorAll('#tabs button').forEach(b => {
-    const isFocus = b.dataset.screen === 'focus';
-    b.classList.toggle('active', focusOn ? isFocus : b.dataset.screen === _screen);
-    b.classList.toggle('here', focusOn && b.dataset.screen === _screen);
-  });
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.screen === _screen));
 }
 
 function showFocus() {
-  _focusShown = true;
-  updateFocusVisibility();
-  renderFocus();
-  if (!WIDE.matches) scrollToFocus();
-}
-
-function hideFocus() {
-  if (state.timer) return;
-  focusId = null;
-  _focusShown = false;
   updateFocusVisibility();
   renderFocus();
 }
@@ -3012,15 +3004,15 @@ function scrollToFocus() {
   document.getElementById('focus-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Phone only: when the Focus card is scrolled out of view, a running timer shows in a bar at the bottom
+// When the timer strip is scrolled out of view, a running timer shows in a bar at the bottom
 function updateTimerBar() {
   const tm = state.timer;
-  const show = !!tm && !WIDE.matches && !_cardInView;
+  const show = !!tm && !_cardInView;
   document.body.classList.toggle('has-bar', show);
   if (!show) return;
   const t = tm.taskId ? findTask(tm.taskId) : null;
   const time = tm.finished ? 'Time is up' : fmt(timeLeft()) + (tm.pausedLeft != null ? ' paused' : '');
-  document.getElementById('timer-bar').textContent = time + (t ? '  |  ' + t.title : '  |  Focus');
+  document.getElementById('timer-bar').textContent = time + (t ? '  |  ' + t.title : '  |  Timer');
 }
 
 if ('IntersectionObserver' in window) {
@@ -3028,7 +3020,7 @@ if ('IntersectionObserver' in window) {
     .observe(document.getElementById('focus-card'));
 }
 
-// The Focus column sits just under the sticky header
+// The Wins column sits just under the sticky header
 function measureHeader() {
   document.documentElement.style.setProperty('--head-h', document.querySelector('.tabbar').offsetHeight + 'px');
 }
