@@ -269,7 +269,9 @@
     cursor: grab; user-select: none;
   }
   .swipe-card.behind { transform: scale(0.95) translateY(10px); opacity: 0.6; pointer-events: none; }
+  .swipe-card { background: var(--n-bg, var(--card)); border-left: 12px solid var(--n-strong, var(--edge)); }
   .swipe-card .t { font-size: 22px; font-weight: 600; }
+  .result.picked { background: var(--n-bg, var(--card)); border: 1px solid var(--n-edge, var(--edge)); border-left: 12px solid var(--n-strong, var(--edge)); border-radius: 6px; padding: 12px 14px; margin-left: auto; margin-right: auto; max-width: 420px; }
   .swipe-card .s { font-size: 14px; color: var(--muted); margin-top: 10px; }
   .stamp {
     position: absolute; top: 18px; font-weight: 800; font-size: 20px; letter-spacing: 1px;
@@ -2579,7 +2581,7 @@ function renderDeck() {
     let s = i < 0 ? '' : `${steps.length > 1 ? `Step ${i + 1} of ${steps.length}` : 'First step'}: ${esc(steps[i].text)}`;
     if (t.skips >= 3) s += `<br><br>Skipped ${t.skips} times. Maybe it needs a smaller first step, or maybe you can let it go.`;
     const meta = [t.size ? sizeLabel(t.size) : '', t.energy ? ENERGY[t.energy] : ''].filter(Boolean).join(' / ');
-    return `<div class="swipe-card ${cls}" data-id="${t.id}">
+    return `<div class="swipe-card ${cls}" data-id="${t.id}" style="${palVars(colorOf(t))}">
       <div class="stamp yes">START</div><div class="stamp no">SKIP</div>
       <div class="t">${esc(t.title)}</div>
       ${meta ? `<div class="s">${meta}</div>` : ''}
@@ -2659,7 +2661,6 @@ document.addEventListener('keydown', e => {
 
 // ── Wheel ───────────────────────────────────────────
 
-const WHEEL_COLORS = Object.values(BRIGHT);
 const WHEEL_MAX = 12;
 let wheelAngle = 0, spinning = false, wheelItems = [];
 
@@ -2683,15 +2684,19 @@ function drawWheel() {
   wheelItems.forEach((t, i) => {
     ctx.beginPath(); ctx.moveTo(0, 0);
     ctx.arc(0, 0, R, i * slice, (i + 1) * slice);
-    const col = n === 1 ? WHEEL_COLORS[0] : WHEEL_COLORS[i % WHEEL_COLORS.length];
-    ctx.fillStyle = col; ctx.fill();
+    const ck = colorOf(t);
+    ctx.fillStyle = ck ? mixHex(BRIGHT[ck], 0.16) : '#ebebe8'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#f7f7f5'; ctx.stroke();
+    // The loop's color shows as a stripe on the rim
+    ctx.beginPath(); ctx.arc(0, 0, R - 8, i * slice + 0.012, (i + 1) * slice - 0.012);
+    ctx.lineWidth = 16; ctx.strokeStyle = ck ? BRIGHT[ck] : '#d3d3cd'; ctx.stroke();
     ctx.save();
     ctx.rotate(i * slice + slice / 2);
     ctx.textAlign = 'right';
-    ctx.fillStyle = col === BRIGHT.yellow ? '#2a2b27' : '#ffffff';
+    ctx.fillStyle = '#2a2b27';
     ctx.font = `600 ${n > 8 ? 22 : 26}px sans-serif`;
     let label = t.title.length > 22 ? t.title.slice(0, 21) + '...' : t.title;
-    ctx.fillText(label, R - 20, 9);
+    ctx.fillText(label, R - 34, 9);
     ctx.restore();
   });
   ctx.restore();
@@ -2702,7 +2707,7 @@ function drawWheel() {
 function spinWheel() {
   if (spinning || !wheelItems.length) return;
   spinning = true;
-  document.getElementById('wheel-result').textContent = '';
+  clearPicked(document.getElementById('wheel-result'));
   document.getElementById('wheel-go').style.display = 'none';
   const n = wheelItems.length, slice = Math.PI * 2 / n;
   const target = Math.floor(Math.random() * n);
@@ -2722,7 +2727,7 @@ function spinWheel() {
       spinning = false;
       wheelAngle = end % (Math.PI * 2);
       pickedId = wheelItems[target].id;
-      document.getElementById('wheel-result').textContent = wheelItems[target].title;
+      showPicked(document.getElementById('wheel-result'), wheelItems[target]);
       document.getElementById('wheel-go').style.display = '';
       document.getElementById('spin-btn').textContent = 'Spin again';
       chime(660, 0.15);
@@ -2733,10 +2738,22 @@ function spinWheel() {
 
 // ── Random ──────────────────────────────────────────
 
+// The picked loop shows as a faint card with its color on the left
+function showPicked(el, t) {
+  el.textContent = t.title;
+  el.classList.add('picked');
+  el.setAttribute('style', palVars(colorOf(t)));
+}
+function clearPicked(el) {
+  el.textContent = '';
+  el.classList.remove('picked');
+  el.removeAttribute('style');
+}
+
 function randomPick() {
   const p = pool();
   const out = document.getElementById('random-result');
-  if (!p.length) { out.textContent = 'Nothing fits. Loosen the filters.'; return; }
+  if (!p.length) { clearPicked(out); out.textContent = 'Nothing fits. Loosen the filters.'; return; }
   // Today's picks get a heavier weight, older loops get a slight bump
   const weighted = [];
   p.forEach(t => {
@@ -2745,7 +2762,7 @@ function randomPick() {
   });
   const t = weighted[Math.floor(Math.random() * weighted.length)];
   pickedId = t.id;
-  out.textContent = t.title;
+  showPicked(out, t);
   document.getElementById('random-go').style.display = '';
 }
 
@@ -3355,7 +3372,7 @@ function switchList(name) {
   state.current = name;
   writeLocal();
   deck = []; _deckShuffled = false; pickedId = null;
-  ['wheel-result', 'random-result'].forEach(id => document.getElementById(id).textContent = '');
+  ['wheel-result', 'random-result'].forEach(id => clearPicked(document.getElementById(id)));
   ['wheel-go', 'random-go'].forEach(id => document.getElementById(id).style.display = 'none');
   renderAll();
   runSync([name]);
