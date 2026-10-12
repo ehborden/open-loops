@@ -147,6 +147,17 @@
   .more.open svg { transform: rotate(180deg); }
   .add-step { padding: 6px 8px; font-size: 13px; }
   .sort-row { margin: 8px 0 0; }
+  .types-box { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .types-box:not(.open) #type-chips { display: none; }
+  #type-chips { margin-top: 10px; }
+  .types-toggle { display: inline-flex; align-items: center; gap: 6px; }
+  .types-toggle svg { width: 11px; height: 7px; transition: transform 0.15s; }
+  .types-box.open .types-toggle svg { transform: rotate(180deg); }
+  .types-toggle.filtering { border-color: var(--accent); color: var(--accent); }
+  .seg .tchip i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-right: 6px; }
+  .seg .tchip span { color: var(--muted); margin-left: 2px; }
+  .seg .tchip.on { background: var(--card); color: var(--ink); border-color: var(--c); box-shadow: 0 0 0 1px var(--c); }
+  .seg .tchip.on span { color: var(--ink); }
   .task-top { display: flex; align-items: center; gap: 10px; }
   .check {
     width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--muted);
@@ -497,6 +508,10 @@
       </div>
       <div class="seg sort-row" id="sort-chips"></div>
       <div id="task-list"></div>
+      <div class="types-box" id="types-box">
+        <button class="btn sm types-toggle" id="types-toggle" onclick="toggleTypes()"></button>
+        <div class="seg" id="type-chips"></div>
+      </div>
     </div>
   </section>
 
@@ -2215,16 +2230,26 @@ const COLOR_NAMES = { green: 'Green', blue: 'Blue', purple: 'Purple', teal: 'Tea
 const palVars = k => PAL[k] ? `--n-bg:${PAL[k].bg};--n-edge:${PAL[k].edge};--n-strong:${PAL[k].strong};--n-sel:${PAL[k].sel};--n-track:${PAL[k].track}` : '';
 
 // Types: kinds of work. A list has its own set (saved and synced with the list). Until you edit them, these are used.
+const URGENT = { id: 'urgent', name: 'Urgent', color: 'orange', words: ['urgent', 'asap', 'overdue', 'deadline', 'due'] };
+const IDEAS = { id: 'ideas', name: 'Ideas', color: 'yellow', words: ['idea', 'ideas', 'brainstorm', 'what if'] };
+const SOMEDAY = { id: 'someday', name: 'Someday', color: 'gray', words: ['someday', 'eventually', 'one day', 'when i have time'] };
+// Order matters: a loop takes the first type whose words match
 const DEFAULT_TYPES = {
   Work: [
-    { id: 'class', name: 'Class', color: 'green', words: ['lesson', 'unit', 'student', 'students', 'class', 'grade', 'grading', 'quiz', 'test', 'worksheet', 'rubric', 'curriculum', 'classroom', 'assignment', 'homework', 'parent'] },
-    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign'] },
-    { id: 'projects', name: 'Projects', color: 'purple', words: ['project', 'plan', 'draft', 'outline', 'write', 'design', 'research', 'proposal', 'build', 'ongoing', 'slides'] }
+    URGENT,
+    IDEAS,
+    { id: 'class', name: 'Class', color: 'green', words: ['lesson', 'unit', 'student', 'students', 'class', 'grade', 'grades', 'grading', 'graded', 'quiz', 'test', 'worksheet', 'rubric', 'feedback', 'curriculum', 'classroom', 'assignment', 'homework', 'parent', 'report card'] },
+    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign', 'iep', '504', 'aide', 'coach', 'colleague', 'team', 'training', 'observation', 'counselor', 'referral', 'sub plans', 'support'] },
+    { id: 'projects', name: 'Projects', color: 'purple', words: ['project', 'plan', 'draft', 'outline', 'write', 'design', 'research', 'proposal', 'build', 'ongoing', 'slides'] },
+    SOMEDAY
   ],
   Home: [
+    URGENT,
+    IDEAS,
     { id: 'chores', name: 'Chores', color: 'teal', words: ['laundry', 'dishes', 'clean', 'vacuum', 'trash', 'closet', 'tidy', 'organize', 'fold', 'mop', 'garden'] },
     { id: 'errands', name: 'Errands', color: 'pink', words: ['buy', 'pick up', 'store', 'grocery', 'groceries', 'return', 'drop off', 'post office', 'order', 'mail'] },
-    { id: 'health', name: 'Health', color: 'red', words: ['dentist', 'doctor', 'appointment', 'pharmacy', 'prescription', 'exercise', 'workout', 'check-up', 'checkup', 'therapy'] }
+    { id: 'health', name: 'Health', color: 'red', words: ['dentist', 'doctor', 'appointment', 'pharmacy', 'prescription', 'exercise', 'workout', 'check-up', 'checkup', 'therapy'] },
+    SOMEDAY
   ]
 };
 function typesOf(listName) {
@@ -2382,11 +2407,21 @@ function taskHTML(t) {
 
 
 const SORTS = [['today', 'Today first'], ['short', 'Quickest'], ['easy', 'Easiest'], ['new', 'Newest'], ['old', 'Oldest']];
-let sortBy = (() => { try { const k = JSON.parse(localStorage.getItem('openloops_view') || '{}').sort; return SORTS.some(x => x[0] === k) ? k : 'today'; } catch { return 'today'; } })();
+// View settings that stay on this device only (not task data, not synced)
+function viewPrefs() { try { return JSON.parse(localStorage.getItem('openloops_view') || '{}') || {}; } catch { return {}; } }
+function saveView(patch) { try { localStorage.setItem('openloops_view', JSON.stringify(Object.assign(viewPrefs(), patch))); } catch {} }
+let sortBy = SORTS.some(x => x[0] === viewPrefs().sort) ? viewPrefs().sort : 'today';
+let _typesOpen = !!viewPrefs().types;
 
 function setSort(k) {
   sortBy = k;
-  try { localStorage.setItem('openloops_view', JSON.stringify({ sort: k })); } catch {}
+  saveView({ sort: k });
+  renderTaskList();
+}
+
+function toggleTypes() {
+  _typesOpen = !_typesOpen;
+  saveView({ types: _typesOpen });
   renderTaskList();
 }
 
@@ -2402,8 +2437,21 @@ function sortTasks(list) {
 
 const notesHTML = list => '<div class="notes">' + list.map(taskHTML).join('') + '</div>';
 
+// Show only one type of loop. Not saved, so a refresh always shows everything.
+let _typeFilter = null;
+
+function setTypeFilter(id) {
+  const same = _typeFilter && _typeFilter.list === state.current && _typeFilter.id === id;
+  _typeFilter = id && !same ? { list: state.current, id } : null;
+  renderTaskList();
+}
+
 function renderTaskList() {
-  const open = L().tasks.filter(t => !t.done);
+  const all = L().tasks.filter(t => !t.done);
+  const tid = t => (typeOfTask(t) || { id: 'none' }).id;
+  let f = _typeFilter && _typeFilter.list === state.current ? _typeFilter.id : null;
+  if (f && !all.some(t => tid(t) === f)) { f = null; _typeFilter = null; }
+  const open = f ? all.filter(t => tid(t) === f) : all;
   const snoozed = open.filter(t => isSnoozed(t) && !t.today);
   const live = open.filter(t => !isSnoozed(t) || t.today);
 
@@ -2426,6 +2474,22 @@ function renderTaskList() {
   document.getElementById('loop-count').textContent = open.length ? `${open.length} open` : '';
   document.getElementById('sort-chips').innerHTML = SORTS.map(([k, label]) =>
     `<button class="${k === sortBy ? 'on' : ''}" onclick="setSort('${k}')">${label}</button>`).join('');
+
+  // One chip per type that has open loops, colored like its band, with a count. They live in a box under the notes.
+  const counts = new Map();
+  all.forEach(t => counts.set(tid(t), (counts.get(tid(t)) || 0) + 1));
+  const chips = typesOf(state.current).filter(y => counts.has(y.id)).map(y => [y.id, y.name, PAL[y.color].strong]);
+  if (counts.has('none')) chips.push(['none', 'No type', '#b3b3ac']);
+  const box = document.getElementById('types-box');
+  box.style.display = chips.length ? '' : 'none';
+  box.classList.toggle('open', _typesOpen);
+  const fname = f ? (chips.find(c => c[0] === f) || [])[1] : '';
+  const tog = document.getElementById('types-toggle');
+  tog.innerHTML = (fname ? 'Types: ' + esc(fname) : 'Types') + ARROW;
+  tog.classList.toggle('filtering', !!fname);
+  document.getElementById('type-chips').innerHTML = chips.length ?
+    `<button class="${f ? '' : 'on'}" onclick="setTypeFilter(null)">All</button>` +
+    chips.map(([id, name, c]) => `<button class="tchip ${f === id ? 'on' : ''}" style="--c:${c}" onclick="setTypeFilter('${id}')"><i></i>${esc(name)} <span>${counts.get(id)}</span></button>`).join('') : '';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3030,6 +3094,7 @@ const HELP = [
   <li><strong>Steps:</strong> the next one shows on the note. Tap its box to check it off. <strong>Steps</strong> at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.</li>
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
   <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
+  <li><strong>Types</strong> at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.</li>
   <li><strong>Data, then Types</strong> opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
   <li>The color is the thick band on the left of a note. The note you open is shown a little stronger.</li>
   <li><strong>The bar</strong> under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).</li>
