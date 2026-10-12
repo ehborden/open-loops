@@ -21,8 +21,9 @@
     --muted: #61635b;
     --line: #d3d3ce;
     --edge: #b7b7af;
-    --accent: #33872f;
-    --accent-deep: #2a6f27;
+    --accent: #3a3f42;
+    --accent-deep: #2b2f31;
+    --hover: #e8e9e9;
     --accent-ink: #ffffff;
     --lime: #d4eb8f;
     --lime-soft: #f7fbe9;
@@ -131,6 +132,7 @@
   .task.open { background: var(--n-sel, var(--n-bg, var(--card))); border-color: var(--n-strong, var(--edge)); box-shadow: 0 0 0 1px var(--n-strong, var(--edge)); }
   .tag.type { border-color: var(--n-strong, var(--edge)); font-weight: 500; }
   .tag.type.unset { font-weight: 400; }
+  .ed-type { margin-top: 10px; }
   .ty-row { display: flex; align-items: center; gap: 8px; }
   .ty-row i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
   .tag-menu .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px 4px; max-width: 190px; border-top: 1px solid var(--line); margin-top: 2px; }
@@ -164,7 +166,7 @@
     background: none; cursor: pointer; flex: none; padding: 0; position: relative;
   }
   .check::before { content: ''; position: absolute; inset: -12px; }
-  .check:hover { border-color: var(--green); background: var(--green-bg); }
+  .check:hover { border-color: var(--accent); background: var(--hover); }
   .task-main { flex: 1; min-width: 0; }
   .task-title { cursor: pointer; word-break: break-word; }
   .task-main .chips { margin-top: 4px; }
@@ -185,8 +187,8 @@
     background: none; padding: 0; cursor: pointer; flex: none; position: relative;
   }
   .step-check.ghost { border-style: dashed; color: var(--muted); font-size: 12px; line-height: 13px; text-align: center; cursor: default; }
-  .step-check:hover { border-color: var(--green); }
-  .step-check.on { background: var(--green); border-color: var(--green); }
+  .step-check:hover { border-color: var(--accent); }
+  .step-check.on { background: var(--accent); border-color: var(--accent); }
   .step-check.on::after {
     content: ''; position: absolute; left: 4px; top: 0; width: 4px; height: 9px;
     border: solid var(--card); border-width: 0 2px 2px 0; transform: rotate(45deg);
@@ -227,8 +229,8 @@
     display: block; width: 100%; text-align: left; background: none; border: none;
     padding: 6px 10px; border-radius: 4px; font-size: 14px; cursor: pointer;
   }
-  .tag-menu button:hover { background: var(--green-bg); }
-  .tag-menu button.on { color: var(--accent); font-weight: 600; background: var(--green-bg); }
+  .tag-menu button:hover { background: var(--hover); }
+  .tag-menu button.on { color: var(--accent); font-weight: 600; background: var(--hover); }
   .tag-menu button.clear { color: var(--muted); border-top: 1px solid var(--line); border-radius: 0; margin-top: 2px; }
   .chips { display: flex; gap: 4px; flex-wrap: wrap; }
   .chip {
@@ -267,7 +269,9 @@
     cursor: grab; user-select: none;
   }
   .swipe-card.behind { transform: scale(0.95) translateY(10px); opacity: 0.6; pointer-events: none; }
+  .swipe-card { background: var(--n-bg, var(--card)); border-left: 12px solid var(--n-strong, var(--edge)); }
   .swipe-card .t { font-size: 22px; font-weight: 600; }
+  .result.picked { background: var(--n-bg, var(--card)); border: 1px solid var(--n-edge, var(--edge)); border-left: 12px solid var(--n-strong, var(--edge)); border-radius: 6px; padding: 12px 14px; margin-left: auto; margin-right: auto; max-width: 420px; }
   .swipe-card .s { font-size: 14px; color: var(--muted); margin-top: 10px; }
   .stamp {
     position: absolute; top: 18px; font-weight: 800; font-size: 20px; letter-spacing: 1px;
@@ -2128,6 +2132,7 @@ function renderEditor() {
   openModal(`<div class="row"><span class="saved" id="ed-saved">Saved</span><div class="spacer"></div>
       <button class="btn primary sm" onclick="closeModal()">Done</button></div>
     <input type="text" class="ed-name" value="${esc(t.title)}" aria-label="Name" oninput="edName(this.value)">
+    <div class="ed-type" style="${palVars(colorOf(t))}">${typeTagHTML(t)}</div>
     <div class="section-label">Steps</div>
     ${steps.map(st => `<div class="step-edit ${st.done ? 'done' : ''}">
         <button class="step-check ${st.done ? 'on' : ''}" title="${st.done ? 'Mark not done' : 'Step done'}" onclick="edToggle('${st.id}')"></button>
@@ -2239,7 +2244,7 @@ const DEFAULT_TYPES = {
     URGENT,
     IDEAS,
     { id: 'class', name: 'Class', color: 'green', words: ['lesson', 'unit', 'student', 'students', 'class', 'grade', 'grades', 'grading', 'graded', 'quiz', 'test', 'worksheet', 'rubric', 'feedback', 'curriculum', 'classroom', 'assignment', 'homework', 'parent', 'report card'] },
-    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign', 'iep', '504', 'aide', 'coach', 'colleague', 'team', 'training', 'observation', 'counselor', 'referral', 'sub plans', 'support'] },
+    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign', 'iep', '504', 'aide', 'coach', 'colleague', 'team', 'training', 'observation', 'counselor', 'referral', 'sub plans', 'support', 'teacher', 'teachers', 'faculty', 'staff', 'principal', 'district', 'permission', 'permissions'] },
     { id: 'projects', name: 'Projects', color: 'purple', words: ['project', 'plan', 'draft', 'outline', 'write', 'design', 'research', 'proposal', 'build', 'ongoing', 'slides'] },
     SOMEDAY
   ],
@@ -2262,13 +2267,18 @@ function wordHit(title, w) {
   if (!r) { r = new RegExp('(^|[^a-z0-9])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); _wordRe.set(w, r); }
   return r.test(title);
 }
-// The type a loop has: the one it was given, else the first type whose words show up in its name
+// The type a loop has: the one it was given, else the type with the most of its words in the loop's name (a tie goes to the first)
 function typeOfTask(t) {
   if (t.type === 'none') return null;
   const types = typesOf(state.current);
   if (t.type) { const x = types.find(y => y.id === t.type); if (x) return x; }
   const title = String(t.title).toLowerCase();
-  return types.find(y => y.words.some(w => wordHit(title, w))) || null;
+  let best = null, bestN = 0;
+  for (const y of types) {
+    const n = y.words.filter(w => wordHit(title, w)).length;
+    if (n > bestN) { best = y; bestN = n; }
+  }
+  return best;
 }
 // A color picked on the note wins, then its type's color; a loop with neither stays plain
 function colorOf(t) {
@@ -2302,7 +2312,7 @@ function openTypeMenu(e, id) {
     if (!b) return;
     ev.stopPropagation();
     closeTagMenu();
-    if (b.dataset.edit) openTypesEditor();
+    if (b.dataset.edit) { if (_modalKind === 'editor') closeModal(); openTypesEditor(); }
     else if (b.dataset.c) setNoteType(id, 'color', b.dataset.c);
     else setNoteType(id, 'type', b.dataset.t);
   });
@@ -2325,6 +2335,7 @@ function setNoteType(id, kind, v) {
   else return;
   save();
   renderAll();
+  if (_modalKind === 'editor' && _editing === id) renderEditor();
 }
 
 // ── Types editor ────────────────────────────────────
@@ -2570,7 +2581,7 @@ function renderDeck() {
     let s = i < 0 ? '' : `${steps.length > 1 ? `Step ${i + 1} of ${steps.length}` : 'First step'}: ${esc(steps[i].text)}`;
     if (t.skips >= 3) s += `<br><br>Skipped ${t.skips} times. Maybe it needs a smaller first step, or maybe you can let it go.`;
     const meta = [t.size ? sizeLabel(t.size) : '', t.energy ? ENERGY[t.energy] : ''].filter(Boolean).join(' / ');
-    return `<div class="swipe-card ${cls}" data-id="${t.id}">
+    return `<div class="swipe-card ${cls}" data-id="${t.id}" style="${palVars(colorOf(t))}">
       <div class="stamp yes">START</div><div class="stamp no">SKIP</div>
       <div class="t">${esc(t.title)}</div>
       ${meta ? `<div class="s">${meta}</div>` : ''}
@@ -2650,7 +2661,6 @@ document.addEventListener('keydown', e => {
 
 // ── Wheel ───────────────────────────────────────────
 
-const WHEEL_COLORS = ['#33872f', '#d4eb8f', '#6aae5a', '#e6f2e3', '#256b24', '#b5dc8a', '#8cc47a', '#f3f9ec'];
 const WHEEL_MAX = 12;
 let wheelAngle = 0, spinning = false, wheelItems = [];
 
@@ -2674,15 +2684,19 @@ function drawWheel() {
   wheelItems.forEach((t, i) => {
     ctx.beginPath(); ctx.moveTo(0, 0);
     ctx.arc(0, 0, R, i * slice, (i + 1) * slice);
-    const col = n === 1 ? WHEEL_COLORS[0] : WHEEL_COLORS[i % WHEEL_COLORS.length];
-    ctx.fillStyle = col; ctx.fill();
+    const ck = colorOf(t);
+    ctx.fillStyle = ck ? mixHex(BRIGHT[ck], 0.16) : '#ebebe8'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#f7f7f5'; ctx.stroke();
+    // The loop's color shows as a stripe on the rim
+    ctx.beginPath(); ctx.arc(0, 0, R - 8, i * slice + 0.012, (i + 1) * slice - 0.012);
+    ctx.lineWidth = 16; ctx.strokeStyle = ck ? BRIGHT[ck] : '#d3d3cd'; ctx.stroke();
     ctx.save();
     ctx.rotate(i * slice + slice / 2);
     ctx.textAlign = 'right';
-    ctx.fillStyle = ['#d4eb8f', '#e6f2e3', '#b5dc8a', '#8cc47a', '#f3f9ec'].includes(col) ? '#2a2f22' : '#ffffff';
+    ctx.fillStyle = '#2a2b27';
     ctx.font = `600 ${n > 8 ? 22 : 26}px sans-serif`;
     let label = t.title.length > 22 ? t.title.slice(0, 21) + '...' : t.title;
-    ctx.fillText(label, R - 20, 9);
+    ctx.fillText(label, R - 34, 9);
     ctx.restore();
   });
   ctx.restore();
@@ -2693,7 +2707,7 @@ function drawWheel() {
 function spinWheel() {
   if (spinning || !wheelItems.length) return;
   spinning = true;
-  document.getElementById('wheel-result').textContent = '';
+  clearPicked(document.getElementById('wheel-result'));
   document.getElementById('wheel-go').style.display = 'none';
   const n = wheelItems.length, slice = Math.PI * 2 / n;
   const target = Math.floor(Math.random() * n);
@@ -2713,7 +2727,7 @@ function spinWheel() {
       spinning = false;
       wheelAngle = end % (Math.PI * 2);
       pickedId = wheelItems[target].id;
-      document.getElementById('wheel-result').textContent = wheelItems[target].title;
+      showPicked(document.getElementById('wheel-result'), wheelItems[target]);
       document.getElementById('wheel-go').style.display = '';
       document.getElementById('spin-btn').textContent = 'Spin again';
       chime(660, 0.15);
@@ -2724,10 +2738,22 @@ function spinWheel() {
 
 // ── Random ──────────────────────────────────────────
 
+// The picked loop shows as a faint card with its color on the left
+function showPicked(el, t) {
+  el.textContent = t.title;
+  el.classList.add('picked');
+  el.setAttribute('style', palVars(colorOf(t)));
+}
+function clearPicked(el) {
+  el.textContent = '';
+  el.classList.remove('picked');
+  el.removeAttribute('style');
+}
+
 function randomPick() {
   const p = pool();
   const out = document.getElementById('random-result');
-  if (!p.length) { out.textContent = 'Nothing fits. Loosen the filters.'; return; }
+  if (!p.length) { clearPicked(out); out.textContent = 'Nothing fits. Loosen the filters.'; return; }
   // Today's picks get a heavier weight, older loops get a slight bump
   const weighted = [];
   p.forEach(t => {
@@ -2736,7 +2762,7 @@ function randomPick() {
   });
   const t = weighted[Math.floor(Math.random() * weighted.length)];
   pickedId = t.id;
-  out.textContent = t.title;
+  showPicked(out, t);
   document.getElementById('random-go').style.display = '';
 }
 
@@ -2971,7 +2997,7 @@ function celebrate() {
   const cv = document.getElementById('confetti');
   const ctx = cv.getContext('2d');
   cv.width = innerWidth; cv.height = innerHeight;
-  const colors = ['#33872f', '#d4eb8f', '#6aae5a', '#b5dc8a', '#256b24'];
+  const colors = Object.values(BRIGHT);
   const parts = Array.from({ length: 120 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.6,
     vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 4,
@@ -3093,7 +3119,7 @@ const HELP = [
   <li><strong>Tap a loop's name</strong> to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.</li>
   <li><strong>Steps:</strong> the next one shows on the note. Tap its box to check it off. <strong>Steps</strong> at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.</li>
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
-  <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
+  <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag, on the note or in the loop's card, to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
   <li><strong>Types</strong> at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.</li>
   <li><strong>Data, then Types</strong> opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
   <li>The color is the thick band on the left of a note. The note you open is shown a little stronger.</li>
@@ -3346,7 +3372,7 @@ function switchList(name) {
   state.current = name;
   writeLocal();
   deck = []; _deckShuffled = false; pickedId = null;
-  ['wheel-result', 'random-result'].forEach(id => document.getElementById(id).textContent = '');
+  ['wheel-result', 'random-result'].forEach(id => clearPicked(document.getElementById(id)));
   ['wheel-go', 'random-go'].forEach(id => document.getElementById(id).style.display = 'none');
   renderAll();
   runSync([name]);
