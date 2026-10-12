@@ -127,17 +127,17 @@
     border: 1px solid var(--edge); border-left: 3px solid var(--accent); border-radius: 6px;
     padding: 9px 10px; margin-top: 6px; background: var(--card);
   }
-  .task { background: var(--n-bg, var(--card)); border-color: var(--n-edge, var(--edge)); border-left-color: var(--n-strong, var(--edge)); transition: background 0.15s; }
+  .task { background: var(--n-bg, var(--card)); border-color: var(--n-edge, var(--edge)); border-left: 12px solid var(--n-strong, #d3d3cd); transition: background 0.15s; }
   .task.open { background: var(--n-sel, var(--n-bg, var(--card))); border-color: var(--n-strong, var(--edge)); box-shadow: 0 0 0 1px var(--n-strong, var(--edge)); }
-  .tag.type { border-left: 3px solid var(--n-strong, var(--edge)); }
-  .tag.type.unset { border-left-width: 1px; }
+  .tag.type { border-color: var(--n-strong, var(--edge)); font-weight: 500; }
+  .tag.type.unset { font-weight: 400; }
   .ty-row { display: flex; align-items: center; gap: 8px; }
-  .ty-row i { width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid; }
-  .tag-menu .swatch-row { display: flex; gap: 6px; padding: 6px 10px 4px; border-top: 1px solid var(--line); margin-top: 2px; }
-  .tag-menu .swatch-row button { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 1px solid; flex: none; }
+  .ty-row i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .tag-menu .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px 4px; max-width: 190px; border-top: 1px solid var(--line); margin-top: 2px; }
+  .tag-menu .swatch-row button { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 0; flex: none; }
   .te-row { display: grid; grid-template-columns: 104px 1fr auto; gap: 6px; margin-top: 10px; align-items: center; }
   .te-row .te-words { grid-column: 1 / -1; }
-  .bar { height: 6px; border-radius: 3px; background: var(--n-edge); margin: 8px 0 0 30px; overflow: hidden; }
+  .bar { height: 6px; border-radius: 3px; background: var(--n-track, var(--line)); margin: 8px 0 0 30px; overflow: hidden; }
   .bar i { display: block; height: 100%; background: var(--n-strong); border-radius: 3px; transition: width 0.25s; }
   .notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; align-items: start; margin-top: 6px; }
   .notes .task { margin-top: 0; }
@@ -619,7 +619,7 @@ const STORE_KEY = 'openloops_v2';
 const OLD_STORE_KEY = 'openloops_v1';
 const APP_ID = 'open-loops';
 const LIST_NAMES = ['Work', 'Home'];
-const COLORS = ['green', 'blue', 'pink', 'purple', 'teal', 'gray'];
+const COLORS = ['green', 'blue', 'purple', 'teal', 'pink', 'red', 'orange', 'yellow', 'gray'];
 const TYPE_MAX = 12;
 const TYPE_NAME_MAX = 24;
 const TODAY_LIMIT = 3;
@@ -2203,28 +2203,28 @@ function stepItemHTML(t, st, extra) {
       <span>${esc(st.text)}</span>${extra || ''}</div>`;
 }
 
-const PAL = {
-  green: { bg: '#e6eee8', edge: '#bfd0c4', strong: '#6c9a7e', sel: '#d2ebda' },
-  blue: { bg: '#e3ebf3', edge: '#bccbdc', strong: '#6a8fb8', sel: '#d0e4f6' },
-  pink: { bg: '#f1e4e8', edge: '#dcbec7', strong: '#b4788a', sel: '#f7d6e0' },
-  purple: { bg: '#ebe6f2', edge: '#cdc3dc', strong: '#8c7bb2', sel: '#e0d6f3' },
-  teal: { bg: '#dff0ee', edge: '#b3d4d0', strong: '#58998f', sel: '#c8ece7' },
-  gray: { bg: '#e8e9ec', edge: '#c4c7ce', strong: '#7a8294', sel: '#d9dce5' }
+// Bright colors go on a thick band down the left of a note; the rest of the card is almost neutral
+const BRIGHT = { green: '#1faa45', blue: '#2f7de1', purple: '#8a4fd6', teal: '#10a89f', pink: '#ee5fa0', red: '#e5413c', orange: '#f58a1f', yellow: '#f2c200', gray: '#7b8494' };
+const mixHex = (h, a) => {
+  const n = parseInt(h.slice(1), 16), base = [247, 247, 245];
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map((v, i) => Math.round(v * a + base[i] * (1 - a)).toString(16).padStart(2, '0')).join('');
 };
-const COLOR_NAMES = { green: 'Sage', blue: 'Sky', pink: 'Rose', purple: 'Lilac', teal: 'Teal', gray: 'Slate' };
-const palVars = k => PAL[k] ? `--n-bg:${PAL[k].bg};--n-edge:${PAL[k].edge};--n-strong:${PAL[k].strong};--n-sel:${PAL[k].sel}` : '';
+const PAL = Object.fromEntries(Object.entries(BRIGHT).map(([k, c]) =>
+  [k, { strong: c, bg: mixHex(c, 0.035), edge: mixHex(c, 0.3), sel: mixHex(c, 0.11), track: mixHex(c, 0.22) }]));
+const COLOR_NAMES = { green: 'Green', blue: 'Blue', purple: 'Purple', teal: 'Teal', pink: 'Pink', red: 'Red', orange: 'Orange', yellow: 'Yellow', gray: 'Grey' };
+const palVars = k => PAL[k] ? `--n-bg:${PAL[k].bg};--n-edge:${PAL[k].edge};--n-strong:${PAL[k].strong};--n-sel:${PAL[k].sel};--n-track:${PAL[k].track}` : '';
 
 // Types: kinds of work. A list has its own set (saved and synced with the list). Until you edit them, these are used.
 const DEFAULT_TYPES = {
   Work: [
     { id: 'class', name: 'Class', color: 'green', words: ['lesson', 'unit', 'student', 'students', 'class', 'grade', 'grading', 'quiz', 'test', 'worksheet', 'rubric', 'curriculum', 'classroom', 'assignment', 'homework', 'parent'] },
-    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign', 'order', 'call'] },
+    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign'] },
     { id: 'projects', name: 'Projects', color: 'purple', words: ['project', 'plan', 'draft', 'outline', 'write', 'design', 'research', 'proposal', 'build', 'ongoing', 'slides'] }
   ],
   Home: [
     { id: 'chores', name: 'Chores', color: 'teal', words: ['laundry', 'dishes', 'clean', 'vacuum', 'trash', 'closet', 'tidy', 'organize', 'fold', 'mop', 'garden'] },
     { id: 'errands', name: 'Errands', color: 'pink', words: ['buy', 'pick up', 'store', 'grocery', 'groceries', 'return', 'drop off', 'post office', 'order', 'mail'] },
-    { id: 'health', name: 'Health', color: 'gray', words: ['dentist', 'doctor', 'appointment', 'pharmacy', 'prescription', 'exercise', 'workout', 'check-up', 'checkup', 'therapy'] }
+    { id: 'health', name: 'Health', color: 'red', words: ['dentist', 'doctor', 'appointment', 'pharmacy', 'prescription', 'exercise', 'workout', 'check-up', 'checkup', 'therapy'] }
   ]
 };
 function typesOf(listName) {
@@ -2268,9 +2268,9 @@ function openTypeMenu(e, id) {
   const menu = document.createElement('div');
   menu.className = 'tag-menu';
   menu.innerHTML = typesOf(state.current).map(y =>
-    `<button class="${cur && cur.id === y.id && !COLORS.includes(t.color) ? 'on' : ''}" data-t="${y.id}"><span class="ty-row"><i style="background:${PAL[y.color].bg};border-color:${PAL[y.color].strong}"></i>${esc(y.name)}</span></button>`).join('') +
+    `<button class="${cur && cur.id === y.id && !COLORS.includes(t.color) ? 'on' : ''}" data-t="${y.id}"><span class="ty-row"><i style="background:${PAL[y.color].strong}"></i>${esc(y.name)}</span></button>`).join('') +
     '<button class="clear" data-t="none">No type</button>' +
-    `<div class="swatch-row">${COLORS.map(c => `<button data-c="${c}" title="${COLOR_NAMES[c]}" aria-label="${COLOR_NAMES[c]}" style="background:${PAL[c].bg};border-color:${PAL[c].strong}"></button>`).join('')}</div>` +
+    `<div class="swatch-row">${COLORS.map(c => `<button data-c="${c}" title="${COLOR_NAMES[c]}" aria-label="${COLOR_NAMES[c]}" style="background:${PAL[c].strong}"></button>`).join('')}</div>` +
     '<button class="clear" data-edit="1">Edit types</button>';
   menu.addEventListener('click', ev => {
     const b = ev.target.closest('button');
@@ -2313,7 +2313,7 @@ function openTypesEditor() {
 function renderTypesEditor() {
   openModal(`<h3>Types: ${esc(listLabel(state.current))}</h3>
     ${_types.map((y, i) => `<div class="te-row">
-        <select aria-label="Color" onchange="_types[${i}].color=this.value;renderTypesEditor()" style="background:${PAL[y.color].bg};border-color:${PAL[y.color].strong}">
+        <select aria-label="Color" onchange="_types[${i}].color=this.value;renderTypesEditor()" style="border-left:8px solid ${PAL[y.color].strong}">
           ${COLORS.map(c => `<option value="${c}" ${c === y.color ? 'selected' : ''}>${COLOR_NAMES[c]}</option>`).join('')}</select>
         <input type="text" value="${esc(y.name)}" maxlength="${TYPE_NAME_MAX}" placeholder="Name" aria-label="Name" oninput="_types[${i}].name=this.value">
         <button class="x" title="Remove" aria-label="Remove" onclick="_types.splice(${i},1);renderTypesEditor()">&times;</button>
@@ -3031,7 +3031,7 @@ const HELP = [
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
   <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
   <li><strong>Data, then Types</strong> opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
-  <li>The note you open is the one shown brighter.</li>
+  <li>The color is the thick band on the left of a note. The note you open is shown a little stronger.</li>
   <li><strong>The bar</strong> under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).</li>
   <li><strong>Today</strong> holds up to 3 picks. Tap the <strong>Today</strong> tag on a loop to pick or unpick it.</li>
   <li><strong>Sort</strong> with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.</li>

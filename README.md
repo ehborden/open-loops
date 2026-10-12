@@ -28,7 +28,7 @@ The same guide is in the app under **Data > How to**.
 - **The circle** on the left closes the whole loop.
 - **Types** are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. **Add with AI** picks the type for you.
 - **Data, then Types** opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.
-- The note you open is the one shown brighter.
+- The color is the thick band on the left of a note. The note you open is shown a little stronger.
 - **The bar** under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).
 - **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
 - **Sort** with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
