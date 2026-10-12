@@ -26,6 +26,8 @@ The same guide is in the app under **Data > How to**.
 - **Tap a loop's name** to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.
 - **Steps:** the next one shows on the note. Tap its box to check it off. **Steps** at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.
 - **The circle** on the left closes the whole loop.
+- **The colored dot** on a note changes its color. Notes start in a mix of colors. Your choice follows you to your other devices.
+- **The bar** under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).
 - **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
 - **Sort** with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
 - **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top.
