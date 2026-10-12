@@ -132,6 +132,7 @@
   .task.open { background: var(--n-sel, var(--n-bg, var(--card))); border-color: var(--n-strong, var(--edge)); box-shadow: 0 0 0 1px var(--n-strong, var(--edge)); }
   .tag.type { border-color: var(--n-strong, var(--edge)); font-weight: 500; }
   .tag.type.unset { font-weight: 400; }
+  .ed-type { margin-top: 10px; }
   .ty-row { display: flex; align-items: center; gap: 8px; }
   .ty-row i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
   .tag-menu .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px 4px; max-width: 190px; border-top: 1px solid var(--line); margin-top: 2px; }
@@ -2129,6 +2130,7 @@ function renderEditor() {
   openModal(`<div class="row"><span class="saved" id="ed-saved">Saved</span><div class="spacer"></div>
       <button class="btn primary sm" onclick="closeModal()">Done</button></div>
     <input type="text" class="ed-name" value="${esc(t.title)}" aria-label="Name" oninput="edName(this.value)">
+    <div class="ed-type" style="${palVars(colorOf(t))}">${typeTagHTML(t)}</div>
     <div class="section-label">Steps</div>
     ${steps.map(st => `<div class="step-edit ${st.done ? 'done' : ''}">
         <button class="step-check ${st.done ? 'on' : ''}" title="${st.done ? 'Mark not done' : 'Step done'}" onclick="edToggle('${st.id}')"></button>
@@ -2240,7 +2242,7 @@ const DEFAULT_TYPES = {
     URGENT,
     IDEAS,
     { id: 'class', name: 'Class', color: 'green', words: ['lesson', 'unit', 'student', 'students', 'class', 'grade', 'grades', 'grading', 'graded', 'quiz', 'test', 'worksheet', 'rubric', 'feedback', 'curriculum', 'classroom', 'assignment', 'homework', 'parent', 'report card'] },
-    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign', 'iep', '504', 'aide', 'coach', 'colleague', 'team', 'training', 'observation', 'counselor', 'referral', 'sub plans', 'support'] },
+    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign', 'iep', '504', 'aide', 'coach', 'colleague', 'team', 'training', 'observation', 'counselor', 'referral', 'sub plans', 'support', 'teacher', 'teachers', 'faculty', 'staff', 'principal', 'district', 'permission', 'permissions'] },
     { id: 'projects', name: 'Projects', color: 'purple', words: ['project', 'plan', 'draft', 'outline', 'write', 'design', 'research', 'proposal', 'build', 'ongoing', 'slides'] },
     SOMEDAY
   ],
@@ -2263,13 +2265,18 @@ function wordHit(title, w) {
   if (!r) { r = new RegExp('(^|[^a-z0-9])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); _wordRe.set(w, r); }
   return r.test(title);
 }
-// The type a loop has: the one it was given, else the first type whose words show up in its name
+// The type a loop has: the one it was given, else the type with the most of its words in the loop's name (a tie goes to the first)
 function typeOfTask(t) {
   if (t.type === 'none') return null;
   const types = typesOf(state.current);
   if (t.type) { const x = types.find(y => y.id === t.type); if (x) return x; }
   const title = String(t.title).toLowerCase();
-  return types.find(y => y.words.some(w => wordHit(title, w))) || null;
+  let best = null, bestN = 0;
+  for (const y of types) {
+    const n = y.words.filter(w => wordHit(title, w)).length;
+    if (n > bestN) { best = y; bestN = n; }
+  }
+  return best;
 }
 // A color picked on the note wins, then its type's color; a loop with neither stays plain
 function colorOf(t) {
@@ -2303,7 +2310,7 @@ function openTypeMenu(e, id) {
     if (!b) return;
     ev.stopPropagation();
     closeTagMenu();
-    if (b.dataset.edit) openTypesEditor();
+    if (b.dataset.edit) { if (_modalKind === 'editor') closeModal(); openTypesEditor(); }
     else if (b.dataset.c) setNoteType(id, 'color', b.dataset.c);
     else setNoteType(id, 'type', b.dataset.t);
   });
@@ -2326,6 +2333,7 @@ function setNoteType(id, kind, v) {
   else return;
   save();
   renderAll();
+  if (_modalKind === 'editor' && _editing === id) renderEditor();
 }
 
 // ── Types editor ────────────────────────────────────
@@ -3094,7 +3102,7 @@ const HELP = [
   <li><strong>Tap a loop's name</strong> to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.</li>
   <li><strong>Steps:</strong> the next one shows on the note. Tap its box to check it off. <strong>Steps</strong> at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.</li>
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
-  <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
+  <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag, on the note or in the loop's card, to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
   <li><strong>Types</strong> at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.</li>
   <li><strong>Data, then Types</strong> opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
   <li>The color is the thick band on the left of a note. The note you open is shown a little stronger.</li>

@@ -26,7 +26,7 @@ The same guide is in the app under **Data > How to**.
 - **Tap a loop's name** to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.
 - **Steps:** the next one shows on the note. Tap its box to check it off. **Steps** at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.
 - **The circle** on the left closes the whole loop.
-- **Types** are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. **Add with AI** picks the type for you.
+- **Types** are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag, on the note or in the loop's card, to change it, pick just a color, or edit the types. **Add with AI** picks the type for you.
 - **Types** at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.
 - **Data, then Types** opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.
 - The color is the thick band on the left of a note. The note you open is shown a little stronger.
