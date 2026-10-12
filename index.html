@@ -21,8 +21,9 @@
     --muted: #61635b;
     --line: #d3d3ce;
     --edge: #b7b7af;
-    --accent: #33872f;
-    --accent-deep: #2a6f27;
+    --accent: #3a3f42;
+    --accent-deep: #2b2f31;
+    --hover: #e8e9e9;
     --accent-ink: #ffffff;
     --lime: #d4eb8f;
     --lime-soft: #f7fbe9;
@@ -164,7 +165,7 @@
     background: none; cursor: pointer; flex: none; padding: 0; position: relative;
   }
   .check::before { content: ''; position: absolute; inset: -12px; }
-  .check:hover { border-color: var(--green); background: var(--green-bg); }
+  .check:hover { border-color: var(--accent); background: var(--hover); }
   .task-main { flex: 1; min-width: 0; }
   .task-title { cursor: pointer; word-break: break-word; }
   .task-main .chips { margin-top: 4px; }
@@ -185,8 +186,8 @@
     background: none; padding: 0; cursor: pointer; flex: none; position: relative;
   }
   .step-check.ghost { border-style: dashed; color: var(--muted); font-size: 12px; line-height: 13px; text-align: center; cursor: default; }
-  .step-check:hover { border-color: var(--green); }
-  .step-check.on { background: var(--green); border-color: var(--green); }
+  .step-check:hover { border-color: var(--accent); }
+  .step-check.on { background: var(--accent); border-color: var(--accent); }
   .step-check.on::after {
     content: ''; position: absolute; left: 4px; top: 0; width: 4px; height: 9px;
     border: solid var(--card); border-width: 0 2px 2px 0; transform: rotate(45deg);
@@ -227,8 +228,8 @@
     display: block; width: 100%; text-align: left; background: none; border: none;
     padding: 6px 10px; border-radius: 4px; font-size: 14px; cursor: pointer;
   }
-  .tag-menu button:hover { background: var(--green-bg); }
-  .tag-menu button.on { color: var(--accent); font-weight: 600; background: var(--green-bg); }
+  .tag-menu button:hover { background: var(--hover); }
+  .tag-menu button.on { color: var(--accent); font-weight: 600; background: var(--hover); }
   .tag-menu button.clear { color: var(--muted); border-top: 1px solid var(--line); border-radius: 0; margin-top: 2px; }
   .chips { display: flex; gap: 4px; flex-wrap: wrap; }
   .chip {
@@ -2650,7 +2651,7 @@ document.addEventListener('keydown', e => {
 
 // ── Wheel ───────────────────────────────────────────
 
-const WHEEL_COLORS = ['#33872f', '#d4eb8f', '#6aae5a', '#e6f2e3', '#256b24', '#b5dc8a', '#8cc47a', '#f3f9ec'];
+const WHEEL_COLORS = Object.values(BRIGHT);
 const WHEEL_MAX = 12;
 let wheelAngle = 0, spinning = false, wheelItems = [];
 
@@ -2679,7 +2680,7 @@ function drawWheel() {
     ctx.save();
     ctx.rotate(i * slice + slice / 2);
     ctx.textAlign = 'right';
-    ctx.fillStyle = ['#d4eb8f', '#e6f2e3', '#b5dc8a', '#8cc47a', '#f3f9ec'].includes(col) ? '#2a2f22' : '#ffffff';
+    ctx.fillStyle = col === BRIGHT.yellow ? '#2a2b27' : '#ffffff';
     ctx.font = `600 ${n > 8 ? 22 : 26}px sans-serif`;
     let label = t.title.length > 22 ? t.title.slice(0, 21) + '...' : t.title;
     ctx.fillText(label, R - 20, 9);
@@ -2971,7 +2972,7 @@ function celebrate() {
   const cv = document.getElementById('confetti');
   const ctx = cv.getContext('2d');
   cv.width = innerWidth; cv.height = innerHeight;
-  const colors = ['#33872f', '#d4eb8f', '#6aae5a', '#b5dc8a', '#256b24'];
+  const colors = Object.values(BRIGHT);
   const parts = Array.from({ length: 120 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.6,
     vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 4,
