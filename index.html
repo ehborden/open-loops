@@ -127,19 +127,16 @@
     border: 1px solid var(--edge); border-left: 3px solid var(--accent); border-radius: 6px;
     padding: 9px 10px; margin-top: 6px; background: var(--card);
   }
-  .c-green { --n-bg: #e4f0df; --n-edge: #a9cca0; --n-strong: #33872f; }
-  .c-blue { --n-bg: #e0ecf6; --n-edge: #9fbfd9; --n-strong: #3f7db0; }
-  .c-yellow { --n-bg: #f7efcf; --n-edge: #dcc979; --n-strong: #a98b12; }
-  .c-pink { --n-bg: #f7e1e4; --n-edge: #dba9b0; --n-strong: #b2485a; }
-  .c-purple { --n-bg: #ebe4f5; --n-edge: #bfaed9; --n-strong: #7b57ad; }
-  .c-orange { --n-bg: #f8e5d3; --n-edge: #deb48a; --n-strong: #b8651d; }
-  .c-gray { --n-bg: #e7e7e3; --n-edge: #bdbdb5; --n-strong: #6b6d63; }
-  .task { background: var(--n-bg, var(--card)); border-color: var(--n-edge, var(--edge)); border-left-color: var(--n-strong, var(--accent)); }
-  .swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--n-edge); background: var(--n-strong); cursor: pointer; flex: none; padding: 0; position: relative; }
-  .swatch::before { content: ''; position: absolute; inset: -10px; }
-  .swatch-menu { display: flex; gap: 8px; padding: 8px 10px; min-width: 0; }
-  .swatch-menu button { width: 24px; height: 24px; border-radius: 50%; padding: 0; border: 1px solid var(--edge); cursor: pointer; }
-  .swatch-menu button.on { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .task { background: var(--n-bg, var(--card)); border-color: var(--n-edge, var(--edge)); border-left-color: var(--n-strong, var(--edge)); transition: background 0.15s; }
+  .task.open { background: var(--n-sel, var(--n-bg, var(--card))); border-color: var(--n-strong, var(--edge)); box-shadow: 0 0 0 1px var(--n-strong, var(--edge)); }
+  .tag.type { border-left: 3px solid var(--n-strong, var(--edge)); }
+  .tag.type.unset { border-left-width: 1px; }
+  .ty-row { display: flex; align-items: center; gap: 8px; }
+  .ty-row i { width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid; }
+  .tag-menu .swatch-row { display: flex; gap: 6px; padding: 6px 10px 4px; border-top: 1px solid var(--line); margin-top: 2px; }
+  .tag-menu .swatch-row button { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 1px solid; flex: none; }
+  .te-row { display: grid; grid-template-columns: 104px 1fr auto; gap: 6px; margin-top: 10px; align-items: center; }
+  .te-row .te-words { grid-column: 1 / -1; }
   .bar { height: 6px; border-radius: 3px; background: var(--n-edge); margin: 8px 0 0 30px; overflow: hidden; }
   .bar i { display: block; height: 100%; background: var(--n-strong); border-radius: 3px; transition: width 0.25s; }
   .notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; align-items: start; margin-top: 6px; }
@@ -455,6 +452,7 @@
           </label>
           <button id="gh-restore" style="display:none" onclick="openGitRestore();closeMenu()">Restore from GitHub</button>
           <button onclick="openRename();closeMenu()">Rename lists</button>
+          <button onclick="openTypesEditor();closeMenu()">Types</button>
           <button onclick="openSync();closeMenu()">Sync settings</button>
           <button onclick="openSettings();closeMenu()">Settings</button>
           <button onclick="openHelp();closeMenu()">How to</button>
@@ -621,7 +619,9 @@ const STORE_KEY = 'openloops_v2';
 const OLD_STORE_KEY = 'openloops_v1';
 const APP_ID = 'open-loops';
 const LIST_NAMES = ['Work', 'Home'];
-const COLORS = ['green', 'blue', 'yellow', 'pink', 'purple', 'orange', 'gray'];
+const COLORS = ['green', 'blue', 'pink', 'purple', 'teal', 'gray'];
+const TYPE_MAX = 12;
+const TYPE_NAME_MAX = 24;
 const TODAY_LIMIT = 3;
 const OLD_DAYS = 14;
 const BACKUP_NUDGE_DAYS = 7;
@@ -658,6 +658,7 @@ function cleanTask(t) {
   if (typeof t.id !== 'string' || !/^[a-z0-9]{1,40}$/.test(t.id)) t.id = uid();
   if (!t.created || isNaN(new Date(t.created))) t.created = new Date().toISOString();
   if (t.color !== undefined && !COLORS.includes(t.color)) delete t.color;
+  if (t.type !== undefined && !(typeof t.type === 'string' && /^[a-z0-9]{1,20}$/.test(t.type))) delete t.type;
   if (t.steps !== undefined) {
     const okStep = x => x && typeof x.text === 'string' && typeof x.id === 'string' && /^[a-z0-9]{1,40}$/.test(x.id);
     if (!Array.isArray(t.steps)) delete t.steps;
@@ -678,7 +679,26 @@ function cleanList(l) {
   // Optional display name for the list (the key stays Work or Home); older copies of the app never set it
   const label = typeof l.label === 'string' ? l.label.replace(/[\u0000-\u001f]/g, '').trim().slice(0, LABEL_MAX) : '';
   if (label) { out.label = label; out.labelAt = Number(l.labelAt) > 0 ? Number(l.labelAt) : 0; }
+  // Optional list of types (kinds of work); older copies of the app never set it
+  const types = cleanTypes(l.types);
+  if (types && Number(l.typesAt) > 0) { out.types = types; out.typesAt = Number(l.typesAt); }
   return out;
+}
+
+function cleanTypes(arr) {
+  if (!Array.isArray(arr)) return null;
+  const seen = new Set();
+  const clean = s => String(s).replace(/[\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim();
+  return arr.slice(0, TYPE_MAX).map(x => {
+    if (!x || typeof x !== 'object') return null;
+    const id = typeof x.id === 'string' && /^[a-z0-9]{1,20}$/.test(x.id) && x.id !== 'none' ? x.id : null;
+    const name = typeof x.name === 'string' ? clean(x.name).slice(0, TYPE_NAME_MAX) : '';
+    if (!id || !name || seen.has(id)) return null;
+    seen.add(id);
+    const words = (Array.isArray(x.words) ? x.words : []).filter(w => typeof w === 'string')
+      .map(w => clean(w).toLowerCase().slice(0, 30)).filter(Boolean).slice(0, 40);
+    return { id, name, color: COLORS.includes(x.color) ? x.color : 'gray', words };
+  }).filter(Boolean);
 }
 
 const LABEL_MAX = 20;
@@ -1043,6 +1063,9 @@ function mergeLists(local, remote) {
   // The newer list name wins
   const src = (remote.labelAt || 0) > (local.labelAt || 0) ? remote : local;
   if (src.label) { merged.label = src.label; merged.labelAt = src.labelAt || 0; }
+  // Same for the types: the newer edit wins
+  const tsrc = (remote.typesAt || 0) > (local.typesAt || 0) ? remote : local;
+  if (tsrc.types) { merged.types = tsrc.types; merged.typesAt = tsrc.typesAt || 0; }
   return merged;
 }
 
@@ -1050,7 +1073,8 @@ function canon(list) {
   return JSON.stringify([
     list.tasks.map(t => JSON.stringify(t)).sort(),
     Object.keys(list.deleted).sort().map(k => k + ':' + list.deleted[k]),
-    list.label || '', list.labelAt || 0
+    list.label || '', list.labelAt || 0,
+    JSON.stringify(list.types || null), list.typesAt || 0
   ]);
 }
 
@@ -1067,7 +1091,7 @@ async function syncList(name, attempt = 0) {
   else if (canon(merged) !== before) renderListToggle();
 
   if (remote.data && canon(remoteList) === canon(merged)) return;
-  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt }, null, 1);
+  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt, types: merged.types, typesAt: merged.typesAt }, null, 1);
   const put = { message: `Update ${name} list`, content: toB64(body) };
   if (remote.sha) put.sha = remote.sha;
   const res = await gh(`/contents/${filePath(name)}`, { method: 'PUT', body: JSON.stringify(put) });
@@ -1568,6 +1592,7 @@ function addItems(items) {
     t.size = it.size || null;
     t.energy = it.energy || null;
     t.today = today;
+    if (it.type) t.type = it.type;
   });
   return overCap;
 }
@@ -1715,6 +1740,16 @@ const listSchema = (props, required) => ({
   properties: { loops: { type: 'array', items: { type: 'object', additionalProperties: false, required, properties: props } } }
 });
 const EXTRACT_SCHEMA = listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA, { today: { type: 'boolean' } }), ['title', 'steps', 'size', 'energy', 'today']);
+// With types on the list, Claude also picks one for each loop (or none)
+function extractSchema(types) {
+  if (!types.length) return EXTRACT_SCHEMA;
+  return listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA,
+    { today: { type: 'boolean' }, type: { type: 'string', enum: types.map(y => y.name).concat('') } }), ['title', 'steps', 'size', 'energy', 'today', 'type']);
+}
+function typesPrompt(types) {
+  if (!types.length) return '';
+  return `\n- type: the kind of work it is. Use exactly one of these names, or "" if none fit: ${types.map(y => `"${y.name}"${y.words.length ? ' (' + y.words.slice(0, 8).join(', ') + ')' : ''}`).join('; ')}.`;
+}
 const BREAK_SCHEMA = { type: 'object', additionalProperties: false, required: ['steps'], properties: { steps: STEP_LIST } };
 
 async function callClaude(system, text, schema) {
@@ -1783,9 +1818,13 @@ function aiExtract() {
   if (!text) { quickAdd.focus(); return; }
   if (needAiKey()) return;
   withBusy('ai-btn', 'Thinking...', async () => {
-    const r = await callClaude(EXTRACT_SYSTEM, text, EXTRACT_SCHEMA);
+    const types = typesOf(state.current);
+    const r = await callClaude(EXTRACT_SYSTEM + typesPrompt(types), text, extractSchema(types));
     const items = (r.loops || []).filter(x => x && typeof x.title === 'string' && x.title.trim())
-      .map(x => Object.assign({ title: x.title.trim(), today: !!x.today }, fromAi(x)));
+      .map(x => {
+        const ty = types.find(y => y.name === x.type);
+        return Object.assign({ title: x.title.trim(), today: !!x.today }, fromAi(x), ty ? { type: ty.id } : {});
+      });
     if (!items.length) { toast('Claude did not find any loops in that.'); return; }
     openReview(items);
   });
@@ -1875,7 +1914,8 @@ function loadDraft() {
       steps: (Array.isArray(x.steps) ? x.steps : []).filter(v => typeof v === 'string'),
       size: SIZES.includes(x.size) ? x.size : null,
       energy: ENERGY[x.energy] ? x.energy : null,
-      today: !!x.today
+      today: !!x.today,
+      type: typeof x.type === 'string' && /^[a-z0-9]{1,20}$/.test(x.type) ? x.type : undefined
     }));
     return items.length ? { list: LIST_NAMES.includes(d.list) ? d.list : state.current, items } : null;
   } catch { return null; }
@@ -2163,35 +2203,83 @@ function stepItemHTML(t, st, extra) {
       <span>${esc(st.text)}</span>${extra || ''}</div>`;
 }
 
-const COLOR_HEX = { green: '#33872f', blue: '#3f7db0', yellow: '#a98b12', pink: '#b2485a', purple: '#7b57ad', orange: '#b8651d', gray: '#6b6d63' };
-const COLOR_BG = { green: '#e4f0df', blue: '#e0ecf6', yellow: '#f7efcf', pink: '#f7e1e4', purple: '#ebe4f5', orange: '#f8e5d3', gray: '#e7e7e3' };
-// A note with no color of its own gets one from its id, so every device shows the same one
+const PAL = {
+  green: { bg: '#e6eee8', edge: '#bfd0c4', strong: '#6c9a7e', sel: '#d2ebda' },
+  blue: { bg: '#e3ebf3', edge: '#bccbdc', strong: '#6a8fb8', sel: '#d0e4f6' },
+  pink: { bg: '#f1e4e8', edge: '#dcbec7', strong: '#b4788a', sel: '#f7d6e0' },
+  purple: { bg: '#ebe6f2', edge: '#cdc3dc', strong: '#8c7bb2', sel: '#e0d6f3' },
+  teal: { bg: '#dff0ee', edge: '#b3d4d0', strong: '#58998f', sel: '#c8ece7' },
+  gray: { bg: '#e8e9ec', edge: '#c4c7ce', strong: '#7a8294', sel: '#d9dce5' }
+};
+const COLOR_NAMES = { green: 'Sage', blue: 'Sky', pink: 'Rose', purple: 'Lilac', teal: 'Teal', gray: 'Slate' };
+const palVars = k => PAL[k] ? `--n-bg:${PAL[k].bg};--n-edge:${PAL[k].edge};--n-strong:${PAL[k].strong};--n-sel:${PAL[k].sel}` : '';
+
+// Types: kinds of work. A list has its own set (saved and synced with the list). Until you edit them, these are used.
+const DEFAULT_TYPES = {
+  Work: [
+    { id: 'class', name: 'Class', color: 'green', words: ['lesson', 'unit', 'student', 'students', 'class', 'grade', 'grading', 'quiz', 'test', 'worksheet', 'rubric', 'curriculum', 'classroom', 'assignment', 'homework', 'parent'] },
+    { id: 'admin', name: 'Admin', color: 'blue', words: ['email', 'reply', 'form', 'forms', 'paperwork', 'report', 'schedule', 'book', 'submit', 'meeting', 'budget', 'approve', 'invoice', 'sign', 'order', 'call'] },
+    { id: 'projects', name: 'Projects', color: 'purple', words: ['project', 'plan', 'draft', 'outline', 'write', 'design', 'research', 'proposal', 'build', 'ongoing', 'slides'] }
+  ],
+  Home: [
+    { id: 'chores', name: 'Chores', color: 'teal', words: ['laundry', 'dishes', 'clean', 'vacuum', 'trash', 'closet', 'tidy', 'organize', 'fold', 'mop', 'garden'] },
+    { id: 'errands', name: 'Errands', color: 'pink', words: ['buy', 'pick up', 'store', 'grocery', 'groceries', 'return', 'drop off', 'post office', 'order', 'mail'] },
+    { id: 'health', name: 'Health', color: 'gray', words: ['dentist', 'doctor', 'appointment', 'pharmacy', 'prescription', 'exercise', 'workout', 'check-up', 'checkup', 'therapy'] }
+  ]
+};
+function typesOf(listName) {
+  const l = state.lists[listName];
+  return l && Array.isArray(l.types) ? l.types : (DEFAULT_TYPES[listName] || []);
+}
+const _wordRe = new Map();
+function wordHit(title, w) {
+  let r = _wordRe.get(w);
+  if (!r) { r = new RegExp('(^|[^a-z0-9])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); _wordRe.set(w, r); }
+  return r.test(title);
+}
+// The type a loop has: the one it was given, else the first type whose words show up in its name
+function typeOfTask(t) {
+  if (t.type === 'none') return null;
+  const types = typesOf(state.current);
+  if (t.type) { const x = types.find(y => y.id === t.type); if (x) return x; }
+  const title = String(t.title).toLowerCase();
+  return types.find(y => y.words.some(w => wordHit(title, w))) || null;
+}
+// A color picked on the note wins, then its type's color; a loop with neither stays plain
 function colorOf(t) {
   if (COLORS.includes(t.color)) return t.color;
-  let h = 2166136261;
-  for (const ch of String(t.id)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-  h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13;
-  return COLORS[(h >>> 0) % 6];
+  const ty = typeOfTask(t);
+  return ty && PAL[ty.color] ? ty.color : null;
 }
 // Bar length shows the time (short task, short bar); the fill shows steps done
 const BAR_LEN = { 2: 30, 15: 50, 30: 75, 60: 100 };
 
-function openColorMenu(e, id) {
+function typeTagHTML(t) {
+  const ty = typeOfTask(t);
+  return `<button class="tag type ${ty ? '' : 'unset'}" onclick="openTypeMenu(event,'${t.id}')">${ty ? esc(ty.name) : '+ type'}</button>`;
+}
+
+function openTypeMenu(e, id) {
   e.stopPropagation();
   closeTagMenu();
   const t = findTask(id);
   if (!t) return;
-  const cur = colorOf(t);
+  const cur = typeOfTask(t);
   const menu = document.createElement('div');
-  menu.className = 'tag-menu swatch-menu';
-  menu.innerHTML = COLORS.map(c =>
-    `<button class="${c === cur ? 'on' : ''}" data-v="${c}" title="${c}" aria-label="${c}" style="background:${COLOR_BG[c]};border-color:${COLOR_HEX[c]}"></button>`).join('');
+  menu.className = 'tag-menu';
+  menu.innerHTML = typesOf(state.current).map(y =>
+    `<button class="${cur && cur.id === y.id && !COLORS.includes(t.color) ? 'on' : ''}" data-t="${y.id}"><span class="ty-row"><i style="background:${PAL[y.color].bg};border-color:${PAL[y.color].strong}"></i>${esc(y.name)}</span></button>`).join('') +
+    '<button class="clear" data-t="none">No type</button>' +
+    `<div class="swatch-row">${COLORS.map(c => `<button data-c="${c}" title="${COLOR_NAMES[c]}" aria-label="${COLOR_NAMES[c]}" style="background:${PAL[c].bg};border-color:${PAL[c].strong}"></button>`).join('')}</div>` +
+    '<button class="clear" data-edit="1">Edit types</button>';
   menu.addEventListener('click', ev => {
     const b = ev.target.closest('button');
     if (!b) return;
     ev.stopPropagation();
     closeTagMenu();
-    setColor(id, b.dataset.v);
+    if (b.dataset.edit) openTypesEditor();
+    else if (b.dataset.c) setNoteType(id, 'color', b.dataset.c);
+    else setNoteType(id, 'type', b.dataset.t);
   });
   document.body.appendChild(menu);
   const r = e.currentTarget.getBoundingClientRect();
@@ -2202,12 +2290,54 @@ function openColorMenu(e, id) {
   _tagMenu = menu;
 }
 
-function setColor(id, c) {
+// kind 'type': a type (or 'none'); kind 'color': just a color, no type
+function setNoteType(id, kind, v) {
   const t = findTask(id);
-  if (!t || !COLORS.includes(c) || colorOf(t) === c) return;
-  pushUndoSnapshot('change color of "' + t.title + '"');
-  t.color = c;
+  if (!t) return;
+  pushUndoSnapshot('change type of "' + t.title + '"');
+  if (kind === 'color' && COLORS.includes(v)) { t.type = 'none'; t.color = v; }
+  else if (kind === 'type' && /^[a-z0-9]{1,20}$/.test(v)) { t.type = v; delete t.color; }
+  else return;
   save();
+  renderAll();
+}
+
+// ── Types editor ────────────────────────────────────
+let _types = null;
+
+function openTypesEditor() {
+  _types = typesOf(state.current).map(y => ({ id: y.id, name: y.name, color: y.color, words: y.words.join(', ') }));
+  renderTypesEditor();
+}
+
+function renderTypesEditor() {
+  openModal(`<h3>Types: ${esc(listLabel(state.current))}</h3>
+    ${_types.map((y, i) => `<div class="te-row">
+        <select aria-label="Color" onchange="_types[${i}].color=this.value;renderTypesEditor()" style="background:${PAL[y.color].bg};border-color:${PAL[y.color].strong}">
+          ${COLORS.map(c => `<option value="${c}" ${c === y.color ? 'selected' : ''}>${COLOR_NAMES[c]}</option>`).join('')}</select>
+        <input type="text" value="${esc(y.name)}" maxlength="${TYPE_NAME_MAX}" placeholder="Name" aria-label="Name" oninput="_types[${i}].name=this.value">
+        <button class="x" title="Remove" aria-label="Remove" onclick="_types.splice(${i},1);renderTypesEditor()">&times;</button>
+        <input type="text" class="te-words" value="${esc(y.words)}" placeholder="Words, with commas" aria-label="Words" oninput="_types[${i}].words=this.value">
+      </div>`).join('')}
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm" ${_types.length >= TYPE_MAX ? 'disabled' : ''} onclick="_types.push({id:'',name:'',color:COLORS[_types.length%COLORS.length],words:''});renderTypesEditor()">+ Type</button>
+    </div>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveTypes()">Save</button>
+    </div>`, false, 'sticky');
+}
+
+function saveTypes() {
+  const out = _types.map(y => ({ id: y.id || ('t' + Math.random().toString(36).slice(2, 9)), name: y.name, color: y.color, words: String(y.words).split(',') }))
+    .filter(y => y.name.trim());
+  const name = state.current;
+  state.lists[name].types = cleanTypes(out) || [];
+  state.lists[name].typesAt = Date.now();
+  markDirty(name);
+  writeLocal();
+  _types = null;
+  closeModal();
   renderAll();
 }
 
@@ -2216,6 +2346,7 @@ function taskHTML(t) {
   const open = _openSteps.has(t.id);
   const tags = [
     `<button class="tag ${t.today ? 'on' : 'unset'}" onclick="toggleToday('${t.id}')">Today</button>`,
+    typeTagHTML(t),
     tagHTML('size', t.size, `openTagMenu(event,'size','task:${t.id}')`),
     tagHTML('energy', t.energy, `openTagMenu(event,'energy','task:${t.id}')`)
   ];
@@ -2225,11 +2356,11 @@ function taskHTML(t) {
 
   const doneN = steps.filter(x => x.done).length;
   const pct = steps.length ? Math.round(doneN / steps.length * 100) : 0;
-  let html = `<div class="task c-${colorOf(t)} ${t.today ? 'today' : ''}" data-id="${t.id}">
+  const ck = colorOf(t);
+  let html = `<div class="task ${t.today ? 'today' : ''} ${open ? 'open' : ''}" data-id="${t.id}" data-color="${ck || ''}" style="${palVars(ck)}">
     <div class="task-top">
       <button class="check" title="Close this loop" onclick="completeTask('${t.id}')"></button>
       <div class="task-main"><div class="task-title" onclick="openEditor('${t.id}')">${esc(t.title)}</div></div>
-      <button class="swatch" title="Color" aria-label="Color" onclick="openColorMenu(event,'${t.id}')"></button>
     </div>
     <div class="tags">${tags.join('')}</div>
     <div class="bar" style="width:calc((100% - 30px) * ${(BAR_LEN[t.size] || 60) / 100})" title="${steps.length ? doneN + ' of ' + steps.length + ' steps' : 'No steps yet'}"><i style="width:${pct}%"></i></div>`;
@@ -2586,7 +2717,7 @@ function renderFocus() {
   const t = found && !found.done ? found : null;
   document.getElementById('focus-empty').style.display = t ? 'none' : 'block';
   document.getElementById('focus-on').style.display = t ? 'block' : 'none';
-  document.getElementById('ring').style.stroke = t ? COLOR_HEX[colorOf(t)] : '';
+  document.getElementById('ring').style.stroke = t && colorOf(t) ? PAL[colorOf(t)].strong : '';
   if (t) {
     document.getElementById('focus-title').textContent = t.title;
     const steps = getSteps(t);
@@ -2898,7 +3029,9 @@ const HELP = [
   <li><strong>Tap a loop's name</strong> to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.</li>
   <li><strong>Steps:</strong> the next one shows on the note. Tap its box to check it off. <strong>Steps</strong> at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.</li>
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
-  <li><strong>The colored dot</strong> on a note changes its color. Notes start in a mix of colors. Your choice follows you to your other devices.</li>
+  <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
+  <li><strong>Data, then Types</strong> opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
+  <li>The note you open is the one shown brighter.</li>
   <li><strong>The bar</strong> under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).</li>
   <li><strong>Today</strong> holds up to 3 picks. Tap the <strong>Today</strong> tag on a loop to pick or unpick it.</li>
   <li><strong>Sort</strong> with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.</li>
