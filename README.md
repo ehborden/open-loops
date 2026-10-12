@@ -22,24 +22,26 @@ The same guide is in the app under **Data > How to**.
 
 ### 2. Your loops
 
-- **Time and energy** are the small tags under each loop. Tap one to change it.
+- Each loop is a note. **Time and energy** are the small tags on it. Tap one to change it.
 - **Tap a loop's name** to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.
-- **Steps:** the next one shows under the loop. Tap its box to check it off. The arrow shows all of them. The last one asks if you want to close the loop.
+- **Steps:** the next one shows on the note. Tap its box to check it off. **Steps** at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.
 - **The circle** on the left closes the whole loop.
 - **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
+- **Sort** with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
 - **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top.
 
 ### 3. Pick one
 
 When choosing is the hard part. Tap **Pick for me**, or choose **Swipe** or **Spin the wheel** underneath. Tap **Right now I have...** to set your energy and time first.
 
-### 4. Focus
+### 4. Timer
 
-- **Start** on any loop begins a timer right away.
-- **On a computer:** Focus is always on the right, with your Wins under it.
-- **On a phone:** Focus is a card at the top. If you scroll down while a timer runs, a bar at the bottom shows the time. Tap it to jump back.
+- The timer runs across the top of every screen. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
+- Pick the minutes first: Just 5 min up to 45. It starts at 25.
+- **Start** inside an open note, or on a loop from Pick one, begins the timer on that loop right away.
+- Scroll down while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.
 - **Step done** checks off the current step. **Close loop** finishes the whole thing. **Stop** asks you to leave a note for next time, which becomes the next step.
-- To use a timer with no loop, pick "Timer only" from the Focus dropdown. Picking a loop later attaches it to the running timer.
+- For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.
 
 ### 5. Wins
 
