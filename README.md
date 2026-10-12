@@ -36,10 +36,10 @@ When choosing is the hard part. Tap **Pick for me**, or choose **Swipe** or **Sp
 
 ### 4. Timer
 
-- The timer runs across the top of every screen. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
+- The timer is on the right, above Wins. On a phone it's at the top. The ring drains as the time runs down. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
 - Pick the minutes first: Just 5 min up to 45. It starts at 25.
 - **Start** inside an open note, or on a loop from Pick one, begins the timer on that loop right away.
-- Scroll down while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.
+- Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.
 - **Step done** checks off the current step. **Close loop** finishes the whole thing. **Stop** asks you to leave a note for next time, which becomes the next step.
 - For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.
 

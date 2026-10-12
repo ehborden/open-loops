@@ -358,7 +358,7 @@
   .toast-undo { margin-left: 10px; background: none; border: none; color: var(--lime); font: inherit; font-weight: 600; cursor: pointer; padding: 4px 2px; }
   #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
 
-  /* Layout: one column on a phone, loops + Wins side by side on a computer. The timer runs across the top. */
+  /* Layout: one column on a phone, loops on the left and Timer + Wins on the right on a computer */
   .layout { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; }
   .layout > main.wrap { max-width: none; margin: 0; width: 100%; }
   .side { order: -1; padding: 0 16px; }
@@ -366,34 +366,36 @@
   .wins-mini .stat .n { font-size: 22px; }
   .wins-mini .win { font-size: 14px; }
   .steps-today { font-size: 14px; color: var(--muted); margin: 10px 0 0; text-align: center; }
-  .timer-wrap { padding-bottom: 0; }
-  .focus-card { margin-top: 12px; padding: 10px 12px; scroll-margin-top: var(--head-h, 110px); }
-  .focus-card .timer-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .focus-card .ring-wrap { width: 60px; height: 60px; margin: 0; flex: none; }
-  .focus-card .ring-time .big { font-size: 15px; font-weight: 600; }
-  .focus-card .ring-time .small { display: none; }
-  .focus-mid { flex: 1 1 180px; min-width: 0; }
-  .focus-card .focus-task { text-align: left; font-size: 16px; font-weight: 500; margin: 0; word-break: break-word; }
-  .focus-card .focus-step { text-align: left; margin: 4px 0 0; max-width: none; padding: 0; background: none; font-size: 14px; }
+  .focus-card { scroll-margin-top: var(--head-h, 110px); }
+  .focus-card .focus-task { text-align: left; font-size: 17px; font-weight: 500; margin: 0 0 4px; word-break: break-word; }
+  .focus-card .focus-step { text-align: left; margin: 0 0 8px; max-width: none; padding: 0; background: none; font-size: 14px; }
+  .focus-card .focus-step:empty { display: none; }
   .focus-card .focus-now { text-align: left; margin: 0; max-width: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .focus-card .focus-now .label { font-size: 11px; }
   .focus-card .focus-now .text { font-size: 14px; font-weight: 400; margin: 0; flex: 1 1 120px; }
-  .focus-card .timer-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .focus-card .presets, .focus-card .controls { margin-top: 0; justify-content: flex-start; gap: 6px; }
-  .focus-card .btn.big { padding: 8px 16px; font-size: 15px; border-radius: 6px; }
-  @media (max-width: 540px) {
-    .focus-card .timer-side { flex: 1 1 100%; justify-content: space-between; }
-    .focus-card .presets .j, .focus-card .presets .u { display: none; }
-    .focus-card .presets .btn { padding: 6px 12px; }
-  }
+  .focus-card .timer-row { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+  .focus-card .ring-wrap { width: 120px; height: 120px; margin: 0; flex: none; }
+  .focus-card .ring-time .big { font-size: 26px; font-weight: 600; }
+  .focus-card .ring-time .small { font-size: 11px; }
+  .focus-card .timer-side { flex: 1; min-width: 0; }
+  .focus-card .presets, .focus-card .controls { justify-content: flex-start; margin-top: 0; gap: 6px; }
+  .focus-card .presets + .controls { margin-top: 8px; }
+  .focus-card .btn.big { padding: 8px 14px; font-size: 15px; border-radius: 6px; }
   @media (min-width: 980px) {
-    header .wrap, .tabbar .wrap, .timer-wrap, .layout { max-width: 1200px; }
+    header .wrap, .tabbar .wrap, .layout { max-width: 1200px; }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
     .side {
       order: 0; position: sticky; top: var(--head-h, 110px); padding: 0 16px 24px 0;
       max-height: calc(100vh - var(--head-h, 110px)); overflow-y: auto;
     }
     .wins-mini { display: block; }
+    .focus-card .focus-task, .focus-card .focus-step, .focus-card .focus-now { text-align: center; justify-content: center; }
+    .focus-card .timer-row { flex-direction: column; gap: 0; margin-top: 8px; }
+    .focus-card .ring-wrap { width: 190px; height: 190px; margin-top: 4px; }
+    .focus-card .ring-time .big { font-size: 40px; }
+    .focus-card .ring-time .small { font-size: 13px; }
+    .focus-card .timer-side { width: 100%; }
+    .focus-card .presets, .focus-card .controls { justify-content: center; margin-top: 12px; }
   }
   .focus-now .label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
   .focus-now .text { word-break: break-word; }
@@ -457,35 +459,6 @@
       <button data-screen="pick">Pick one</button>
       <button data-screen="wins">Wins</button>
     </nav>
-  </div>
-</div>
-
-<div class="wrap timer-wrap">
-  <div class="card focus-card" id="focus-card">
-    <div class="timer-row">
-      <div class="ring-wrap">
-        <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="8"/>
-          <circle id="ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="8"
-                  stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/>
-        </svg>
-        <div class="ring-time">
-          <div class="big" id="clock">25:00</div>
-          <div class="small" id="clock-sub">ready</div>
-        </div>
-      </div>
-      <div class="focus-mid">
-        <div id="focus-empty"><select id="focus-select"></select></div>
-        <div id="focus-on" style="display:none">
-          <div class="focus-task" id="focus-title"></div>
-          <div class="focus-step" id="focus-step"></div>
-        </div>
-      </div>
-      <div class="timer-side">
-        <div class="presets" id="presets"></div>
-        <div class="controls" id="timer-controls"></div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -584,6 +557,30 @@
 
 <!-- WINS: a column on the right on a computer -->
 <aside class="side" id="side">
+  <div class="card focus-card" id="focus-card">
+    <div id="focus-empty"><select id="focus-select"></select></div>
+    <div id="focus-on" style="display:none">
+      <div class="focus-task" id="focus-title"></div>
+      <div class="focus-step" id="focus-step"></div>
+    </div>
+    <div class="timer-row">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="8"/>
+          <circle id="ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="8"
+                  stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/>
+        </svg>
+        <div class="ring-time">
+          <div class="big" id="clock">25:00</div>
+          <div class="small" id="clock-sub">ready</div>
+        </div>
+      </div>
+      <div class="timer-side">
+        <div class="presets" id="presets"></div>
+        <div class="controls" id="timer-controls"></div>
+      </div>
+    </div>
+  </div>
   <div class="card wins-mini" id="wins-mini"></div>
 </aside>
 </div>
@@ -2841,10 +2838,10 @@ const HELP = [
 <p>For when choosing is the hard part. Tap <strong>Pick for me</strong>, or choose <strong>Swipe</strong> or <strong>Spin the wheel</strong> underneath. Tap <strong>Right now I have...</strong> to set your energy and time first.</p>`],
 ['Timer', `
 <ul>
-  <li>The timer runs across the top of every screen. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
+  <li>The timer is on the right, above Wins. On a phone it's at the top. The ring drains as the time runs down. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
   <li>Pick the minutes first: Just 5 min up to 45. It starts at 25.</li>
   <li><strong>Start</strong> inside an open note, or on a loop from Pick one, begins the timer on that loop right away.</li>
-  <li>Scroll down while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.</li>
+  <li>Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.</li>
   <li><strong>Step done</strong> checks off the current step. <strong>Close loop</strong> finishes the whole thing. <strong>Stop</strong> asks for a note for next time, which becomes the next step.</li>
   <li>For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.</li>
 </ul>`],
@@ -3004,7 +3001,7 @@ function scrollToFocus() {
   document.getElementById('focus-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// When the timer strip is scrolled out of view, a running timer shows in a bar at the bottom
+// When the timer card is scrolled out of view, a running timer shows in a bar at the bottom
 function updateTimerBar() {
   const tm = state.timer;
   const show = !!tm && !_cardInView;
