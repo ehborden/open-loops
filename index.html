@@ -86,8 +86,8 @@
   }
   .btn:hover { border-color: var(--accent); }
   .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-  /* Add and Start take the color of the open list, the same as the bar across the top */
-  .btn.primary.listbtn { background: var(--list, var(--accent)); border-color: var(--list, var(--accent)); color: var(--list-ink, var(--accent-ink)); }
+  /* Add and Start are a very light tint of the open list's color (the bar across the top is the full color) */
+  .btn.primary.listbtn { background: var(--list-soft, var(--hover)); border-color: var(--list, var(--edge)); color: var(--ink); }
   .btn.big { padding: 14px 22px; font-size: 18px; border-radius: 8px; }
   .btn.sm { padding: 4px 10px; font-size: 13px; border-radius: 8px; }
   .btn.danger { color: var(--red); }
@@ -184,7 +184,7 @@
     .seg button { min-height: 38px; }
     .more { min-height: 32px; }
   }
-  .btn.start-btn { flex: none; padding: 6px 16px; font-size: 14px; font-weight: 600; min-height: 36px; border-color: var(--list, var(--accent)); color: var(--list-text, var(--accent)); }
+  .btn.start-btn { flex: none; padding: 6px 16px; font-size: 14px; font-weight: 600; min-height: 36px; border-color: var(--list, var(--accent)); color: var(--ink); }
   .task-steps { margin: 5px 0 0 30px; display: grid; gap: 5px; }
   .step-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
   .step-item span { word-break: break-word; }
@@ -3432,13 +3432,10 @@ function listColor(n) {
 function applyListColor() {
   const c = BRIGHT[listColor(state.current)];
   document.querySelector('header').style.setProperty('--band', c);
-  // Buttons in the list color: dark text on the light colors so it stays readable
-  const lum = h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0); };
-  const light = 1.05 / (lum(c) + 0.05) < 3.5;
+  // Add and Start use a very light tint of the list color, with the full color as their outline
   const root = document.documentElement.style;
   root.setProperty('--list', c);
-  root.setProperty('--list-ink', light ? '#1d211f' : '#ffffff');
-  root.setProperty('--list-text', light ? '#1d211f' : c);
+  root.setProperty('--list-soft', mixHex(c, 0.16));
   const m = document.querySelector('meta[name="theme-color"]');
   if (m) m.setAttribute('content', c);
 }
