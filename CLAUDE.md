@@ -39,7 +39,7 @@ Use Playwright with the preinstalled Chromium. Serve the folder over `http://loc
 
 ## Merging
 
-The owner has said Claude may merge its own pull requests into `main` once the tests above pass, without waiting for them. Keep using a branch and a pull request for every change (so there is a record and an easy revert), and tell the owner what went live.
+The owner has said Claude may merge its own pull requests into `main` once the tests above pass, and no longer needs to approve each one. Keep using a branch and a pull request for every change (so there is a record and an easy revert), and tell the owner what went live. Use judgement: merge small, tested changes right away; during a long, multi-step redesign, or when a change could surprise the owner (it moves things around, removes something, or touches how data is stored), hold it and ask first.
 
 ## Owner preferences for anything that shows up in the app
 
