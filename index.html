@@ -136,6 +136,9 @@
   .tag.type { border-color: var(--n-strong, var(--edge)); font-weight: 500; }
   .tag.type.unset { font-weight: 400; }
   .ed-type { margin-top: 10px; }
+  .task-top { align-items: flex-start; }
+  .x.del { font-size: 22px; padding: 0 8px; margin: -4px -6px 0 0; }
+  .btn.primary.delete-btn { background: var(--red); border-color: var(--red); color: #fff; }
   .rn-row { display: grid; grid-template-columns: 1fr 120px; gap: 8px; }
   .ty-row { display: flex; align-items: center; gap: 8px; }
   .ty-row i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
@@ -1409,6 +1412,52 @@ function completeTask(id) {
   renderAll();
 }
 
+// Delete a loop or a win for good. It asks first, Undo brings it back, and it is never counted as a win.
+function askDelete(id) {
+  const t = findTask(id);
+  if (!t) return;
+  openModal(`<h3>${t.done ? 'Delete this win?' : 'Delete this loop?'}</h3>
+    <p class="hint" style="margin:6px 0 0">${esc(t.title)}</p>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary delete-btn" onclick="deleteTask('${t.id}')">Delete</button>
+    </div>`);
+}
+
+function deleteTask(id) {
+  const t = findTask(id);
+  closeModal();
+  if (!t) return;
+  pushUndoSnapshot('delete "' + t.title + '"');
+  L().tasks = L().tasks.filter(x => x.id !== id);
+  _openSteps.delete(id);
+  if (focusId === id) focusId = null;
+  save();
+  renderAll();
+  toast('Deleted.');
+}
+
+function askDeleteAllWins() {
+  const n = L().tasks.filter(t => t.done).length;
+  if (!n) return;
+  openModal(`<h3>Delete all ${n} win${n === 1 ? '' : 's'}?</h3>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary delete-btn" onclick="deleteAllWins()">Delete all</button>
+    </div>`);
+}
+
+function deleteAllWins() {
+  closeModal();
+  const n = L().tasks.filter(t => t.done).length;
+  if (!n) return;
+  pushUndoSnapshot(`delete ${n} win${n === 1 ? '' : 's'}`);
+  L().tasks = L().tasks.filter(t => !t.done);
+  save();
+  renderAll();
+  toast(`${n} deleted.`);
+}
+
 function letGo(id) {
   const t = findTask(id);
   if (!t) return;
@@ -2426,6 +2475,7 @@ function taskHTML(t) {
     <div class="task-top">
       <button class="check" title="Close this loop" onclick="completeTask('${t.id}')"></button>
       <div class="task-main"><div class="task-title" onclick="openEditor('${t.id}')">${esc(t.title)}</div></div>
+      <button class="x del" title="Delete" aria-label="Delete" onclick="askDelete('${t.id}')">&times;</button>
     </div>
     <div class="tags">${tags.join('')}</div>
     <div class="bar" style="width:calc((100% - 30px) * ${(BAR_LEN[t.size] || 60) / 100})" title="${steps.length ? doneN + ' of ' + steps.length + ' steps' : 'No steps yet'}"><i style="width:${pct}%"></i></div>`;
@@ -3109,8 +3159,10 @@ function renderWins() {
   const list = document.getElementById('wins-list');
   if (!w.done.length) { list.innerHTML = '<div class="empty">Nothing closed yet. Your first one goes here.</div>'; return; }
   list.innerHTML = w.done.slice(0, 50).map(t => `<div class="win"><span>${esc(t.title)}</span><time>${winTime(w, t)}</time>
-      <button class="btn sm" title="Reopen" onclick="reopen('${t.id}')">Reopen</button></div>`).join('') +
-    `<div class="row" style="margin-top:12px"><button class="btn sm" onclick="clearOldWins()">Clear wins older than 30 days</button></div>`;
+      <button class="btn sm" title="Reopen" onclick="reopen('${t.id}')">Reopen</button>
+      <button class="x" title="Delete" aria-label="Delete" onclick="askDelete('${t.id}')">&times;</button></div>`).join('') +
+    `<div class="row" style="margin-top:12px"><button class="btn sm" onclick="askDeleteAllWins()">Delete all wins</button>
+      <button class="btn sm" onclick="clearOldWins()">Clear wins older than 30 days</button></div>`;
 }
 
 // The small version on the right on a computer
@@ -3177,6 +3229,7 @@ const HELP = [
   <li><strong>Tap a loop's name</strong> to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.</li>
   <li><strong>Steps:</strong> the next one shows on the note. Tap its box to check it off. <strong>Steps</strong> at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.</li>
   <li><strong>The circle</strong> on the left closes the whole loop.</li>
+  <li><strong>The x</strong> at the top right of a note deletes it for good. It asks first, and Undo brings it back. A deleted loop is never counted as a win.</li>
   <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag, on the note or in the loop's card, to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
   <li><strong>Types</strong> at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.</li>
   <li><strong>Data, then Types</strong> opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
@@ -3198,7 +3251,7 @@ const HELP = [
   <li>For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.</li>
 </ul>`],
 ['Wins', `
-<p>Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today.</p>`],
+<p>Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today. The <strong>x</strong> on a win deletes it, and <strong>Delete all wins</strong> clears the list. Both ask first, Undo brings them back, and deleted wins drop out of the counts.</p>`],
 ['Work and Home', `
 <p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap <strong>Data</strong>, then <strong>Rename lists</strong>. With sync on, the names and colors follow you to your other devices.</p>`],
 ['Sync your devices (your own GitHub)', `
