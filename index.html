@@ -395,6 +395,10 @@
   .closed-body .stat .n { font-size: 22px; }
   .closed-body .win { font-size: 14px; align-items: center; }
   .closed-side { display: none; }
+  .memo-card { padding: 10px 16px 14px; }
+  .memo-card .memo-head { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+  .memo-card textarea { width: 100%; min-height: 84px; font-size: 14px; line-height: 1.4; resize: vertical; background: var(--card); }
+  .memo-side { display: none; }
   .steps-today { font-size: 14px; color: var(--muted); margin: 10px 0 0; text-align: center; }
   .focus-card { scroll-margin-top: 12px; }
   .focus-card .focus-task { text-align: left; font-size: 17px; font-weight: 500; margin: 0 0 4px; word-break: break-word; }
@@ -437,6 +441,8 @@
     }
     .closed-side { display: block; }
     .closed-bottom { display: none; }
+    .memo-side { display: block; }
+    .memo-bottom { display: none; }
     .focus-card .focus-task, .focus-card .focus-step, .focus-card .focus-now { text-align: center; justify-content: center; }
     .focus-card .timer-row { flex-direction: column; gap: 0; margin-top: 8px; }
     .focus-card .ring-wrap { width: 190px; height: 190px; margin-top: 4px; }
@@ -603,10 +609,12 @@
   </div></section>
 
   <div class="card closed-card closed-bottom"></div>
+  <div class="card memo-card memo-bottom"><div class="memo-head">Notes</div><textarea class="memo-text" maxlength="4000" aria-label="Notes" oninput="memoInput(this)"></textarea></div>
 </main>
 
 <!-- TIMER + CLOSED: a column on the right on a computer -->
 <aside class="side" id="side">
+  <div class="card memo-card memo-side"><div class="memo-head">Notes</div><textarea class="memo-text" maxlength="4000" aria-label="Notes" oninput="memoInput(this)"></textarea></div>
   <div class="card focus-card" id="focus-card">
     <div id="focus-empty"><select id="focus-select"></select></div>
     <div id="focus-on" style="display:none">
@@ -663,7 +671,7 @@ const COLORS = ['green', 'blue', 'purple', 'teal', 'pink', 'red', 'orange', 'yel
 const TYPE_MAX = 12;
 const TYPE_NAME_MAX = 24;
 // Change this with every release, so the Data menu shows which copy a device is running
-const APP_VERSION = '2026-10-13 c';
+const APP_VERSION = '2026-10-13 d';
 const TODAY_LIMIT = 3;
 const OLD_DAYS = 14;
 const BACKUP_NUDGE_DAYS = 7;
@@ -713,6 +721,8 @@ function cleanTask(t) {
   return t;
 }
 
+const NOTES_MAX = 4000;
+
 function cleanList(l) {
   l = l && typeof l === 'object' ? l : {};
   const out = {
@@ -725,6 +735,8 @@ function cleanList(l) {
   // Optional color for the top of the page when this list is open
   if (COLORS.includes(l.color) && Number(l.colorAt) > 0) { out.color = l.color; out.colorAt = Number(l.colorAt); }
   // Optional list of types (kinds of work); older copies of the app never set it
+  // Optional little notes box for the list (can be empty once cleared)
+  if (typeof l.notes === 'string' && Number(l.notesAt) > 0) { out.notes = l.notes.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').slice(0, NOTES_MAX); out.notesAt = Number(l.notesAt); }
   const types = cleanTypes(l.types);
   if (types && Number(l.typesAt) > 0) { out.types = types; out.typesAt = Number(l.typesAt); }
   return out;
@@ -1143,6 +1155,9 @@ function mergeLists(local, remote) {
   if (src.label) { merged.label = src.label; merged.labelAt = src.labelAt || 0; }
   const csrc = (remote.colorAt || 0) > (local.colorAt || 0) ? remote : local;
   if (csrc.color) { merged.color = csrc.color; merged.colorAt = csrc.colorAt || 0; }
+  // The newer notes win, even when they were cleared
+  const nsrc = (remote.notesAt || 0) > (local.notesAt || 0) ? remote : local;
+  if (typeof nsrc.notes === 'string') { merged.notes = nsrc.notes; merged.notesAt = nsrc.notesAt || 0; }
   // Same for the types: the newer edit wins
   const tsrc = (remote.typesAt || 0) > (local.typesAt || 0) ? remote : local;
   if (tsrc.types) { merged.types = tsrc.types; merged.typesAt = tsrc.typesAt || 0; }
@@ -1155,7 +1170,8 @@ function canon(list) {
     Object.keys(list.deleted).sort().map(k => k + ':' + list.deleted[k]),
     list.label || '', list.labelAt || 0,
     JSON.stringify(list.types || null), list.typesAt || 0,
-    list.color || '', list.colorAt || 0
+    list.color || '', list.colorAt || 0,
+    list.notes || '', list.notesAt || 0
   ]);
 }
 
@@ -1172,7 +1188,7 @@ async function syncList(name, attempt = 0) {
   else if (canon(merged) !== before) renderListToggle();
 
   if (remote.data && canon(remoteList) === canon(merged)) return;
-  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt, types: merged.types, typesAt: merged.typesAt, color: merged.color, colorAt: merged.colorAt }, null, 1);
+  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt, types: merged.types, typesAt: merged.typesAt, color: merged.color, colorAt: merged.colorAt, notes: merged.notes, notesAt: merged.notesAt }, null, 1);
   const put = { message: `Update ${name} list`, content: toB64(body) };
   if (remote.sha) put.sha = remote.sha;
   const res = await gh(`/contents/${filePath(name)}`, { method: 'PUT', body: JSON.stringify(put) });
@@ -3366,6 +3382,8 @@ const HELP = [
   <li><strong>Step done</strong> checks off the current step. <strong>Close loop</strong> finishes the whole thing. <strong>Stop</strong> asks for a note for next time, which becomes the next step.</li>
   <li>For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.</li>
 </ul>`],
+['Notes', `
+<p>A small notes box for reminders that are not tasks. It is above the timer on a computer and at the very bottom of the page on a phone. Each list has its own, it saves as you type, and it syncs with the list.</p>`],
 ['Closed', `
 <p>Every loop you close stays tracked in <strong>Closed</strong>, below the timer on a computer and at the bottom of the page on a phone. It starts folded, with just today's count. Tap it to open the counts for today, the last 7 days, your streak, and steps checked off today, plus the list. <strong>Reopen</strong> puts a loop back. The <strong>x</strong> deletes one, and <strong>Delete all closed</strong> clears the list. Both ask first, Undo brings them back, and deleted loops drop out of the counts.</p>`],
 ['Not seeing the latest changes?', `
@@ -3615,8 +3633,26 @@ function switchList(name) {
   runSync([name]);
 }
 
+// The little notes box: one per list, shown twice (side on a computer, bottom on a phone)
+function renderNotes() {
+  const v = L().notes || '';
+  document.querySelectorAll('.memo-text').forEach(el => { if (el !== document.activeElement && el.value !== v) el.value = v; });
+}
+
+let _memoTimer = null;
+function memoInput(el) {
+  const v = el.value;
+  document.querySelectorAll('.memo-text').forEach(o => { if (o !== el) o.value = v; });
+  const name = state.current;
+  state.lists[name].notes = v;
+  state.lists[name].notesAt = Date.now();
+  clearTimeout(_memoTimer);
+  _memoTimer = setTimeout(() => { markDirty(name); writeLocal(); }, 400);
+}
+
 function renderAll() {
   renderListToggle();
+  renderNotes();
   renderSyncPill();
   renderTaskList();
   renderBackupNote();
