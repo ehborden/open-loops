@@ -48,10 +48,8 @@
   .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
 
   /* Header */
-  header { background: var(--band, var(--bg)); }
-  header::before { content: ''; display: block; height: 5px; background: linear-gradient(90deg, #1faa45 0 11.1%, #2f7de1 0 22.2%, #8a4fd6 0 33.3%, #10a89f 0 44.4%, #ee5fa0 0 55.5%, #e5413c 0 66.6%, #f58a1f 0 77.7%, #f2c200 0 88.8%, #7b8494 0); }
-  header .brand, header .brand .sub { color: var(--band-ink, var(--ink)); }
-  header .brand .sub { opacity: 0.9; }
+  header { background: var(--bg); }
+  header::before { content: ''; display: block; height: 10px; background: var(--band, var(--edge)); }
   header .wrap { padding-bottom: 0; }
   .tabbar { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--edge); }
   .tabbar .wrap { padding-bottom: 0; }
@@ -3200,7 +3198,7 @@ const HELP = [
 ['Wins', `
 <p>Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today.</p>`],
 ['Work and Home', `
-<p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. The top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap <strong>Data</strong>, then <strong>Rename lists</strong>. With sync on, the names and colors follow you to your other devices.</p>`],
+<p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap <strong>Data</strong>, then <strong>Rename lists</strong>. With sync on, the names and colors follow you to your other devices.</p>`],
 ['Sync your devices (your own GitHub)', `
 <p>Keeps your phone and computers showing the same lists. Your loops are saved in a private GitHub repo that only you can see.</p>
 <p><strong>One time:</strong></p>
@@ -3428,12 +3426,10 @@ function listColor(n) {
   const c = state.lists[n] && state.lists[n].color;
   return COLORS.includes(c) ? c : (DEFAULT_LIST_COLORS[n] || 'gray');
 }
-// The top of the page takes the color of the list you are in
+// The bar across the top of the page takes the color of the list you are in
 function applyListColor() {
-  const key = listColor(state.current), c = BRIGHT[key];
-  const h = document.querySelector('header');
-  h.style.setProperty('--band', c);
-  h.style.setProperty('--band-ink', key === 'yellow' ? '#2a2b27' : '#ffffff');
+  const c = BRIGHT[listColor(state.current)];
+  document.querySelector('header').style.setProperty('--band', c);
   const m = document.querySelector('meta[name="theme-color"]');
   if (m) m.setAttribute('content', c);
 }

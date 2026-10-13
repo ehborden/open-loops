@@ -54,7 +54,7 @@ Everything you've closed, with counts for today, the last 7 days, your streak, a
 
 ### 6. Work and Home
 
-The two list buttons at the top right switch between two separate lists. They start as **Work** and **Home**. The top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap **Data**, then **Rename lists**. With sync on, the names and colors follow you to your other devices.
+The two list buttons at the top right switch between two separate lists. They start as **Work** and **Home**. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap **Data**, then **Rename lists**. With sync on, the names and colors follow you to your other devices.
 
 ---
 
