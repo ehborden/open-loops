@@ -499,7 +499,9 @@
           <button onclick="openSync();closeMenu()">Sync settings</button>
           <button onclick="openSettings();closeMenu()">Settings</button>
           <button onclick="openHelp();closeMenu()">How to</button>
+          <button onclick="getLatest();closeMenu()">Get the latest version</button>
           <div class="menu-note" id="backup-note"></div>
+          <div class="menu-note" id="version-note"></div>
         </div>
       </div>
       </div>
@@ -659,6 +661,8 @@ const LIST_NAMES = ['Work', 'Home'];
 const COLORS = ['green', 'blue', 'purple', 'teal', 'pink', 'red', 'orange', 'yellow', 'gray'];
 const TYPE_MAX = 12;
 const TYPE_NAME_MAX = 24;
+// Change this with every release, so the Data menu shows which copy a device is running
+const APP_VERSION = '2026-10-13 b';
 const TODAY_LIMIT = 3;
 const OLD_DAYS = 14;
 const BACKUP_NUDGE_DAYS = 7;
@@ -3233,6 +3237,8 @@ const HELP = [
 </ul>`],
 ['Closed', `
 <p>Every loop you close stays tracked in <strong>Closed</strong>, below the timer on a computer and at the bottom of the page on a phone. It starts folded, with just today's count. Tap it to open the counts for today, the last 7 days, your streak, and steps checked off today, plus the list. <strong>Reopen</strong> puts a loop back. The <strong>x</strong> deletes one, and <strong>Delete all closed</strong> clears the list. Both ask first, Undo brings them back, and deleted loops drop out of the counts.</p>`],
+['Not seeing the latest changes?', `
+<p>Tap <strong>Data</strong>, then <strong>Get the latest version</strong>. It loads the newest copy of the app and keeps your loops. The version at the bottom of the Data menu tells you which copy a device is running.</p>`],
 ['Work and Home', `
 <p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap <strong>Data</strong>, then <strong>Rename lists</strong>. With sync on, the names and colors follow you to your other devices.</p>`],
 ['Sync your devices (your own GitHub)', `
@@ -3402,6 +3408,12 @@ function toggleMenu(e) {
   document.getElementById('data-menu').classList.toggle('open');
 }
 function closeMenu() { document.getElementById('data-menu').classList.remove('open'); }
+
+// Loads the page again under a new address, so a copy kept by the browser (or by the Home Screen app) is skipped.
+// Your loops stay where they are: they live in this browser, not in the page.
+function getLatest() { location.replace(location.pathname + '?fresh=' + Date.now()); }
+if (location.search.includes('fresh=')) history.replaceState(null, '', location.pathname);
+document.getElementById('version-note').textContent = 'Version ' + APP_VERSION;
 document.addEventListener('click', e => { if (!e.target.closest('.menu')) closeMenu(); });
 
 let _modalKind = null;
