@@ -35,7 +35,7 @@ The same guide is in the app under **Data > How to**.
 - **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
 - **! Urgent** marks a loop as time sensitive. Urgent loops are grouped right under Today, so they don't use up your 3 picks, and they come up more often in Pick for me. Saying "urgent" or "ASAP" when you add a loop marks it.
 - **Sort** with the buttons above the notes (a single Sort button on a phone): Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
-- **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top.
+- **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top. Undo on an add puts what you typed back in the add box. **Redo** brings back what you undid. In the check-over screen, **Back to the box** puts your text back in the add box.
 
 ### 3. Pick for me
 

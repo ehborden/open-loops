@@ -489,6 +489,7 @@
       <div class="head-actions">
       <button class="btn sm sync-pill off" id="sync-pill" onclick="openSync()">Sync off</button>
       <button class="btn sm" id="undo-btn" hidden onclick="undoLastAction()">Undo</button>
+      <button class="btn sm" id="redo-btn" hidden onclick="redoLastAction()">Redo</button>
       <div class="menu">
         <button class="btn sm" onclick="toggleMenu(event)">Data</button>
         <div class="menu-list" id="data-menu">
@@ -662,7 +663,7 @@ const COLORS = ['green', 'blue', 'purple', 'teal', 'pink', 'red', 'orange', 'yel
 const TYPE_MAX = 12;
 const TYPE_NAME_MAX = 24;
 // Change this with every release, so the Data menu shows which copy a device is running
-const APP_VERSION = '2026-10-13 b';
+const APP_VERSION = '2026-10-13 c';
 const TODAY_LIMIT = 3;
 const OLD_DAYS = 14;
 const BACKUP_NUDGE_DAYS = 7;
@@ -842,14 +843,19 @@ LIST_NAMES.forEach(name => {
 const UNDO_LIMIT = 15;
 let _undoStack = [];
 
-function pushUndoSnapshot(label) {
-  _undoStack.push({ at: Date.now(), label, list: state.current, tasks: JSON.stringify(L().tasks) });
+let _redoStack = [];
+
+// source: the text typed in the add box, so Undo can put it back
+function pushUndoSnapshot(label, source) {
+  _undoStack.push({ at: Date.now(), label, list: state.current, tasks: JSON.stringify(L().tasks), source: source || '' });
   if (_undoStack.length > UNDO_LIMIT) _undoStack.shift();
+  _redoStack = [];
   updateUndoButton();
 }
 
 function clearUndoHistory() {
   _undoStack = [];
+  _redoStack = [];
   updateUndoButton();
 }
 
@@ -858,6 +864,29 @@ function updateUndoButton() {
   const top = _undoStack[_undoStack.length - 1];
   btn.hidden = !top;
   btn.title = top ? 'Undo: ' + top.label : '';
+  const rb = document.getElementById('redo-btn');
+  const rtop = _redoStack[_redoStack.length - 1];
+  rb.hidden = !rtop;
+  rb.title = rtop ? 'Redo: ' + rtop.label : '';
+}
+
+// Makes the loops this one action changed match the 'before' or 'after' side of the snapshot
+function applySnap(snap, side) {
+  const before = new Map(JSON.parse(snap.tasks).map(t => [t.id, t]));
+  const after = new Map(JSON.parse(snap.after || snap.tasks).map(t => [t.id, t]));
+  const want = side === 'before' ? before : after;
+  const list = state.lists[snap.list];
+  new Set([...before.keys(), ...after.keys()]).forEach(id => {
+    if (JSON.stringify(before.get(id)) === JSON.stringify(after.get(id))) return;
+    const i = list.tasks.findIndex(t => t.id === id);
+    if (want.has(id)) {
+      if (i >= 0) list.tasks[i] = want.get(id); else list.tasks.push(want.get(id));
+    } else if (i >= 0) list.tasks.splice(i, 1);
+  });
+  list.tasks.sort(byNewest);
+  if (snap.list !== state.current) state.current = snap.list;
+  save();
+  renderAll();
 }
 
 function undoLastAction() {
@@ -865,22 +894,27 @@ function undoLastAction() {
   if (!snap) return;
   // Only put back the loops this one action changed, so undo never
   // wipes out edits that synced in from another device since then
-  const before = new Map(JSON.parse(snap.tasks).map(t => [t.id, t]));
-  const after = new Map(JSON.parse(snap.after || snap.tasks).map(t => [t.id, t]));
-  const list = state.lists[snap.list];
-  new Set([...before.keys(), ...after.keys()]).forEach(id => {
-    if (JSON.stringify(before.get(id)) === JSON.stringify(after.get(id))) return;
-    const i = list.tasks.findIndex(t => t.id === id);
-    if (before.has(id)) {
-      if (i >= 0) list.tasks[i] = before.get(id); else list.tasks.push(before.get(id));
-    } else if (i >= 0) list.tasks.splice(i, 1);
-  });
-  list.tasks.sort(byNewest);
-  if (snap.list !== state.current) state.current = snap.list;
-  save();
-  renderAll();
+  applySnap(snap, 'before');
+  _redoStack.push(snap);
+  // Typed text goes back in the add box, unless something new is already there
+  if (snap.source && !quickAdd.value.trim()) { quickAdd.value = snap.source; growBox(); quickAdd.focus(); }
   updateUndoButton();
   toast('Undone: ' + snap.label, true);
+  const el = document.getElementById('toast');
+  el.insertAdjacentHTML('beforeend', ' <button class="toast-undo" onclick="redoLastAction()">Redo</button>');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 6000);
+}
+
+function redoLastAction() {
+  const snap = _redoStack.pop();
+  if (!snap) return;
+  applySnap(snap, 'after');
+  _undoStack.push(snap);
+  snap.at = 0; // no Undo link on the Redo message
+  if (snap.source && quickAdd.value === snap.source) clearBox();
+  updateUndoButton();
+  toast('Redone: ' + snap.label, true);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1730,7 +1764,7 @@ function addFromBox() {
   const items = splitLoops(quickAdd.value).map(parseLoop);
   if (!items.length) return;
   if (items.length > 1) { openReview(items); return; }
-  pushUndoSnapshot('add "' + items[0].title + '"');
+  pushUndoSnapshot('add "' + items[0].title + '"', quickAdd.value);
   addItems(items);
   save();
   clearBox();
@@ -1993,7 +2027,7 @@ function aiExtract() {
         return Object.assign({ title: x.title.trim(), today: !!x.today, urgent: !!x.urgent }, fromAi(x), ty ? { type: ty.id } : {});
       });
     if (!items.length) { toast('Claude did not find any loops in that.'); return; }
-    openReview(items);
+    openReview(items, text);
   });
 }
 
@@ -2066,7 +2100,7 @@ const DRAFT_KEY = 'openloops_draft';
 
 function saveDraft() {
   try {
-    if (_review && _review.items.length) localStorage.setItem(DRAFT_KEY, JSON.stringify({ list: state.current, items: _review.items }));
+    if (_review && _review.items.length) localStorage.setItem(DRAFT_KEY, JSON.stringify({ list: state.current, source: _review.source || '', items: _review.items }));
     else localStorage.removeItem(DRAFT_KEY);
   } catch {}
   renderDraftNote();
@@ -2085,7 +2119,7 @@ function loadDraft() {
       urgent: !!x.urgent,
       type: typeof x.type === 'string' && /^[a-z0-9]{1,20}$/.test(x.type) ? x.type : undefined
     }));
-    return items.length ? { list: LIST_NAMES.includes(d.list) ? d.list : state.current, items } : null;
+    return items.length ? { list: LIST_NAMES.includes(d.list) ? d.list : state.current, source: typeof d.source === 'string' ? d.source.slice(0, 5000) : '', items } : null;
   } catch { return null; }
 }
 
@@ -2099,14 +2133,15 @@ function resumeDraft() {
   const d = loadDraft();
   if (!d) return;
   if (d.list !== state.current) switchList(d.list);
-  _review = { items: d.items };
+  _review = { source: d.source, items: d.items };
   _rvOpen.clear();
   renderReview();
 }
 
-function openReview(items) {
+function openReview(items, source) {
   _rvOpen.clear();
-  _review = { items: items.map(it => Object.assign({ steps: [], size: null, energy: null, today: false, urgent: false }, it)) };
+  if (source == null) source = quickAdd.value;
+  _review = { source: source.trim(), items: items.map(it => Object.assign({ steps: [], size: null, energy: null, today: false, urgent: false }, it)) };
   saveDraft();
   clearBox();
   renderReview();
@@ -2158,6 +2193,7 @@ function renderReview() {
     <div class="review-foot">
       <button class="btn link" onclick="discardReview()">Discard all</button>
       <button class="btn link" onclick="closeModal()">Keep draft</button>
+      ${r.source ? '<button class="btn link" onclick="reviewToBox()">Back to the box</button>' : ''}
       <div class="spacer"></div>
       <button class="btn primary" ${n ? '' : 'disabled'} onclick="commitReview()">Add ${n} to ${esc(listLabel(state.current))}</button>
     </div>`, true, 'sticky');
@@ -2197,12 +2233,25 @@ function discardReview() {
   closeModal();
 }
 
+// Puts the original text back in the add box (to add it another way) and drops the draft
+function reviewToBox() {
+  const r = _review;
+  if (!r) return;
+  if (!quickAdd.value.trim()) quickAdd.value = r.source;
+  else quickAdd.value = quickAdd.value.replace(/\s+$/, '') + '\n' + r.source;
+  _review = null;
+  saveDraft();
+  closeModal();
+  growBox();
+  quickAdd.focus();
+}
+
 function commitReview() {
   const r = _review;
   if (!r) return;
   const items = r.items.filter(it => (it.title || '').trim()).map(it => Object.assign({}, it, { title: it.title.trim() }));
   if (!items.length) { discardReview(); return; }
-  pushUndoSnapshot(`add ${items.length} loop${items.length === 1 ? '' : 's'}`);
+  pushUndoSnapshot(`add ${items.length} loop${items.length === 1 ? '' : 's'}`, r.source);
   const overCap = addItems(items);
   save();
   _review = null;
@@ -3304,7 +3353,7 @@ const HELP = [
   <li><strong>Today</strong> holds up to 3 picks. Tap the <strong>Today</strong> tag on a loop to pick or unpick it.</li>
   <li><strong>! Urgent</strong> marks a loop as time sensitive. Urgent loops are grouped right under Today, so they don't use up your 3 picks, and they come up more often in Pick for me. Saying "urgent" or "ASAP" when you add a loop marks it.</li>
   <li><strong>Sort</strong> with the buttons above the notes (a single Sort button on a phone): Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.</li>
-  <li><strong>Undo</strong> reverses your last few actions. It appears in the message that pops up after an action, and at the top.</li>
+  <li><strong>Undo</strong> reverses your last few actions. It appears in the message that pops up after an action, and at the top. Undo on an add puts what you typed back in the add box. <strong>Redo</strong> brings back what you undid. In the check-over screen, <strong>Back to the box</strong> puts your text back in the add box.</li>
 </ul>`],
 ['Pick for me', `
 <p>For when choosing is the hard part. Tap <strong>Pick for me</strong> above the notes and it picks one loop, leaning toward quick, low-energy ones for an easy start. Tap <strong>Pick again</strong> for another, or choose <strong>This or that</strong> (two loops at a time, tap the one you would rather do) or <strong>Spin the wheel</strong> underneath. <strong>Surprise me</strong> goes back to a single pick. Tap <strong>Right now I have...</strong> to set your energy and time first. <strong>Close</strong> goes back to your loops.</p>`],
