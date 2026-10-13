@@ -671,7 +671,7 @@ const COLORS = ['green', 'blue', 'purple', 'teal', 'pink', 'red', 'orange', 'yel
 const TYPE_MAX = 12;
 const TYPE_NAME_MAX = 24;
 // Change this with every release, so the Data menu shows which copy a device is running
-const APP_VERSION = '2026-10-13 d';
+const APP_VERSION = '2026-10-13 e';
 const TODAY_LIMIT = 3;
 const OLD_DAYS = 14;
 const BACKUP_NUDGE_DAYS = 7;
@@ -1772,7 +1772,13 @@ function startLoop(id) { goFocus(id, true); }
 const quickAdd = document.getElementById('quick-add');
 function growBox() { quickAdd.style.height = 'auto'; quickAdd.style.height = Math.min(quickAdd.scrollHeight + 2, 240) + 'px'; }
 quickAdd.addEventListener('input', growBox);
-quickAdd.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addFromBox(); } });
+// Enter sends the box to Claude when AI is set up (Ctrl or Cmd + Enter adds without it); with no key it just adds
+quickAdd.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  e.preventDefault();
+  if (document.getElementById('ai-btn').disabled) return;
+  if (aiOn() && !e.ctrlKey && !e.metaKey) aiExtract(); else addFromBox();
+});
 
 function clearBox() { quickAdd.value = ''; growBox(); }
 
@@ -3350,7 +3356,7 @@ const HELP = [
   <li>Say <strong>"next"</strong> between loops. For steps, say <strong>"steps"</strong> with <strong>"then"</strong> between them.</li>
   <li>Example: <em>"email Dana, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"</em></li>
   <li><strong>Add</strong>: one loop goes straight in. Several open the check-over screen.</li>
-  <li><strong>Add with AI</strong>: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (see "Turn on AI").</li>
+  <li><strong>Add with AI</strong>: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (see "Turn on AI"). Once the key is in, pressing <strong>Enter</strong> in the box does this too. <strong>Ctrl+Enter</strong> (<strong>Cmd+Enter</strong> on a Mac) or the <strong>Add</strong> button adds without AI, and <strong>Shift+Enter</strong> starts a new line.</li>
   <li>On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. <strong>Keep draft</strong> keeps it for when you come back.</li>
   <li>Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," "urgent," and "first step is."</li>
 </ul>`],
