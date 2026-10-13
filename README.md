@@ -38,7 +38,7 @@ The same guide is in the app under **Data > How to**.
 
 ### 3. Pick for me
 
-When choosing is the hard part. Tap **Pick for me** above the notes and it picks one loop, leaning toward quick, low-energy ones for an easy start. Tap **Pick again** for another, or choose **Bracket** (two loops at a time, tap the one you would rather do) or **Spin the wheel** underneath. Tap **Right now I have...** to set your energy and time first. **Close** goes back to your loops.
+When choosing is the hard part. Tap **Pick for me** above the notes and it picks one loop, leaning toward quick, low-energy ones for an easy start. Tap **Pick again** for another, or choose **This or that** (two loops at a time, tap the one you would rather do) or **Spin the wheel** underneath. **Surprise me** goes back to a single pick. Tap **Right now I have...** to set your energy and time first. **Close** goes back to your loops.
 
 ### 4. Timer
 
