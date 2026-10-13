@@ -134,6 +134,8 @@
   .tag.type { border-color: var(--n-strong, var(--edge)); font-weight: 500; }
   .tag.type.unset { font-weight: 400; }
   .ed-type { margin-top: 10px; }
+  .choices { display: grid; gap: 8px; margin-top: 14px; }
+  .choices .btn { text-align: left; padding: 12px 14px; font-size: 15px; }
   .task-top { align-items: flex-start; }
   .x.del { font-size: 22px; padding: 0 8px; margin: -4px -6px 0 0; }
   .btn.primary.delete-btn { background: var(--red); border-color: var(--red); color: #fff; }
@@ -299,8 +301,8 @@
   .ring-time .big { font-size: 46px; font-weight: 700; }
   .ring-time .small { font-size: 13px; color: var(--muted); }
   .presets { display: flex; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
-  .presets .j, .presets .u { display: none; }
-  .presets .btn.primary .j, .presets .btn.primary .u { display: inline; }
+  .presets .u { display: none; }
+  .presets .btn.primary .u { display: inline; }
   .controls { display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
 
   /* Wins */
@@ -489,13 +491,10 @@
       <div class="menu">
         <button class="btn sm" onclick="toggleMenu(event)">Data</button>
         <div class="menu-list" id="data-menu">
-          <button onclick="exportAllData();closeMenu()">Backup</button>
-          <label>Restore
-            <input type="file" accept=".json,application/json" style="display:none" onchange="importAllData(event);closeMenu()">
-          </label>
-          <button id="gh-restore" style="display:none" onclick="openGitRestore();closeMenu()">Restore from GitHub</button>
-          <button onclick="openRename();closeMenu()">Rename lists</button>
-          <button onclick="openTypesEditor();closeMenu()">Types</button>
+          <button onclick="openBackup();closeMenu()">Backup</button>
+          <button onclick="openRestore();closeMenu()">Restore</button>
+          <input type="file" id="restore-file" accept=".json,application/json" style="display:none" onchange="importAllData(event);closeMenu()">
+          <button onclick="openLists();closeMenu()">Lists</button>
           <button onclick="openSync();closeMenu()">Sync settings</button>
           <button onclick="openSettings();closeMenu()">Settings</button>
           <button onclick="openHelp();closeMenu()">How to</button>
@@ -1299,6 +1298,67 @@ async function autoBackup() {
   _autoBackupRunning = false;
 }
 
+// Backup: to a file on this device, or (with sync on) a snapshot saved in your GitHub data repo right now
+function openBackup() {
+  if (!syncOn()) { exportAllData(); return; }
+  openModal(`<h3>Backup</h3>
+    <div class="choices">
+      <button class="btn" onclick="closeModal();exportAllData()">To a file</button>
+      <button class="btn" onclick="backupToGithub()">To GitHub</button>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" onclick="closeModal()">Cancel</button></div>`);
+}
+
+// Saves a dated backup to the data repo now (the weekly one happens by itself). A second one on the same day replaces the first.
+async function backupToGithub() {
+  if (!syncOn()) { openSync(); return; }
+  closeModal();
+  toast('Saving to GitHub...', true);
+  try {
+    const existing = await listGitBackups();
+    const now = new Date();
+    const name = `open loops backup ${todayStr(now)}.json`;
+    const same = existing.find(f => f.name === name);
+    const body = JSON.stringify(backupPayload(now.toISOString()), null, 1);
+    const put = { message: `Backup ${todayStr(now)}`, content: toB64(body) };
+    if (same && same.sha) put.sha = same.sha;
+    const res = await gh(backupUrl(name), { method: 'PUT', body: JSON.stringify(put) });
+    if (!res.ok) throw httpError(res);
+    state.settings.lastAutoBackup = now.toISOString();
+    const all = [{ name, date: todayStr(now) }, ...existing.filter(f => f.name !== name)];
+    for (const old of all.slice(AUTO_BACKUP_KEEP)) {
+      if (!old.sha) continue;
+      await gh(backupUrl(old.name), { method: 'DELETE', body: JSON.stringify({ message: `Remove old backup ${old.date}`, sha: old.sha }) });
+    }
+    writeLocal();
+    renderBackupNote();
+    toast('Saved a backup to GitHub.', true);
+  } catch (e) {
+    toast(e instanceof SyncError ? e.message : 'Could not reach GitHub. Try again in a moment.', true);
+  }
+}
+
+// Restore: from a file, or (with sync on) from a backup on GitHub
+function openRestore() {
+  if (!syncOn()) { document.getElementById('restore-file').click(); return; }
+  openModal(`<h3>Restore</h3>
+    <div class="choices">
+      <button class="btn" onclick="closeModal();document.getElementById('restore-file').click()">From a file</button>
+      <button class="btn" onclick="openGitRestore()">From GitHub</button>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" onclick="closeModal()">Cancel</button></div>`);
+}
+
+// Lists: names and colors, or the types of work for the open list
+function openLists() {
+  openModal(`<h3>Lists</h3>
+    <div class="choices">
+      <button class="btn" onclick="openRename()">Names and colors</button>
+      <button class="btn" onclick="openTypesEditor()">Types: ${esc(listLabel(state.current))}</button>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" onclick="closeModal()">Cancel</button></div>`);
+}
+
 async function openGitRestore() {
   if (!syncOn()) { openSync(); return; }
   openModal('<h3>Restore from GitHub</h3><p class="hint">Looking for backups...</p>');
@@ -1351,7 +1411,6 @@ function renderBackupNote() {
   if (auto !== Infinity) parts.push(`Last GitHub backup: ${ago(auto)}`);
   if (dl !== Infinity) parts.push(`Last download: ${ago(dl)}`);
   document.getElementById('backup-note').textContent = parts.length ? parts.join('. ') : 'Never backed up';
-  document.getElementById('gh-restore').style.display = syncOn() ? '' : 'none';
   const box = document.getElementById('backup-alert');
   const active = LIST_NAMES.reduce((n, k) => n + state.lists[k].tasks.filter(t => !t.done).length, 0);
   // With sync on, GitHub keeps every version, so the reminder can wait longer
@@ -2928,7 +2987,7 @@ function renderFocus() {
     };
   }
   document.getElementById('presets').innerHTML = state.timer ? '' : PRESETS.map(m =>
-    `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? '<span class="j">Just </span>5' : m}<span class="u"> min</span></button>`).join('');
+    `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m}<span class="u"> min</span></button>`).join('');
   renderControls();
   const card = document.getElementById('focus-card');
   card.classList.toggle('idle', !state.timer);
@@ -3217,7 +3276,7 @@ const HELP = [
   <li><strong>The x</strong> at the top right of a note deletes it for good. It asks first, and Undo brings it back. A deleted loop is never counted as closed.</li>
   <li><strong>Types</strong> are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag, on the note or in the loop's card, to change it, pick just a color, or edit the types. <strong>Add with AI</strong> picks the type for you.</li>
   <li><strong>Types</strong> at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.</li>
-  <li><strong>Data, then Types</strong> opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
+  <li><strong>Data, then Lists, then Types</strong> opens the types for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.</li>
   <li>The color is the thick band on the left of a note. The note you open is shown a little stronger.</li>
   <li><strong>The bar</strong> under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).</li>
   <li><strong>Today</strong> holds up to 3 picks. Tap the <strong>Today</strong> tag on a loop to pick or unpick it.</li>
@@ -3229,7 +3288,7 @@ const HELP = [
 ['Timer', `
 <ul>
   <li>The timer is on the right, above Closed. On a phone it's a slim row at the top (tap <strong>More</strong> for the full card, and it opens by itself while a timer runs). The ring drains as the time runs down. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
-  <li>Pick the minutes first: Just 5 min up to 45. It starts at 25.</li>
+  <li>Pick the minutes first: 5 up to 45. It starts at 25.</li>
   <li><strong>Start</strong> inside an open note, or on a loop from Pick for me, begins the timer on that loop right away.</li>
   <li>Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.</li>
   <li><strong>Step done</strong> checks off the current step. <strong>Close loop</strong> finishes the whole thing. <strong>Stop</strong> asks for a note for next time, which becomes the next step.</li>
@@ -3240,7 +3299,7 @@ const HELP = [
 ['Not seeing the latest changes?', `
 <p>Tap <strong>Data</strong>, then <strong>Get the latest version</strong>. It loads the newest copy of the app and keeps your loops. The version at the bottom of the Data menu tells you which copy a device is running.</p>`],
 ['Work and Home', `
-<p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap <strong>Data</strong>, then <strong>Rename lists</strong>. With sync on, the names and colors follow you to your other devices.</p>`],
+<p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap <strong>Data</strong>, then <strong>Lists</strong>, then <strong>Names and colors</strong>. With sync on, the names and colors follow you to your other devices.</p>`],
 ['Sync your devices (your own GitHub)', `
 <p>Keeps your phone and computers showing the same lists. Your loops are saved in a private GitHub repo that only you can see.</p>
 <p><strong>One time:</strong></p>
@@ -3289,8 +3348,8 @@ const HELP = [
 </ul>`],
 ['Backups', `
 <ul>
-  <li><strong>Automatic:</strong> with sync on, the app saves a backup to GitHub about once a week and keeps the last 12. <strong>Data, Restore from GitHub</strong> lists them by date.</li>
-  <li><strong>By hand:</strong> <strong>Data, Backup</strong> downloads both lists as one file. <strong>Data, Restore</strong> loads one back. It always shows what's in it and asks before replacing anything.</li>
+  <li><strong>Automatic:</strong> with sync on, the app saves a backup to GitHub about once a week (so the date in the Data menu can say a few days ago) and keeps the last 12. <strong>Data, Restore, From GitHub</strong> lists them by date.</li>
+  <li><strong>By hand:</strong> <strong>Data, Backup</strong> saves both lists as one file (<strong>To a file</strong>), or, with sync on, saves a backup into your GitHub data repo right now (<strong>To GitHub</strong>). <strong>Data, Restore</strong> loads one back (from a file, or from GitHub when sync is on). It always shows what's in it and asks before replacing anything.</li>
 </ul>`],
 ['Fixes for common problems', `
 <ul>
@@ -3327,7 +3386,7 @@ function openSettings(note) {
 }
 
 function openRename() {
-  openModal(`<h3>Rename lists</h3>
+  openModal(`<h3>Names and colors</h3>
     ${LIST_NAMES.map((n, i) => `<div class="rn-row" style="margin-top:${i ? 8 : 14}px">
         <input type="text" id="rn-${i}" value="${esc(listLabel(n))}" maxlength="${LABEL_MAX}" autocomplete="off">
         <select id="rc-${i}" aria-label="Color" style="border-left:8px solid ${BRIGHT[listColor(n)]}" onchange="this.style.borderLeftColor=BRIGHT[this.value]">
