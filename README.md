@@ -29,7 +29,7 @@ The same guide is in the app under **Data > How to**.
 - **The x** at the top right of a note deletes it for good. It asks first, and Undo brings it back. A deleted loop is never counted as closed.
 - **Types** are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag, on the note or in the loop's card, to change it, pick just a color, or edit the types. **Add with AI** picks the type for you.
 - **Types** at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.
-- **Data, then Types** opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.
+- **Data, then Lists, then Types** opens the types for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.
 - The color is the thick band on the left of a note. The note you open is shown a little stronger.
 - **The bar** under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).
 - **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
@@ -43,7 +43,7 @@ When choosing is the hard part. Tap **Pick for me** above the notes and it picks
 ### 4. Timer
 
 - The timer is on the right, above Closed. On a phone it's a slim row at the top (tap **More** for the full card, and it opens by itself while a timer runs). The ring drains as the time runs down. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
-- Pick the minutes first: Just 5 min up to 45. It starts at 25.
+- Pick the minutes first: 5 up to 45. It starts at 25.
 - **Start** inside an open note, or on a loop from Pick for me, begins the timer on that loop right away.
 - Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.
 - **Step done** checks off the current step. **Close loop** finishes the whole thing. **Stop** asks you to leave a note for next time, which becomes the next step.
@@ -59,7 +59,7 @@ Tap **Data**, then **Get the latest version**. It loads the newest copy of the a
 
 ### 7. Work and Home
 
-The two list buttons at the top right switch between two separate lists. They start as **Work** and **Home**. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap **Data**, then **Rename lists**. With sync on, the names and colors follow you to your other devices.
+The two list buttons at the top right switch between two separate lists. They start as **Work** and **Home**. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap **Data**, then **Lists**, then **Names and colors**. With sync on, the names and colors follow you to your other devices.
 
 ---
 
@@ -123,8 +123,8 @@ Add with AI and Break it down use Claude. This is pay-as-you-go and separate fro
 
 ## Backups
 
-- **Automatic:** with sync on, the app saves a backup to a `backups` folder in `open-loops-data` about once a week and keeps the last 12. **Data > Restore from GitHub** lists them by date.
-- **By hand:** **Data > Backup** downloads both lists as one file. **Data > Restore** loads one back. It always shows you what's in it and asks before replacing anything.
+- **Automatic:** with sync on, the app saves a backup to a `backups` folder in `open-loops-data` about once a week (so the date in the Data menu can say a few days ago) and keeps the last 12. **Data > Restore > From GitHub** lists them by date.
+- **By hand:** **Data > Backup** saves both lists as one file (**To a file**), or, with sync on, saves a backup into your GitHub data repo right now (**To GitHub**). **Data > Restore** loads one back (from a file, or from GitHub when sync is on). It always shows you what's in it and asks before replacing anything.
 
 ## Fixes for common problems
 
