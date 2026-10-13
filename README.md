@@ -16,7 +16,7 @@ The same guide is in the app under **Data > How to**.
 - Say **"next"** between loops. For steps, say **"steps"** with **"then"** between them.
   - Example: *"email Dana, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"*
 - **Add**: one loop goes straight in. Several open the check-over screen.
-- **Add with AI**: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (section 9).
+- **Add with AI**: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (section 10).
 - On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. **Keep draft** keeps it for when you come back.
 - Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," "urgent," and "first step is."
 
@@ -50,15 +50,19 @@ When choosing is the hard part. Tap **Pick for me** above the notes and it picks
 - **Step done** checks off the current step. **Close loop** finishes the whole thing. **Stop** asks you to leave a note for next time, which becomes the next step.
 - For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.
 
-### 5. Closed
+### 5. Notes
+
+A small notes box for reminders that are not tasks. It is above the timer on a computer and at the very bottom of the page on a phone. Each list has its own, it saves as you type, and it syncs with the list.
+
+### 6. Closed
 
 Every loop you close stays tracked in **Closed**, below the timer on a computer and at the bottom of the page on a phone. It starts folded, with just today's count. Tap it to open the counts for today, the last 7 days, your streak, and steps checked off today, plus the list. **Reopen** puts a loop back. The **x** deletes one, and **Delete all closed** clears the list. Both ask first, Undo brings them back, and deleted loops drop out of the counts.
 
-### 6. Not seeing the latest changes?
+### 7. Not seeing the latest changes?
 
 Tap **Data**, then **Get the latest version**. It loads the newest copy of the app and keeps your loops. The version at the bottom of the Data menu tells you which copy a device is running.
 
-### 7. Work and Home
+### 8. Work and Home
 
 The two list buttons at the top right switch between two separate lists. They start as **Work** and **Home**. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap **Data**, then **Lists**, then **Names and colors**. With sync on, the names and colors follow you to your other devices.
 
@@ -66,7 +70,7 @@ The two list buttons at the top right switch between two separate lists. They st
 
 ## Setup
 
-### 8. Sync your devices (your own GitHub)
+### 9. Sync your devices (your own GitHub)
 
 This keeps your phone and computers showing the same lists. Your loops are saved in a private GitHub repo that only you can see.
 
@@ -91,7 +95,7 @@ This keeps your phone and computers showing the same lists. Your loops are saved
 
 The token is saved only in that browser. It's never in a backup or in this repo.
 
-### 9. Turn on AI (your own Claude account)
+### 10. Turn on AI (your own Claude account)
 
 Add with AI and Break it down use Claude. This is pay-as-you-go and separate from a Claude Pro or Max subscription. With the cheaper model, a brain dump costs roughly a tenth of a cent, so $5 lasts a long time.
 
@@ -130,7 +134,7 @@ Add with AI and Break it down use Claude. This is pay-as-you-go and separate fro
 ## Fixes for common problems
 
 - **Don't see a new update?** On a computer, press Cmd + Shift + R (Mac) or Ctrl + Shift + R (Windows). On a phone, close the app completely and reopen it. It can take up to 10 minutes.
-- **Sync says "Sync problem"?** Tap it. The token may have expired. Make a new one (section 8) and paste it in.
+- **Sync says "Sync problem"?** Tap it. The token may have expired. Make a new one (section 9) and paste it in.
 - **AI says the key wasn't accepted?** Check the key in **Data > Settings**, and check that your Anthropic account still has credit.
 - **Timer stuck at 0:00?** Tap **Stop here**, then **Skip**.
 - **On iPhone, don't delete and re-add the Home Screen icon** unless Sync says "Synced." Deleting it also deletes what's saved on that phone.
