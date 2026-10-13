@@ -57,6 +57,7 @@
   @media (min-width: 980px) { .brand { font-size: 28px; } .brand .sub { font-size: 13px; } }
   .brand .sub { display: block; font-size: 12px; font-weight: 400; letter-spacing: 0; color: var(--muted); margin-top: 1px; }
   .list-toggle button { font-weight: 600; padding: 4px 12px; }
+  .ldot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
   .seg.list-toggle button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .list-toggle .count { font-weight: 400; opacity: 0.75; font-size: 12px; }
   .sync-pill.ok { color: var(--ink); }
@@ -70,7 +71,11 @@
   @media (max-width: 760px) {
     .head-row { grid-template-columns: 1fr; gap: 8px; }
     .head-l { display: none; }
-    .head-r { justify-content: space-between; }
+    .head-r { justify-content: space-between; gap: 6px; }
+    .head-actions { gap: 6px; }
+    .list-toggle button { padding: 4px 9px; }
+    .ldot { width: 7px; height: 7px; margin-right: 4px; }
+    .head-r .btn.sm { padding-left: 10px; padding-right: 10px; }
   }
 
   .btn {
@@ -294,6 +299,8 @@
   .ring-time .big { font-size: 46px; font-weight: 700; }
   .ring-time .small { font-size: 13px; color: var(--muted); }
   .presets { display: flex; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+  .presets .j, .presets .u { display: none; }
+  .presets .btn.primary .j, .presets .btn.primary .u { display: inline; }
   .controls { display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
 
   /* Wins */
@@ -401,6 +408,9 @@
   .focus-card .presets, .focus-card .controls { justify-content: flex-start; margin-top: 0; gap: 6px; }
   .focus-card .presets + .controls { margin-top: 8px; }
   .focus-card .btn.big { padding: 8px 14px; font-size: 15px; border-radius: 6px; }
+  .focus-card .ring-wrap svg circle { transition: stroke-width 0.2s; }
+  .focus-card.idle #ring { stroke-width: 4; stroke: var(--edge) !important; }
+  .focus-card.idle .ring-wrap svg circle:first-child { stroke-width: 4; }
   .slim-more, .slim-less { display: none; }
   @media (max-width: 979px) {
     .focus-card.slim { padding: 8px 12px; }
@@ -470,7 +480,7 @@
   <div class="wrap">
     <div class="head-row">
       <div class="head-l"></div>
-      <div class="brand">Open Loops: To-Do List<span class="sub">Brain Dump and Tracker</span></div>
+      <div class="brand">Open Loops<span class="sub">Brain Dump and Task Tracker</span></div>
       <div class="head-r">
       <div class="seg list-toggle" id="list-toggle"></div>
       <div class="head-actions">
@@ -507,7 +517,7 @@
       <textarea id="quick-add" rows="1" placeholder="What's on your mind?" autocomplete="off"></textarea>
       <div class="row" style="margin-top:8px">
         <button class="btn primary listbtn" onclick="addFromBox()">Add</button>
-        <button class="btn link" id="ai-btn" onclick="aiExtract()">Add with AI</button>
+        <button class="btn" id="ai-btn" onclick="aiExtract()">Add with AI</button>
         <div class="spacer"></div>
         <span id="draft-note"></span>
       </div>
@@ -517,12 +527,11 @@
       <div class="row">
         <h2 style="flex:1">Your loops</h2>
         <span class="hint" style="margin:0" id="loop-count"></span>
+        <button class="btn sm primary listbtn" id="pick-open" onclick="openPick()">Pick for me</button>
       </div>
-      <div class="loops-tools sort-row">
+      <div class="loops-tools sort-row" id="loops-tools">
         <button class="btn sm sort-btn" id="sort-btn" onclick="openSortMenu(event)"></button>
         <div class="seg" id="sort-chips"></div>
-        <div class="spacer"></div>
-        <button class="btn sm primary listbtn" id="pick-open" onclick="openPick()">Pick for me</button>
       </div>
       <div id="task-list"></div>
       <div class="types-box" id="types-box">
@@ -2564,6 +2573,9 @@ function renderTaskList() {
   if (open.length && snoozed.length) html += '<div class="section-label">Back tomorrow</div>' + notesHTML(snoozed);
   document.getElementById('task-list').innerHTML = html;
   document.getElementById('loop-count').textContent = open.length ? `${open.length} open` : '';
+  // Nothing open: no sorting and nothing to pick
+  document.getElementById('loops-tools').style.display = all.length ? '' : 'none';
+  document.getElementById('pick-open').style.display = all.length ? '' : 'none';
   document.getElementById('sort-btn').innerHTML = 'Sort: ' + SORTS.find(x => x[0] === sortBy)[1] + ARROW;
   document.getElementById('sort-chips').innerHTML = SORTS.map(([k, label]) =>
     `<button class="${k === sortBy ? 'on' : ''}" onclick="setSort('${k}')">${label}</button>`).join('');
@@ -2915,6 +2927,7 @@ function renderFocus() {
     `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? '<span class="j">Just </span>5' : m}<span class="u"> min</span></button>`).join('');
   renderControls();
   const card = document.getElementById('focus-card');
+  card.classList.toggle('idle', !state.timer);
   card.classList.toggle('slim', !WIDE.matches && !state.timer && !_timerOpen);
   card.classList.toggle('open-idle', !WIDE.matches && !state.timer && _timerOpen);
   updateClock();
@@ -3443,7 +3456,7 @@ function renderListToggle() {
   applyListColor();
   document.getElementById('list-toggle').innerHTML = LIST_NAMES.map(n => {
     const open = state.lists[n].tasks.filter(t => !t.done).length;
-    return `<button class="${n === state.current ? 'on' : ''}" onclick="switchList('${n}')">${esc(listLabel(n))}${open ? ` <span class="count">${open}</span>` : ''}</button>`;
+    return `<button class="${n === state.current ? 'on' : ''}" onclick="switchList('${n}')"><span class="ldot" style="background:${BRIGHT[listColor(n)]}"></span>${esc(listLabel(n))}${open ? ` <span class="count">${open}</span>` : ''}</button>`;
   }).join('');
 }
 
