@@ -86,6 +86,8 @@
   }
   .btn:hover { border-color: var(--accent); }
   .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  /* Add and Start are a very light tint of the open list's color (the bar across the top is the full color) */
+  .btn.primary.listbtn { background: var(--list-soft, var(--hover)); border-color: var(--list, var(--edge)); color: var(--ink); }
   .btn.big { padding: 14px 22px; font-size: 18px; border-radius: 8px; }
   .btn.sm { padding: 4px 10px; font-size: 13px; border-radius: 8px; }
   .btn.danger { color: var(--red); }
@@ -182,7 +184,7 @@
     .seg button { min-height: 38px; }
     .more { min-height: 32px; }
   }
-  .btn.start-btn { flex: none; padding: 6px 16px; font-size: 14px; font-weight: 600; min-height: 36px; border-color: var(--accent); color: var(--accent); }
+  .btn.start-btn { flex: none; padding: 6px 16px; font-size: 14px; font-weight: 600; min-height: 36px; border-color: var(--list, var(--accent)); color: var(--ink); }
   .task-steps { margin: 5px 0 0 30px; display: grid; gap: 5px; }
   .step-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
   .step-item span { word-break: break-word; }
@@ -517,7 +519,7 @@
     <div class="card capture">
       <textarea id="quick-add" rows="1" placeholder="What's on your mind?" autocomplete="off"></textarea>
       <div class="row" style="margin-top:8px">
-        <button class="btn primary" onclick="addFromBox()">Add</button>
+        <button class="btn primary listbtn" onclick="addFromBox()">Add</button>
         <button class="btn link" id="ai-btn" onclick="aiExtract()">Add with AI</button>
         <div class="spacer"></div>
         <span id="draft-note"></span>
@@ -2907,7 +2909,7 @@ function renderControls() {
   const tm = state.timer;
   const hasTask = !!(tm ? tm.taskId : focusId);
   if (!tm) {
-    c.innerHTML = `<button class="btn primary big" onclick="startTimer()">Start</button>` +
+    c.innerHTML = `<button class="btn primary big listbtn" onclick="startTimer()">Start</button>` +
       (hasTask ? `<button class="btn big" onclick="focusId=null;updateFocusVisibility();renderFocus()">Clear</button>` : '');
   } else if (tm.finished) {
     c.innerHTML = (hasTask ? `<button class="btn primary big" onclick="finishFocus(true)">I finished it</button>` : '') +
@@ -3430,6 +3432,10 @@ function listColor(n) {
 function applyListColor() {
   const c = BRIGHT[listColor(state.current)];
   document.querySelector('header').style.setProperty('--band', c);
+  // Add and Start use a very light tint of the list color, with the full color as their outline
+  const root = document.documentElement.style;
+  root.setProperty('--list', c);
+  root.setProperty('--list-soft', mixHex(c, 0.16));
   const m = document.querySelector('meta[name="theme-color"]');
   if (m) m.setAttribute('content', c);
 }
