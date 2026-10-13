@@ -26,7 +26,7 @@ The same guide is in the app under **Data > How to**.
 - **Tap a loop's name** to open its card: name and steps, plus Break it down, Pick for today, Not today, and Let it go. Everything saves as you type.
 - **Steps:** the next one shows on the note. Tap its box to check it off. **Steps** at the bottom of the note opens all of them, with a box to add one. The last one asks if you want to close the loop.
 - **The circle** on the left closes the whole loop.
-- **The x** at the top right of a note deletes it for good. It asks first, and Undo brings it back. A deleted loop is never counted as a win.
+- **The x** at the top right of a note deletes it for good. It asks first, and Undo brings it back. A deleted loop is never counted as closed.
 - **Types** are your kinds of work, like Class, Admin, or Projects. A loop's type is the tag after Today, and loops of the same type share a color. New loops land in a type by the words in their name. Tap the tag, on the note or in the loop's card, to change it, pick just a color, or edit the types. **Add with AI** picks the type for you.
 - **Types** at the bottom of the notes opens colored chips with your types and how many loops each has. Tap one to show only those loops; tap it again, or All, to see everything. The button names the type while one is showing. A refresh shows everything again.
 - **Data, then Types** opens the list for this list: a name, a color, and the words that match. Each list has its own types, and they follow you to your other devices.
@@ -36,22 +36,22 @@ The same guide is in the app under **Data > How to**.
 - **Sort** with the buttons above the notes (a single Sort button on a phone): Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
 - **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top.
 
-### 3. Pick one
+### 3. Pick for me
 
-When choosing is the hard part. Tap **Pick for me**, or choose **Swipe** or **Spin the wheel** underneath. Tap **Right now I have...** to set your energy and time first.
+When choosing is the hard part. Tap **Pick for me** above the notes and it picks one loop, leaning toward quick, low-energy ones for an easy start. Tap **Pick again** for another, or choose **Bracket** (two loops at a time, tap the one you would rather do), **Swipe**, or **Spin the wheel** underneath. Tap **Right now I have...** to set your energy and time first. **Close** goes back to your loops.
 
 ### 4. Timer
 
-- The timer is on the right, above Wins. On a phone it's a slim row at the top (tap **More** for the full card, and it opens by itself while a timer runs). The ring drains as the time runs down. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
+- The timer is on the right, above Closed. On a phone it's a slim row at the top (tap **More** for the full card, and it opens by itself while a timer runs). The ring drains as the time runs down. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
 - Pick the minutes first: Just 5 min up to 45. It starts at 25.
-- **Start** inside an open note, or on a loop from Pick one, begins the timer on that loop right away.
+- **Start** inside an open note, or on a loop from Pick for me, begins the timer on that loop right away.
 - Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.
 - **Step done** checks off the current step. **Close loop** finishes the whole thing. **Stop** asks you to leave a note for next time, which becomes the next step.
 - For a timer with no loop, leave the dropdown on "Timer only". Picking a loop later attaches it to the running timer.
 
-### 5. Wins
+### 5. Closed
 
-Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today. The **x** on a win deletes it, and **Delete all wins** clears the list. Both ask first, Undo brings them back, and deleted wins drop out of the counts.
+Every loop you close stays tracked in **Closed**, below the timer on a computer and at the bottom of the page on a phone. It starts folded, with just today's count. Tap it to open the counts for today, the last 7 days, your streak, and steps checked off today, plus the list. **Reopen** puts a loop back. The **x** deletes one, and **Delete all closed** clears the list. Both ask first, Undo brings them back, and deleted loops drop out of the counts.
 
 ### 6. Work and Home
 
