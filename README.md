@@ -16,7 +16,7 @@ The same guide is in the app under **Data > How to**.
 - Say **"next"** between loops. For steps, say **"steps"** with **"then"** between them.
   - Example: *"email Dana, that's quick, next, plan the unit, takes an hour, steps, find last year's doc, then pick the readings, next, call the dentist today"*
 - **Add**: one loop goes straight in. Several open the check-over screen.
-- **Add with AI**: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (section 10).
+- **Add with AI**: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (section 10). Once the key is in, pressing **Enter** in the box does this too. **Ctrl+Enter** (**Cmd+Enter** on a Mac) or the **Add** button adds without AI, and **Shift+Enter** starts a new line.
 - On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. **Keep draft** keeps it for when you come back.
 - Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," "urgent," and "first step is."
 
