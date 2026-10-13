@@ -18,7 +18,7 @@ The same guide is in the app under **Data > How to**.
 - **Add**: one loop goes straight in. Several open the check-over screen.
 - **Add with AI**: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (section 9).
 - On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. **Keep draft** keeps it for when you come back.
-- Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," and "first step is."
+- Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," "urgent," and "first step is."
 
 ### 2. Your loops
 
@@ -33,6 +33,7 @@ The same guide is in the app under **Data > How to**.
 - The color is the thick band on the left of a note. The note you open is shown a little stronger.
 - **The bar** under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).
 - **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
+- **! Urgent** marks a loop as time sensitive. Urgent loops are grouped right under Today, so they don't use up your 3 picks, and they come up more often in Pick for me. Saying "urgent" or "ASAP" when you add a loop marks it.
 - **Sort** with the buttons above the notes (a single Sort button on a phone): Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
 - **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top.
 

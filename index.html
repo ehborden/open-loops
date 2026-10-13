@@ -229,6 +229,7 @@
   .tag:hover { border-color: var(--accent); }
   .tag.unset { color: var(--muted); border-style: dashed; }
   .tag.on { background: var(--lime); border-color: var(--lime); }
+  .tag.urgent.on { background: #fde6cf; border-color: #f58a1f; font-weight: 600; }
   .tag.static { cursor: default; color: var(--muted); }
   .tag.static:hover { border-color: var(--edge); }
   .tag.old { color: var(--amber); }
@@ -698,6 +699,7 @@ function cleanTask(t) {
   if (typeof t.id !== 'string' || !/^[a-z0-9]{1,40}$/.test(t.id)) t.id = uid();
   if (!t.created || isNaN(new Date(t.created))) t.created = new Date().toISOString();
   if (t.color !== undefined && !COLORS.includes(t.color)) delete t.color;
+  if (t.urgent !== undefined && t.urgent !== true) delete t.urgent;
   if (t.type !== undefined && !(typeof t.type === 'string' && /^[a-z0-9]{1,20}$/.test(t.type))) delete t.type;
   if (t.steps !== undefined) {
     const okStep = x => x && typeof x.text === 'string' && typeof x.id === 'string' && /^[a-z0-9]{1,40}$/.test(x.id);
@@ -1547,6 +1549,16 @@ function toggleToday(id) {
   renderAll();
 }
 
+// Urgent: a loop that is time sensitive. It sits right under Today (it does not use up the 3 Today picks).
+function toggleUrgent(id) {
+  const t = findTask(id);
+  if (!t) return;
+  pushUndoSnapshot((t.urgent ? 'unmark urgent "' : 'mark urgent "') + t.title + '"');
+  if (t.urgent) delete t.urgent; else t.urgent = true;
+  save();
+  renderAll();
+}
+
 function updateField(id, field, value) {
   const t = findTask(id);
   if (!t) return;
@@ -1743,6 +1755,7 @@ function addItems(items) {
     t.size = it.size || null;
     t.energy = it.energy || null;
     t.today = today;
+    if (it.urgent) t.urgent = true;
     if (it.type) t.type = it.type;
   });
   return overCap;
@@ -1791,7 +1804,8 @@ const ENERGY_RULES = [
   [/\b(?:some energy|medium energy|medium|moderate)\b/i, 'med']
 ];
 
-const TODAY_RE = /\b(today|tonight|this (?:morning|afternoon|evening)|asap|urgent(?:ly)?|right away)\b/i;
+const TODAY_RE = /\b(today|tonight|this (?:morning|afternoon|evening))\b/i;
+const URGENT_RE = /\b(asap|urgent(?:ly)?|right away|time[- ]sensitive|due soon)\b/i;
 const STEP_RE = /[,.;]?\s*\b(?:(?:the|my)\s+)?(?:first\s+step(?:\s+is|\s+would\s+be|\s+will\s+be)?|start\s+(?:by|with)|step\s+one(?:\s+is)?)\s*[:,-]?\s*/i;
 const LEAD_JUNK = /^(?:um+|uh+|so|okay|ok|and|also|then|oh|like|i need to|i have to|i've got to|i got to|i gotta|gotta|need to|have to|i should|i want to|remember to|don't forget to|dont forget to)\b[\s,.]*/i;
 const TRAIL_JUNK = /[\s,.;:!-]*\b(?:and|that'?s|that|it'?s|it(?: will| should)? takes?|(?<=[,;:.]\s*)it|this|which(?: is)?|will(?: take)?|that'?ll(?: take)?|it'?ll(?: take)?|takes?|should(?: take)?|is|be|like|about|maybe|probably|only|just|when|i'?m|so|gonna(?: take| be)?|going to(?: take| be)?|needs?|i need|and i need|of)\s*$/i;
@@ -1825,7 +1839,7 @@ function findStepsCue(s) {
 const splitThen = text => text.split(/[\s,;.]*\b(?:and\s+)?then\b[\s,;:.]*/i).map(x => capFirst(tidy(x))).filter(Boolean);
 
 function parseLoop(raw) {
-  const item = { title: '', steps: [], size: null, energy: null, today: false };
+  const item = { title: '', steps: [], size: null, energy: null, today: false, urgent: false };
   let s = raw;
   const cue = findStepsCue(s);
   if (cue) { item.steps = splitThen(cue.rest); s = s.slice(0, cue.index); }
@@ -1834,6 +1848,7 @@ function parseLoop(raw) {
     if (sm) { item.steps = splitThen(s.slice(sm.index + sm[0].length)); s = s.slice(0, sm.index); }
   }
   if (TODAY_RE.test(s)) { item.today = true; s = s.replace(TODAY_RE, ' '); }
+  if (URGENT_RE.test(s)) { item.urgent = true; s = s.replace(URGENT_RE, ' '); }
   for (const [re, val] of SIZE_RULES) {
     const m = s.match(re);
     if (m) { item.size = val(m); s = s.replace(re, ' '); break; }
@@ -1877,7 +1892,8 @@ For each loop:
 - title: a short name in the person's own words. Drop filler ("um", "I need to", "I gotta") and the time/energy/today/steps remarks, but keep their phrasing. Don't add details they didn't say.
 - steps: if they listed steps for this loop (usually after the word "steps", with "then" between them), return those, in order and in their words. Otherwise return exactly one step: ${FIRST_STEP}. If they said a first step, use theirs. Don't make up extra steps.
 ${SIZE_ENERGY}
-- today: true only if they said it's for today, tonight, urgent, or ASAP.`;
+- today: true only if they said it's for today or tonight.
+- urgent: true if they said it's urgent, ASAP, important, due soon, or time-sensitive.`;
 
 const BREAK_SYSTEM = `You help someone break a task they're putting off into small steps. Return 3 to 5 steps in order, or just 1 or 2 if the task is already small. The first step is ${FIRST_STEP}. Each step is a short, concrete action in plain words, about 10 words at most. Leave out steps they've already done.`;
 
@@ -1890,12 +1906,12 @@ const listSchema = (props, required) => ({
   type: 'object', additionalProperties: false, required: ['loops'],
   properties: { loops: { type: 'array', items: { type: 'object', additionalProperties: false, required, properties: props } } }
 });
-const EXTRACT_SCHEMA = listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA, { today: { type: 'boolean' } }), ['title', 'steps', 'size', 'energy', 'today']);
+const EXTRACT_SCHEMA = listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA, { today: { type: 'boolean' }, urgent: { type: 'boolean' } }), ['title', 'steps', 'size', 'energy', 'today', 'urgent']);
 // With types on the list, Claude also picks one for each loop (or none)
 function extractSchema(types) {
   if (!types.length) return EXTRACT_SCHEMA;
   return listSchema(Object.assign({ title: { type: 'string' }, steps: STEP_LIST }, SIZE_ENERGY_SCHEMA,
-    { today: { type: 'boolean' }, type: { type: 'string', enum: types.map(y => y.name).concat('') } }), ['title', 'steps', 'size', 'energy', 'today', 'type']);
+    { today: { type: 'boolean' }, urgent: { type: 'boolean' }, type: { type: 'string', enum: types.map(y => y.name).concat('') } }), ['title', 'steps', 'size', 'energy', 'today', 'urgent', 'type']);
 }
 function typesPrompt(types) {
   if (!types.length) return '';
@@ -1974,7 +1990,7 @@ function aiExtract() {
     const items = (r.loops || []).filter(x => x && typeof x.title === 'string' && x.title.trim())
       .map(x => {
         const ty = types.find(y => y.name === x.type);
-        return Object.assign({ title: x.title.trim(), today: !!x.today }, fromAi(x), ty ? { type: ty.id } : {});
+        return Object.assign({ title: x.title.trim(), today: !!x.today, urgent: !!x.urgent }, fromAi(x), ty ? { type: ty.id } : {});
       });
     if (!items.length) { toast('Claude did not find any loops in that.'); return; }
     openReview(items);
@@ -2066,6 +2082,7 @@ function loadDraft() {
       size: SIZES.includes(x.size) ? x.size : null,
       energy: ENERGY[x.energy] ? x.energy : null,
       today: !!x.today,
+      urgent: !!x.urgent,
       type: typeof x.type === 'string' && /^[a-z0-9]{1,20}$/.test(x.type) ? x.type : undefined
     }));
     return items.length ? { list: LIST_NAMES.includes(d.list) ? d.list : state.current, items } : null;
@@ -2089,7 +2106,7 @@ function resumeDraft() {
 
 function openReview(items) {
   _rvOpen.clear();
-  _review = { items: items.map(it => Object.assign({ steps: [], size: null, energy: null, today: false }, it)) };
+  _review = { items: items.map(it => Object.assign({ steps: [], size: null, energy: null, today: false, urgent: false }, it)) };
   saveDraft();
   clearBox();
   renderReview();
@@ -2121,6 +2138,7 @@ function renderReview() {
         ${tagHTML('size', it.size, `openTagMenu(event,'size','rv:${i}')`)}
         ${tagHTML('energy', it.energy, `openTagMenu(event,'energy','rv:${i}')`)}
         <button class="tag ${it.today ? 'on' : 'unset'}" onclick="rvSet(${i},'today',${!it.today},true)">Today</button>
+        <button class="tag urgent ${it.urgent ? 'on' : 'unset'}" onclick="rvSet(${i},'urgent',${!it.urgent},true)">! Urgent</button>
         ${showAdd(i, it) ? '' : `<button class="tag unset" onclick="rvOpenAdd(${i})">+ step</button>`}
       </div>
       <div class="rv-steps">
@@ -2514,6 +2532,7 @@ function taskHTML(t) {
   const open = _openSteps.has(t.id);
   const tags = [
     `<button class="tag ${t.today ? 'on' : 'unset'}" onclick="toggleToday('${t.id}')">Today</button>`,
+    `<button class="tag urgent ${t.urgent ? 'on' : 'unset'}" onclick="toggleUrgent('${t.id}')" aria-pressed="${!!t.urgent}">! Urgent</button>`,
     typeTagHTML(t),
     tagHTML('size', t.size, `openTagMenu(event,'size','task:${t.id}')`),
     tagHTML('energy', t.energy, `openTagMenu(event,'energy','task:${t.id}')`)
@@ -2596,7 +2615,8 @@ function sortTasks(list) {
     new: t => -(Date.parse(t.created) || 0),
     old: t => Date.parse(t.created) || 0
   }[sortBy];
-  return list.map((t, i) => [t, i]).sort((a, b) => key(a[0]) - key(b[0]) || a[1] - b[1]).map(x => x[0]);
+  // Urgent loops come first in every order
+  return list.map((t, i) => [t, i]).sort((a, b) => (!!b[0].urgent - !!a[0].urgent) || key(a[0]) - key(b[0]) || a[1] - b[1]).map(x => x[0]);
 }
 
 const notesHTML = list => '<div class="notes">' + list.map(taskHTML).join('') + '</div>';
@@ -2624,10 +2644,12 @@ function renderTaskList() {
     html = '<div class="empty">Nothing open.</div>';
   } else if (sortBy === 'today') {
     const today = live.filter(t => t.today);
-    const quick = live.filter(t => !t.today && t.size === 2);
-    const rest = live.filter(t => !t.today && t.size !== 2);
+    const urgent = live.filter(t => !t.today && t.urgent);
+    const quick = live.filter(t => !t.today && !t.urgent && t.size === 2);
+    const rest = live.filter(t => !t.today && !t.urgent && t.size !== 2);
     html += `<div class="section-label">Today (${today.length}/${TODAY_LIMIT})</div>`;
     html += today.length ? notesHTML(today) : '<div class="empty">Nothing picked yet.</div>';
+    if (urgent.length) html += '<div class="section-label">Urgent</div>' + notesHTML(urgent);
     if (quick.length) html += '<div class="section-label">Quick ones</div>' + notesHTML(quick);
     if (rest.length) html += '<div class="section-label">Everything else</div>' + notesHTML(rest);
   } else if (live.length) {
@@ -2865,7 +2887,7 @@ function clearPicked(el) {
 
 // How likely a loop is to come up: Today's picks, older loops, and quick or low-effort loops (an easy first win) count more
 function pickWeight(t) {
-  return 1 + (t.today ? 3 : 0) + Math.min(3, Math.floor(daysSince(t.created) / 7)) +
+  return 1 + (t.today ? 3 : 0) + (t.urgent ? 4 : 0) + Math.min(3, Math.floor(daysSince(t.created) / 7)) +
     (t.size === 2 ? 3 : t.size === 15 ? 1 : 0) + (t.energy === 'low' ? 2 : 0);
 }
 
@@ -3265,7 +3287,7 @@ const HELP = [
   <li><strong>Add</strong>: one loop goes straight in. Several open the check-over screen.</li>
   <li><strong>Add with AI</strong>: Claude splits it up, fills in time and energy, and writes a tiny first step. Needs an API key (see "Turn on AI").</li>
   <li>On the check-over screen you can change names, steps, time, energy, and Today right there. It's saved as a draft, so nothing is lost if you leave. <strong>Keep draft</strong> keeps it for when you come back.</li>
-  <li>Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," and "first step is."</li>
+  <li>Without AI, Add picks up phrases like "quick," "10 minutes," "half an hour," "takes forever," "when I'm tired," "need to be fresh," "today," "urgent," and "first step is."</li>
 </ul>`],
 ['Your loops', `
 <ul>
@@ -3280,6 +3302,7 @@ const HELP = [
   <li>The color is the thick band on the left of a note. The note you open is shown a little stronger.</li>
   <li><strong>The bar</strong> under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).</li>
   <li><strong>Today</strong> holds up to 3 picks. Tap the <strong>Today</strong> tag on a loop to pick or unpick it.</li>
+  <li><strong>! Urgent</strong> marks a loop as time sensitive. Urgent loops are grouped right under Today, so they don't use up your 3 picks, and they come up more often in Pick for me. Saying "urgent" or "ASAP" when you add a loop marks it.</li>
   <li><strong>Sort</strong> with the buttons above the notes (a single Sort button on a phone): Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.</li>
   <li><strong>Undo</strong> reverses your last few actions. It appears in the message that pops up after an action, and at the top.</li>
 </ul>`],
