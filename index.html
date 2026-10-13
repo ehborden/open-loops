@@ -263,26 +263,8 @@
   }
   .empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
 
-  /* Swipe */
-  .deck { position: relative; height: 300px; margin: 16px auto 0; max-width: 420px; touch-action: none; }
-  .swipe-card {
-    position: absolute; inset: 0; background: var(--card); border: 1px solid var(--edge);
-    border-radius: 6px; box-shadow: var(--shadow); padding: 24px;
-    display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
-    cursor: grab; user-select: none;
-  }
-  .swipe-card.behind { transform: scale(0.95) translateY(10px); opacity: 0.6; pointer-events: none; }
-  .swipe-card { background: var(--n-bg, var(--card)); border-left: 12px solid var(--n-strong, var(--edge)); }
-  .swipe-card .t { font-size: 22px; font-weight: 600; }
   .result.picked { background: var(--n-bg, var(--card)); border: 1px solid var(--n-edge, var(--edge)); border-left: 12px solid var(--n-strong, var(--edge)); border-radius: 6px; padding: 12px 14px; margin-left: auto; margin-right: auto; max-width: 420px; }
-  .swipe-card .s { font-size: 14px; color: var(--muted); margin-top: 10px; }
-  .stamp {
-    position: absolute; top: 18px; font-weight: 800; font-size: 20px; letter-spacing: 1px;
-    padding: 4px 10px; border-radius: 8px; border: 3px solid; opacity: 0;
-  }
-  .stamp.yes { left: 18px; color: var(--green); border-color: var(--green); transform: rotate(-12deg); }
-  .stamp.no { right: 18px; color: var(--red); border-color: var(--red); transform: rotate(12deg); }
-  .swipe-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
 
   /* Wheel */
   .wheel-wrap { position: relative; width: min(340px, 100%); margin: 16px auto 0; aspect-ratio: 1; }
@@ -577,15 +559,6 @@
         </div>
       </div>
 
-      <div id="mode-swipe" style="display:none">
-        <div class="deck" id="deck"></div>
-        <div class="swipe-buttons">
-          <button class="btn" onclick="swipeDecide(false)">Skip</button>
-          <button class="btn" onclick="snoozeTop()">Not today</button>
-          <button class="btn primary" onclick="swipeDecide(true)">Start</button>
-        </div>
-      </div>
-
       <div id="mode-wheel" style="display:none">
         <div class="wheel-wrap">
           <div class="pointer"></div>
@@ -611,7 +584,6 @@
       <div class="seg other-ways" id="pick-mode">
         <button data-mode="random" hidden>One pick</button>
         <button data-mode="bracket">Bracket</button>
-        <button data-mode="swipe">Swipe</button>
         <button data-mode="wheel">Spin the wheel</button>
       </div>
     </div>
@@ -2613,7 +2585,7 @@ function renderTaskList() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  PICK: filters, swipe, wheel, random
+//  PICK: filters, bracket, wheel, random
 // ═══════════════════════════════════════════════════════
 
 const filters = { energy: 'any', time: 'any', today: false };
@@ -2654,25 +2626,17 @@ function shuffle(a) {
   return a;
 }
 
-let deck = [];
-
 function renderPickPool() {
   const p = pool();
   document.getElementById('pool-count').textContent =
     p.length ? `${p.length} loop${p.length === 1 ? '' : 's'} fit right now.` : 'Nothing fits these filters. Loosen them, or add a loop.';
-  const ids = new Set(p.map(t => t.id));
-  deck = deck.filter(id => ids.has(id));
-  p.forEach(t => { if (!deck.includes(t.id)) deck.push(t.id); });
-  if (deck.length && !_deckShuffled) { deck = shuffle(deck); _deckShuffled = true; }
-  renderDeck();
   drawWheel();
 }
-let _deckShuffled = false;
 
 function setPickMode(mode) {
   pickMode = mode;
   document.querySelectorAll('#pick-mode button').forEach(x => { x.classList.toggle('on', x.dataset.mode === mode); x.hidden = mode === 'random' && x.dataset.mode === 'random'; });
-  ['swipe', 'wheel', 'random', 'bracket'].forEach(m => document.getElementById('mode-' + m).style.display = m === mode ? 'block' : 'none');
+  ['wheel', 'random', 'bracket'].forEach(m => document.getElementById('mode-' + m).style.display = m === mode ? 'block' : 'none');
   if (mode === 'wheel') drawWheel();
   if (mode === 'bracket') startBracket();
 }
@@ -2731,98 +2695,6 @@ function renderBracket() {
   };
   box.innerHTML = card(b.round[b.i]) + card(b.round[b.i + 1]);
 }
-
-// ── Swipe ───────────────────────────────────────────
-
-function renderDeck() {
-  const el = document.getElementById('deck');
-  if (!deck.length) {
-    el.innerHTML = '<div class="swipe-card" style="cursor:default"><div class="s">No cards. Change the filters above or capture a loop.</div></div>';
-    return;
-  }
-  const [a, b] = deck;
-  const card = (t, cls) => {
-    const steps = getSteps(t), i = steps.findIndex(x => !x.done);
-    let s = i < 0 ? '' : `${steps.length > 1 ? `Step ${i + 1} of ${steps.length}` : 'First step'}: ${esc(steps[i].text)}`;
-    if (t.skips >= 3) s += `<br><br>Skipped ${t.skips} times. Maybe it needs a smaller first step, or maybe you can let it go.`;
-    const meta = [t.size ? sizeLabel(t.size) : '', t.energy ? ENERGY[t.energy] : ''].filter(Boolean).join(' / ');
-    return `<div class="swipe-card ${cls}" data-id="${t.id}" style="${palVars(colorOf(t))}">
-      <div class="stamp yes">START</div><div class="stamp no">SKIP</div>
-      <div class="t">${esc(t.title)}</div>
-      ${meta ? `<div class="s">${meta}</div>` : ''}
-      ${s ? `<div class="s">${s}</div>` : ''}
-    </div>`;
-  };
-  el.innerHTML = (b ? card(findTask(b), 'behind') : '') + card(findTask(a), 'top');
-  attachDrag(el.querySelector('.swipe-card.top'));
-}
-
-function attachDrag(cardEl) {
-  let startX = 0, dx = 0, dragging = false;
-  const yes = cardEl.querySelector('.stamp.yes'), no = cardEl.querySelector('.stamp.no');
-  cardEl.addEventListener('pointerdown', e => {
-    dragging = true; startX = e.clientX; dx = 0;
-    cardEl.setPointerCapture(e.pointerId);
-    cardEl.style.transition = 'none';
-  });
-  cardEl.addEventListener('pointermove', e => {
-    if (!dragging) return;
-    dx = e.clientX - startX;
-    cardEl.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`;
-    yes.style.opacity = Math.max(0, Math.min(1, dx / 100));
-    no.style.opacity = Math.max(0, Math.min(1, -dx / 100));
-  });
-  const end = () => {
-    if (!dragging) return;
-    dragging = false;
-    if (dx > 100) flyOut(cardEl, 1, () => swipeDecide(true, true));
-    else if (dx < -100) flyOut(cardEl, -1, () => swipeDecide(false, true));
-    else {
-      cardEl.style.transition = 'transform 0.2s';
-      cardEl.style.transform = '';
-      yes.style.opacity = 0; no.style.opacity = 0;
-    }
-  };
-  cardEl.addEventListener('pointerup', end);
-  cardEl.addEventListener('pointercancel', end);
-}
-
-function flyOut(cardEl, dir, cb) {
-  cardEl.style.transition = 'transform 0.25s ease-in';
-  cardEl.style.transform = `translateX(${dir * 600}px) rotate(${dir * 30}deg)`;
-  setTimeout(cb, 220);
-}
-
-function swipeDecide(yes, animated) {
-  if (!deck.length) return;
-  const id = deck[0];
-  if (!animated) {
-    const c = document.querySelector('#deck .swipe-card.top');
-    if (c) { flyOut(c, yes ? 1 : -1, () => swipeDecide(yes, true)); return; }
-  }
-  if (yes) {
-    pickedId = id;
-    renderDeck(); // put the card back after the timer starts
-    startFromPick();
-  } else {
-    const t = findTask(id);
-    if (t) { t.skips = (t.skips || 0) + 1; save(); }
-    deck.push(deck.shift());
-    renderDeck();
-  }
-}
-
-function snoozeTop() {
-  if (!deck.length) return;
-  snooze(deck[0]);
-}
-
-document.addEventListener('keydown', e => {
-  if (!document.getElementById('screen-pick').classList.contains('active') || pickMode !== 'swipe') return;
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
-  if (e.key === 'ArrowRight') swipeDecide(true);
-  if (e.key === 'ArrowLeft') swipeDecide(false);
-});
 
 // ── Wheel ───────────────────────────────────────────
 
@@ -3335,7 +3207,7 @@ const HELP = [
   <li><strong>Undo</strong> reverses your last few actions. It appears in the message that pops up after an action, and at the top.</li>
 </ul>`],
 ['Pick for me', `
-<p>For when choosing is the hard part. Tap <strong>Pick for me</strong> above the notes and it picks one loop, leaning toward quick, low-energy ones for an easy start. Tap <strong>Pick again</strong> for another, or choose <strong>Bracket</strong> (two loops at a time, tap the one you would rather do), <strong>Swipe</strong>, or <strong>Spin the wheel</strong> underneath. Tap <strong>Right now I have...</strong> to set your energy and time first. <strong>Close</strong> goes back to your loops.</p>`],
+<p>For when choosing is the hard part. Tap <strong>Pick for me</strong> above the notes and it picks one loop, leaning toward quick, low-energy ones for an easy start. Tap <strong>Pick again</strong> for another, or choose <strong>Bracket</strong> (two loops at a time, tap the one you would rather do) or <strong>Spin the wheel</strong> underneath. Tap <strong>Right now I have...</strong> to set your energy and time first. <strong>Close</strong> goes back to your loops.</p>`],
 ['Timer', `
 <ul>
   <li>The timer is on the right, above Closed. On a phone it's a slim row at the top (tap <strong>More</strong> for the full card, and it opens by itself while a timer runs). The ring drains as the time runs down. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
@@ -3578,7 +3450,7 @@ function switchList(name) {
   if (name === state.current) return;
   state.current = name;
   writeLocal();
-  deck = []; _deckShuffled = false; pickedId = null;
+  pickedId = null;
   ['wheel-result', 'random-result', 'bracket-result'].forEach(id => clearPicked(document.getElementById(id)));
   ['wheel-go', 'random-go', 'bracket-go'].forEach(id => document.getElementById(id).style.display = 'none');
   _bracket = null;
