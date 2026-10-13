@@ -32,7 +32,7 @@ The same guide is in the app under **Data > How to**.
 - The color is the thick band on the left of a note. The note you open is shown a little stronger.
 - **The bar** under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).
 - **Today** holds up to 3 picks. Tap the **Today** tag on a loop to pick or unpick it.
-- **Sort** with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
+- **Sort** with the buttons above the notes (a single Sort button on a phone): Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.
 - **Undo** reverses your last few actions. It appears in the message that pops up after an action, and at the top.
 
 ### 3. Pick one
@@ -41,7 +41,7 @@ When choosing is the hard part. Tap **Pick for me**, or choose **Swipe** or **Sp
 
 ### 4. Timer
 
-- The timer is on the right, above Wins. On a phone it's at the top. The ring drains as the time runs down. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
+- The timer is on the right, above Wins. On a phone it's a slim row at the top (tap **More** for the full card, and it opens by itself while a timer runs). The ring drains as the time runs down. **Start** begins it on the loop you opened last (tap **Steps** on a note to open it). With no loop open, it's a timer on its own.
 - Pick the minutes first: Just 5 min up to 45. It starts at 25.
 - **Start** inside an open note, or on a loop from Pick one, begins the timer on that loop right away.
 - Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.
@@ -54,7 +54,7 @@ Everything you've closed, with counts for today, the last 7 days, your streak, a
 
 ### 6. Work and Home
 
-The two list buttons at the top right switch between two separate lists. They start as **Work** and **Home**. To use other names (Personal, for example), tap **Data**, then **Rename lists**. With sync on, the names follow you to your other devices.
+The two list buttons at the top right switch between two separate lists. They start as **Work** and **Home**. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap **Data**, then **Rename lists**. With sync on, the names and colors follow you to your other devices.
 
 ---
 

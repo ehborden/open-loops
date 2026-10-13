@@ -49,6 +49,7 @@
 
   /* Header */
   header { background: var(--bg); }
+  header::before { content: ''; display: block; height: 10px; background: var(--band, var(--edge)); }
   header .wrap { padding-bottom: 0; }
   .tabbar { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--edge); }
   .tabbar .wrap { padding-bottom: 0; }
@@ -133,6 +134,7 @@
   .tag.type { border-color: var(--n-strong, var(--edge)); font-weight: 500; }
   .tag.type.unset { font-weight: 400; }
   .ed-type { margin-top: 10px; }
+  .rn-row { display: grid; grid-template-columns: 1fr 120px; gap: 8px; }
   .ty-row { display: flex; align-items: center; gap: 8px; }
   .ty-row i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
   .tag-menu .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px 4px; max-width: 190px; border-top: 1px solid var(--line); margin-top: 2px; }
@@ -149,6 +151,9 @@
   .more.open svg { transform: rotate(180deg); }
   .add-step { padding: 6px 8px; font-size: 13px; }
   .sort-row { margin: 8px 0 0; }
+  .sort-btn { display: none; align-items: center; gap: 6px; }
+  .sort-btn svg { width: 11px; height: 7px; }
+  @media (max-width: 979px) { .sort-btn { display: inline-flex; } #sort-chips { display: none; } }
   .types-box { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); }
   .types-box:not(.open) #type-chips { display: none; }
   #type-chips { margin-top: 10px; }
@@ -374,7 +379,7 @@
   .ed-foot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
 
   /* Adding */
-  .capture textarea { min-height: 0; resize: none; }
+  .capture textarea { min-height: 44px; resize: none; }
   .toast {
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120px);
     background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px;
@@ -407,6 +412,20 @@
   .focus-card .presets, .focus-card .controls { justify-content: flex-start; margin-top: 0; gap: 6px; }
   .focus-card .presets + .controls { margin-top: 8px; }
   .focus-card .btn.big { padding: 8px 14px; font-size: 15px; border-radius: 6px; }
+  .slim-more, .slim-less { display: none; }
+  @media (max-width: 979px) {
+    .focus-card.slim { padding: 8px 12px; }
+    .focus-card.slim #focus-empty, .focus-card.slim .presets, .focus-card.slim .focus-step { display: none !important; }
+    .focus-card.slim .focus-task { font-size: 14px; margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .focus-card.slim .timer-row { margin-top: 0; gap: 12px; }
+    .focus-card.slim .ring-wrap { width: 52px; height: 52px; }
+    .focus-card.slim .ring-time .big { font-size: 13px; }
+    .focus-card.slim .ring-time .small { display: none; }
+    .focus-card.slim .timer-side { display: flex; align-items: center; gap: 8px; }
+    .focus-card.slim .controls { margin: 0; }
+    .focus-card.slim .slim-more { display: inline-flex; }
+    .focus-card.open-idle .slim-less { display: inline-flex; margin-top: 8px; }
+  }
   @media (min-width: 980px) {
     header .wrap, .tabbar .wrap, .layout { max-width: 1200px; }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
@@ -496,7 +515,7 @@
   <section class="screen active" id="screen-capture">
     <div id="backup-alert"></div>
     <div class="card capture">
-      <textarea id="quick-add" rows="2" placeholder="What's on your mind?" autocomplete="off"></textarea>
+      <textarea id="quick-add" rows="1" placeholder="What's on your mind?" autocomplete="off"></textarea>
       <div class="row" style="margin-top:8px">
         <button class="btn primary" onclick="addFromBox()">Add</button>
         <button class="btn link" id="ai-btn" onclick="aiExtract()">Add with AI</button>
@@ -510,6 +529,7 @@
         <h2 style="flex:1">Your loops</h2>
         <span class="hint" style="margin:0" id="loop-count"></span>
       </div>
+      <button class="btn sm sort-btn sort-row" id="sort-btn" onclick="openSortMenu(event)"></button>
       <div class="seg sort-row" id="sort-chips"></div>
       <div id="task-list"></div>
       <div class="types-box" id="types-box">
@@ -609,6 +629,8 @@
       <div class="timer-side">
         <div class="presets" id="presets"></div>
         <div class="controls" id="timer-controls"></div>
+        <button class="btn big slim-more" onclick="setTimerOpen(true)">More</button>
+        <button class="btn big slim-less" onclick="setTimerOpen(false)">Less</button>
       </div>
     </div>
   </div>
@@ -698,6 +720,8 @@ function cleanList(l) {
   // Optional display name for the list (the key stays Work or Home); older copies of the app never set it
   const label = typeof l.label === 'string' ? l.label.replace(/[\u0000-\u001f]/g, '').trim().slice(0, LABEL_MAX) : '';
   if (label) { out.label = label; out.labelAt = Number(l.labelAt) > 0 ? Number(l.labelAt) : 0; }
+  // Optional color for the top of the page when this list is open
+  if (COLORS.includes(l.color) && Number(l.colorAt) > 0) { out.color = l.color; out.colorAt = Number(l.colorAt); }
   // Optional list of types (kinds of work); older copies of the app never set it
   const types = cleanTypes(l.types);
   if (types && Number(l.typesAt) > 0) { out.types = types; out.typesAt = Number(l.typesAt); }
@@ -1082,6 +1106,8 @@ function mergeLists(local, remote) {
   // The newer list name wins
   const src = (remote.labelAt || 0) > (local.labelAt || 0) ? remote : local;
   if (src.label) { merged.label = src.label; merged.labelAt = src.labelAt || 0; }
+  const csrc = (remote.colorAt || 0) > (local.colorAt || 0) ? remote : local;
+  if (csrc.color) { merged.color = csrc.color; merged.colorAt = csrc.colorAt || 0; }
   // Same for the types: the newer edit wins
   const tsrc = (remote.typesAt || 0) > (local.typesAt || 0) ? remote : local;
   if (tsrc.types) { merged.types = tsrc.types; merged.typesAt = tsrc.typesAt || 0; }
@@ -1093,7 +1119,8 @@ function canon(list) {
     list.tasks.map(t => JSON.stringify(t)).sort(),
     Object.keys(list.deleted).sort().map(k => k + ':' + list.deleted[k]),
     list.label || '', list.labelAt || 0,
-    JSON.stringify(list.types || null), list.typesAt || 0
+    JSON.stringify(list.types || null), list.typesAt || 0,
+    list.color || '', list.colorAt || 0
   ]);
 }
 
@@ -1110,7 +1137,7 @@ async function syncList(name, attempt = 0) {
   else if (canon(merged) !== before) renderListToggle();
 
   if (remote.data && canon(remoteList) === canon(merged)) return;
-  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt, types: merged.types, typesAt: merged.typesAt }, null, 1);
+  const body = JSON.stringify({ app: APP_ID, list: name, savedAt: new Date().toISOString(), tasks: merged.tasks, deleted: merged.deleted, label: merged.label, labelAt: merged.labelAt, types: merged.types, typesAt: merged.typesAt, color: merged.color, colorAt: merged.colorAt }, null, 1);
   const put = { message: `Update ${name} list`, content: toB64(body) };
   if (remote.sha) put.sha = remote.sha;
   const res = await gh(`/contents/${filePath(name)}`, { method: 'PUT', body: JSON.stringify(put) });
@@ -2424,6 +2451,26 @@ function saveView(patch) { try { localStorage.setItem('openloops_view', JSON.str
 let sortBy = SORTS.some(x => x[0] === viewPrefs().sort) ? viewPrefs().sort : 'today';
 let _typesOpen = !!viewPrefs().types;
 
+function openSortMenu(e) {
+  e.stopPropagation();
+  closeTagMenu();
+  const menu = document.createElement('div');
+  menu.className = 'tag-menu';
+  menu.innerHTML = SORTS.map(([k, label]) => `<button class="${k === sortBy ? 'on' : ''}" data-k="${k}">${label}</button>`).join('');
+  menu.addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    ev.stopPropagation();
+    closeTagMenu();
+    setSort(b.dataset.k);
+  });
+  document.body.appendChild(menu);
+  const r = e.currentTarget.getBoundingClientRect();
+  menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+  menu.style.top = (r.bottom + 4 + menu.offsetHeight < window.innerHeight ? r.bottom + 4 : r.top - menu.offsetHeight - 4) + 'px';
+  _tagMenu = menu;
+}
+
 function setSort(k) {
   sortBy = k;
   saveView({ sort: k });
@@ -2483,6 +2530,7 @@ function renderTaskList() {
   if (open.length && snoozed.length) html += '<div class="section-label">Back tomorrow</div>' + notesHTML(snoozed);
   document.getElementById('task-list').innerHTML = html;
   document.getElementById('loop-count').textContent = open.length ? `${open.length} open` : '';
+  document.getElementById('sort-btn').innerHTML = 'Sort: ' + SORTS.find(x => x[0] === sortBy)[1] + ARROW;
   document.getElementById('sort-chips').innerHTML = SORTS.map(([k, label]) =>
     `<button class="${k === sortBy ? 'on' : ''}" onclick="setSort('${k}')">${label}</button>`).join('');
 
@@ -2801,6 +2849,10 @@ function goFocus(id, start) {
   if (start && !state.timer) startTimer();
 }
 
+// On a phone the idle timer is one slim row; More opens the full card, and it opens by itself while a timer runs
+let _timerOpen = false;
+function setTimerOpen(v) { _timerOpen = v; renderFocus(); }
+
 function renderFocus() {
   const id = state.timer ? state.timer.taskId : focusId;
   const found = id ? findTask(id) : null;
@@ -2842,6 +2894,9 @@ function renderFocus() {
   document.getElementById('presets').innerHTML = state.timer ? '' : PRESETS.map(m =>
     `<button class="btn sm ${m === chosenMinutes ? 'primary' : ''}" onclick="chosenMinutes=${m};renderFocus()">${m === 5 ? '<span class="j">Just </span>5' : m}<span class="u"> min</span></button>`).join('');
   renderControls();
+  const card = document.getElementById('focus-card');
+  card.classList.toggle('slim', !WIDE.matches && !state.timer && !_timerOpen);
+  card.classList.toggle('open-idle', !WIDE.matches && !state.timer && _timerOpen);
   updateClock();
   updateFocusVisibility();
 }
@@ -2867,6 +2922,7 @@ function renderControls() {
 }
 
 function startTimer() {
+  _timerOpen = false;
   const ms = chosenMinutes * 60000;
   state.timer = { taskId: focusId, total: ms, endsAt: Date.now() + ms, pausedLeft: null, finished: false };
   save();
@@ -3125,14 +3181,14 @@ const HELP = [
   <li>The color is the thick band on the left of a note. The note you open is shown a little stronger.</li>
   <li><strong>The bar</strong> under the tags fills as you check off steps. A longer bar means a longer task (set with the time tag).</li>
   <li><strong>Today</strong> holds up to 3 picks. Tap the <strong>Today</strong> tag on a loop to pick or unpick it.</li>
-  <li><strong>Sort</strong> with the buttons above the notes: Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.</li>
+  <li><strong>Sort</strong> with the buttons above the notes (a single Sort button on a phone): Today first, Quickest, Easiest, Newest, or Oldest. Each device remembers its own.</li>
   <li><strong>Undo</strong> reverses your last few actions. It appears in the message that pops up after an action, and at the top.</li>
 </ul>`],
 ['Pick one', `
 <p>For when choosing is the hard part. Tap <strong>Pick for me</strong>, or choose <strong>Swipe</strong> or <strong>Spin the wheel</strong> underneath. Tap <strong>Right now I have...</strong> to set your energy and time first.</p>`],
 ['Timer', `
 <ul>
-  <li>The timer is on the right, above Wins. On a phone it's at the top. The ring drains as the time runs down. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
+  <li>The timer is on the right, above Wins. On a phone it's a slim row at the top (tap <strong>More</strong> for the full card, and it opens by itself while a timer runs). The ring drains as the time runs down. <strong>Start</strong> begins it on the loop you opened last (tap <strong>Steps</strong> on a note to open it). With no loop open, it's a timer on its own.</li>
   <li>Pick the minutes first: Just 5 min up to 45. It starts at 25.</li>
   <li><strong>Start</strong> inside an open note, or on a loop from Pick one, begins the timer on that loop right away.</li>
   <li>Scroll down on a phone while a timer runs and a bar at the bottom shows the time. Tap it to jump back up.</li>
@@ -3142,7 +3198,7 @@ const HELP = [
 ['Wins', `
 <p>Everything you've closed, with counts for today, the last 7 days, your streak, and steps checked off today.</p>`],
 ['Work and Home', `
-<p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. To use other names (Personal, for example), tap <strong>Data</strong>, then <strong>Rename lists</strong>. With sync on, the names follow you to your other devices.</p>`],
+<p>The two list buttons at the top right switch between two separate lists. They start as <strong>Work</strong> and <strong>Home</strong>. A bar across the top of the page takes the list's color, teal for Work and purple for Home. To use other names (Personal, for example) or other colors, tap <strong>Data</strong>, then <strong>Rename lists</strong>. With sync on, the names and colors follow you to your other devices.</p>`],
 ['Sync your devices (your own GitHub)', `
 <p>Keeps your phone and computers showing the same lists. Your loops are saved in a private GitHub repo that only you can see.</p>
 <p><strong>One time:</strong></p>
@@ -3230,21 +3286,26 @@ function openSettings(note) {
 
 function openRename() {
   openModal(`<h3>Rename lists</h3>
-    ${LIST_NAMES.map((n, i) => `<input type="text" id="rn-${i}" value="${esc(listLabel(n))}" maxlength="${LABEL_MAX}" autocomplete="off" style="margin-top:${i ? 8 : 14}px">`).join('')}
+    ${LIST_NAMES.map((n, i) => `<div class="rn-row" style="margin-top:${i ? 8 : 14}px">
+        <input type="text" id="rn-${i}" value="${esc(listLabel(n))}" maxlength="${LABEL_MAX}" autocomplete="off">
+        <select id="rc-${i}" aria-label="Color" style="border-left:8px solid ${BRIGHT[listColor(n)]}" onchange="this.style.borderLeftColor=BRIGHT[this.value]">
+          ${COLORS.map(c => `<option value="${c}" ${c === listColor(n) ? 'selected' : ''}>${COLOR_NAMES[c]}</option>`).join('')}</select>
+      </div>`).join('')}
     <div class="row" style="margin-top:16px;justify-content:flex-end">
       <button class="btn" onclick="closeModal()">Cancel</button>
       <button class="btn primary" onclick="saveRename()">Save</button>
     </div>`);
 }
-
 function saveRename() {
   const vals = LIST_NAMES.map((n, i) => document.getElementById('rn-' + i).value.replace(/\s+/g, ' ').trim().slice(0, LABEL_MAX) || n);
   if (vals[0].toLowerCase() === vals[1].toLowerCase()) { toast('The two lists need different names.'); return; }
   LIST_NAMES.forEach((n, i) => {
-    if (vals[i] === listLabel(n)) return;
-    state.lists[n].label = vals[i];
-    state.lists[n].labelAt = Date.now();
-    markDirty(n);
+    const col = document.getElementById('rc-' + i).value;
+    const nameChanged = vals[i] !== listLabel(n);
+    const colorChanged = COLORS.includes(col) && col !== listColor(n);
+    if (nameChanged) { state.lists[n].label = vals[i]; state.lists[n].labelAt = Date.now(); }
+    if (colorChanged) { state.lists[n].color = col; state.lists[n].colorAt = Date.now(); }
+    if (nameChanged || colorChanged) markDirty(n);
   });
   writeLocal();
   closeModal();
@@ -3360,7 +3421,21 @@ function toast(msg, plain) {
   _toastTimer = setTimeout(() => el.classList.remove('show'), withUndo ? 6000 : 3200);
 }
 
+const DEFAULT_LIST_COLORS = { Work: 'teal', Home: 'purple' };
+function listColor(n) {
+  const c = state.lists[n] && state.lists[n].color;
+  return COLORS.includes(c) ? c : (DEFAULT_LIST_COLORS[n] || 'gray');
+}
+// The bar across the top of the page takes the color of the list you are in
+function applyListColor() {
+  const c = BRIGHT[listColor(state.current)];
+  document.querySelector('header').style.setProperty('--band', c);
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute('content', c);
+}
+
 function renderListToggle() {
+  applyListColor();
   document.getElementById('list-toggle').innerHTML = LIST_NAMES.map(n => {
     const open = state.lists[n].tasks.filter(t => !t.done).length;
     return `<button class="${n === state.current ? 'on' : ''}" onclick="switchList('${n}')">${esc(listLabel(n))}${open ? ` <span class="count">${open}</span>` : ''}</button>`;
